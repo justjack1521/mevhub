@@ -1,0 +1,51 @@
+package query
+
+import (
+	uuid "github.com/satori/go.uuid"
+	"mevhub/internal/domain/lobby"
+	"mevhub/internal/domain/session"
+)
+
+type SearchPlayerQuery struct {
+	LobbyID   uuid.UUID
+	PartySlot int
+}
+
+func NewSearchPlayerQuery(id uuid.UUID, slot int) SearchPlayerQuery {
+	return SearchPlayerQuery{LobbyID: id, PartySlot: slot}
+}
+
+func (q SearchPlayerQuery) QueryName() string {
+	return "search.player"
+}
+
+type SearchPlayerQueryHandler struct {
+	ParticipantRepository lobby.ParticipantRepository
+	SessionRepository     session.InstanceReadRepository
+	SummaryRepository     lobby.PlayerSummaryReadRepository
+}
+
+func NewSearchPlayerQueryHandler(participant lobby.ParticipantRepository, session session.InstanceReadRepository, summary lobby.PlayerSummaryReadRepository) *SearchPlayerQueryHandler {
+	return &SearchPlayerQueryHandler{ParticipantRepository: participant, SessionRepository: session, SummaryRepository: summary}
+}
+
+func (h *SearchPlayerQueryHandler) Handle(ctx *Context, qry SearchPlayerQuery) (lobby.PlayerSummary, error) {
+
+	participant, err := h.ParticipantRepository.QueryParticipantForLobby(ctx.Context, qry.LobbyID, qry.PartySlot)
+	if err != nil {
+		return lobby.PlayerSummary{}, err
+	}
+
+	current, err := h.SessionRepository.QueryByID(ctx.Context, participant.ClientID)
+	if err != nil {
+		return lobby.PlayerSummary{}, err
+	}
+
+	summary, err := h.SummaryRepository.Query(ctx.Context, current.PlayerID, current.DeckIndex)
+	if err != nil {
+		return lobby.PlayerSummary{}, err
+	}
+
+	return summary, nil
+
+}
