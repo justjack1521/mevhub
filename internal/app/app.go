@@ -4,6 +4,7 @@ import (
 	"github.com/go-redis/redis/v8"
 	services "github.com/justjack1521/mevium/pkg/genproto/service"
 	"github.com/justjack1521/mevium/pkg/mevent"
+	"github.com/nats-io/nats.go"
 	"github.com/sirupsen/logrus"
 	"github.com/wagslane/go-rabbitmq"
 	"gorm.io/gorm"
@@ -51,9 +52,10 @@ type Services struct {
 	EventPublisher     *mevent.Publisher
 	Redis              *redis.Client
 	RabbitMQConnection *rabbitmq.Conn
+	NATSConnection     *nats.Conn
 }
 
-func NewApplication(db *gorm.DB, client *redis.Client, logger *logrus.Logger, conn *rabbitmq.Conn, game services.MeviusGameServiceClient) *Application {
+func NewApplication(db *gorm.DB, client *redis.Client, logger *logrus.Logger, conn *rabbitmq.Conn, nts *nats.Conn, game services.MeviusGameServiceClient) *Application {
 	var application = &Application{
 		repositories: &Repositories{
 			Quests: database.NewGameQuestDatabaseRepository(db),

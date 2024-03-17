@@ -3,16 +3,16 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/jinzhu/configor"
 	services "github.com/justjack1521/mevium/pkg/genproto/service"
 	"github.com/justjack1521/mevium/pkg/server"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"math/rand"
+	"mevhub/internal/adapter/broker"
+	"mevhub/internal/adapter/database"
 	"mevhub/internal/app"
 	"mevhub/internal/config"
 	"mevhub/internal/ports"
-	"os"
 	"time"
 )
 
@@ -22,11 +22,11 @@ func main() {
 
 	rand.Seed(time.Now().Unix())
 
-	var path = os.Getenv("GOPATH")
+	//var path = os.Getenv("GOPATH")
 	var configuration config.Application
-	if err := configor.Load(&configuration, path+"/"+conf); err != nil {
-		panic(err)
-	}
+	//if err := configor.Load(&configuration, path+"/"+conf); err != nil {
+	//	panic(err)
+	//}
 
 	var logger = logrus.New()
 
@@ -53,27 +53,32 @@ func main() {
 
 func NewApplication(ctx context.Context, configuration config.Application, logger *logrus.Logger) *app.Application {
 
-	db, err := configuration.Database.NewPostgresConnection()
+	db, err := database.NewPostgresConnection()
 	if err != nil {
-		panic(err)
+		panic(fmt.Errorf("failed to connect to database: %w", err))
 	}
 
-	rds, err := configuration.Redis.NewRedisConnection(ctx)
+	rds, err := database.NewRedisConnection(ctx)
 	if err != nil {
-		panic(err)
+		panic(fmt.Errorf("failed to connect to cache: %w", err))
 	}
 
-	msg, err := configuration.RabbitMQ.NewRabbitMQConnection()
+	msg, err := broker.NewRabbitMQConnection()
 	if err != nil {
-		panic(err)
+		panic(fmt.Errorf("failed to connect to message bus: %w", err))
+	}
+
+	nts, err := broker.NewNATSConnection()
+	if err != nil {
+		panic(fmt.Errorf("failed to connect to nats: %w", err))
 	}
 
 	game, err := DialToGameClient(configuration)
 	if err != nil {
-		panic(err)
+		panic(fmt.Errorf("failed to connect to game client: %w", err))
 	}
 
-	return app.NewApplication(db, rds, logger, msg, game)
+	return app.NewApplication(db, rds, logger, msg, nts, game)
 
 }
 

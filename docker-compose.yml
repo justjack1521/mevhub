@@ -1,0 +1,53 @@
+version: '3.8'
+
+services:
+  cache:
+    image: redis:6.2-alpine
+    restart: always
+    networks:
+      - mevnet
+    ports:
+      - '6379:6379'
+    environment:
+      - REDISPASSWORD=${REDISPASSWORD:?redis password not set}
+    command: redis-server --save 20 1 --loglevel warning --requirepass ${REDISPASSWORD:?redis password not set}
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 1s
+      timeout: 2s
+      retries: 10
+    volumes:
+      - cache:/data
+  mevhub:
+    depends_on:
+      - cache
+    build:
+      context: .
+    container_name: mevhub-server
+    hostname: mevhub-server
+    networks:
+      - mevnet
+    ports:
+      - '50552:50552'
+    environment:
+      - PGUSER=${PGUSER:-doadmin}
+      - PGPASSWORD=${PGPASSWORD:?database password not set}
+      - PGHOST=${PGHOST:-db}
+      - PGPORT=${PGPORT:-26257}
+      - PGDATABASE=${PGDATABASE:-public}
+      - REDISHOST=${REDISHOST:-localhost}
+      - REDISPORT=${REDISPORT:-6379}
+      - REDISPASSWORD=${REDISPASSWORD:?redis password not set}
+      - RMQHOST=${RMQHOST:-localhost}
+      - RMQPORT=${RMQPORT:-5672}
+      - RMQUSERNAME=${RMQUSERNAME:-xdiradmin}
+      - RMQPASSWORD=${RMQPASSWORD:?rabbitmq password not set}
+    deploy:
+      restart_policy:
+        condition: on-failure
+volumes:
+  cache:
+    driver: local
+networks:
+  mevnet:
+    driver: bridge
