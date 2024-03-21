@@ -39,7 +39,7 @@ func NewRedisConnection(ctx context.Context) (*redis.Client, error) {
 		Addr:      config.DSN(),
 		Username:  config.Username(),
 		Password:  config.Password(),
-		TLSConfig: &tls.Config{ServerName: "mevdb-redis-do-user-7620299-0.c.db.ondigitalocean.com"},
+		TLSConfig: &tls.Config{ServerName: config.Host()},
 	})
 	_, err = client.Ping(ctx).Result()
 	if err != nil {
