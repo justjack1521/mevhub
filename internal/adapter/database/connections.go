@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
 	"github.com/go-redis/redis/v8"
 	"github.com/justjack1521/mevconn"
@@ -35,9 +36,10 @@ func NewRedisConnection(ctx context.Context) (*redis.Client, error) {
 		return nil, ErrFailedConnectToRedis(err)
 	}
 	client := redis.NewClient(&redis.Options{
-		Addr:     config.DSN(),
-		Username: config.Username(),
-		Password: config.Password(),
+		Addr:      config.DSN(),
+		Username:  config.Username(),
+		Password:  config.Password(),
+		TLSConfig: &tls.Config{ServerName: "mevdb-redis-do-user-7620299-0.c.db.ondigitalocean.com"},
 	})
 	_, err = client.Ping(ctx).Result()
 	if err != nil {
