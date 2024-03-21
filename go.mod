@@ -23,7 +23,7 @@ require (
 	github.com/jackc/pgx/v5 v5.3.1 // indirect
 	github.com/jinzhu/inflection v1.0.0 // indirect
 	github.com/jinzhu/now v1.1.5 // indirect
-	github.com/justjack1521/mevconn v0.0.0-20240317064132-2af99dcc532c // indirect
+	github.com/justjack1521/mevconn v0.0.0-20240319123519-20904c083749 // indirect
 	github.com/klauspost/compress v1.17.2 // indirect
 	github.com/nats-io/nats.go v1.33.1 // indirect
 	github.com/nats-io/nkeys v0.4.7 // indirect

@@ -55,7 +55,7 @@ type Services struct {
 	NATSConnection     *nats.Conn
 }
 
-func NewApplication(db *gorm.DB, client *redis.Client, logger *logrus.Logger, conn *rabbitmq.Conn, nts *nats.Conn, game services.MeviusGameServiceClient) *Application {
+func NewApplication(db *gorm.DB, client *redis.Client, logger *logrus.Logger, conn *rabbitmq.Conn, game services.MeviusGameServiceClient) *Application {
 	var application = &Application{
 		repositories: &Repositories{
 			Quests: database.NewGameQuestDatabaseRepository(db),

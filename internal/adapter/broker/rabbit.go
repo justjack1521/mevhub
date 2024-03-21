@@ -2,6 +2,7 @@ package broker
 
 import (
 	"fmt"
+	"github.com/justjack1521/mevconn"
 	"github.com/wagslane/go-rabbitmq"
 	"os"
 )
@@ -36,14 +37,11 @@ func buildURL() (string, error) {
 }
 
 func NewRabbitMQConnection() (*rabbitmq.Conn, error) {
-
-	url, err := buildURL()
-
+	config, err := mevconn.CreateRabbitMQConfig()
 	if err != nil {
 		return nil, ErrFailedConnectToRabbitMQ(err)
 	}
-
-	conn, err := rabbitmq.NewConn(url, rabbitmq.WithConnectionOptionsLogging)
+	conn, err := rabbitmq.NewConn(config.Source(), rabbitmq.WithConnectionOptionsLogging)
 	if err != nil {
 		return nil, ErrFailedConnectToRabbitMQ(err)
 	}

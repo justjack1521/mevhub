@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"github.com/justjack1521/mevconn"
 	services "github.com/justjack1521/mevium/pkg/genproto/service"
 	"github.com/justjack1521/mevium/pkg/server"
 	"github.com/sirupsen/logrus"
@@ -11,26 +12,17 @@ import (
 	"mevhub/internal/adapter/broker"
 	"mevhub/internal/adapter/database"
 	"mevhub/internal/app"
-	"mevhub/internal/config"
 	"mevhub/internal/ports"
 	"time"
 )
-
-const conf string = "/src/mevhub/internal/config/config.dev.json"
 
 func main() {
 
 	rand.Seed(time.Now().Unix())
 
-	//var path = os.Getenv("GOPATH")
-	var configuration config.Application
-	//if err := configor.Load(&configuration, path+"/"+conf); err != nil {
-	//	panic(err)
-	//}
-
 	var logger = logrus.New()
 
-	var application = NewApplication(context.Background(), configuration, logger)
+	var application = NewApplication(context.Background(), logger)
 
 	options := []grpc.ServerOption{
 		grpc.UnaryInterceptor(ports.ServerInterceptor(logger)),
@@ -38,7 +30,7 @@ func main() {
 
 	application.Start()
 
-	server.RunGRPCServerWithOptions("50552", func(svr *grpc.Server) {
+	server.RunGRPCServerWithOptions("50555", func(svr *grpc.Server) {
 		svc := ports.NewMultiGrpcServer(application)
 		services.RegisterMeviusMultiServiceServer(svr, svc)
 	}, options...)
@@ -51,7 +43,7 @@ func main() {
 
 }
 
-func NewApplication(ctx context.Context, configuration config.Application, logger *logrus.Logger) *app.Application {
+func NewApplication(ctx context.Context, logger *logrus.Logger) *app.Application {
 
 	db, err := database.NewPostgresConnection()
 	if err != nil {
@@ -68,22 +60,21 @@ func NewApplication(ctx context.Context, configuration config.Application, logge
 		panic(fmt.Errorf("failed to connect to message bus: %w", err))
 	}
 
-	nts, err := broker.NewNATSConnection()
-	if err != nil {
-		panic(fmt.Errorf("failed to connect to nats: %w", err))
-	}
-
-	game, err := DialToGameClient(configuration)
+	game, err := DialToGameClient()
 	if err != nil {
 		panic(fmt.Errorf("failed to connect to game client: %w", err))
 	}
 
-	return app.NewApplication(db, rds, logger, msg, nts, game)
+	return app.NewApplication(db, rds, logger, msg, game)
 
 }
 
-func DialToGameClient(config config.Application) (services.MeviusGameServiceClient, error) {
-	conn, err := grpc.Dial(config.GameClient.ConnectionString(), grpc.WithInsecure())
+func DialToGameClient() (services.MeviusGameServiceClient, error) {
+	config, err := mevconn.CreateGrpcServiceConfig(mevconn.GAMESERVICENAME)
+	if err != nil {
+		return nil, err
+	}
+	conn, err := grpc.Dial(config.ConnectionString(), grpc.WithInsecure())
 	if err != nil {
 		return nil, err
 	}
