@@ -33,6 +33,8 @@ github.com/justjack1521/mevconn v0.0.0-20240317064132-2af99dcc532c h1:ivFAY12FuM
 github.com/justjack1521/mevconn v0.0.0-20240317064132-2af99dcc532c/go.mod h1:G4gKWe7Q6DwT8YeBcwtowwIAjjQXBXiHe4IoHYiOYQY=
 github.com/justjack1521/mevconn v0.0.0-20240319123519-20904c083749 h1:h+MXHTQvw3pA7oCf9IXjtly6GMFjBGYxIZjzxeLiRzQ=
 github.com/justjack1521/mevconn v0.0.0-20240319123519-20904c083749/go.mod h1:G4gKWe7Q6DwT8YeBcwtowwIAjjQXBXiHe4IoHYiOYQY=
+github.com/justjack1521/mevconn v0.0.0-20240321055340-a6b0e2c3ba1f h1:MGMnYycMZj2keP9urhucfhl4tk5DcEH6RI9f6A5EpEg=
+github.com/justjack1521/mevconn v0.0.0-20240321055340-a6b0e2c3ba1f/go.mod h1:G4gKWe7Q6DwT8YeBcwtowwIAjjQXBXiHe4IoHYiOYQY=
 github.com/justjack1521/mevium v0.0.0-20231011082632-92d8e9b3eada h1:nH3+2129k5qyR7k5owq+36ur+lbKix+U9psQrntUQd0=
 github.com/justjack1521/mevium v0.0.0-20231011082632-92d8e9b3eada/go.mod h1:k13hr6Gx5QFZHTE5gUPIKCDmTWx9mQ800W4C5mEMBBI=
 github.com/justjack1521/mevium v0.0.0-20231016070704-4330bc9b1830 h1:7/SaowzIK1AKe+iQCRWhjhiH+KKUQErU+pjvTgelto0=

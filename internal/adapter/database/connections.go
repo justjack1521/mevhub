@@ -36,6 +36,7 @@ func NewRedisConnection(ctx context.Context) (*redis.Client, error) {
 	}
 	client := redis.NewClient(&redis.Options{
 		Addr:     config.DSN(),
+		Username: config.Username(),
 		Password: config.Password(),
 	})
 	_, err = client.Ping(ctx).Result()
