@@ -61,5 +61,5 @@ func (r *LobbyChannelRepository) DeleteAll(ctx context.Context, id uuid.UUID) er
 }
 
 func (r *LobbyChannelRepository) GenerateKeyForLobby(id uuid.UUID) string {
-	return strings.Join([]string{lobbyChannelKey, id.String()}, ":")
+	return strings.Join([]string{serviceKeyPrefix, lobbyChannelKey, id.String()}, ":")
 }

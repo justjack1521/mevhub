@@ -155,9 +155,9 @@ func (r *LobbyParticipantRedisRepository) ParticipantToTransfer(participant *lob
 }
 
 func (r *LobbyParticipantRedisRepository) GenerateLobbyKey(id uuid.UUID) string {
-	return strings.Join([]string{lobbyKey, id.String(), "*"}, lobbyKeySeparator)
+	return strings.Join([]string{serviceKeyPrefix, lobbyKey, id.String(), "*"}, lobbyKeySeparator)
 }
 
 func (r *LobbyParticipantRedisRepository) GenerateParticipantKey(id uuid.UUID, slot int) string {
-	return strings.Join([]string{lobbyKey, id.String(), strconv.Itoa(slot)}, lobbyKeySeparator)
+	return strings.Join([]string{serviceKeyPrefix, lobbyKey, id.String(), strconv.Itoa(slot)}, lobbyKeySeparator)
 }

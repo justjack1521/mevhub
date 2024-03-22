@@ -11,6 +11,7 @@ import (
 	"math/rand"
 	"mevhub/internal/adapter/broker"
 	"mevhub/internal/adapter/database"
+	"mevhub/internal/adapter/memory"
 	"mevhub/internal/app"
 	"mevhub/internal/ports"
 	"time"
@@ -50,7 +51,7 @@ func NewApplication(ctx context.Context, logger *logrus.Logger) *app.Application
 		panic(fmt.Errorf("failed to connect to database: %w", err))
 	}
 
-	rds, err := database.NewRedisConnection(ctx)
+	rds, err := memory.NewRedisConnection(ctx)
 	if err != nil {
 		panic(fmt.Errorf("failed to connect to cache: %w", err))
 	}

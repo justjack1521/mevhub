@@ -87,5 +87,5 @@ func (r *SessionInstanceRedisRepository) InstanceToTransfer(instance *session.In
 }
 
 func (r *SessionInstanceRedisRepository) GenerateSessionKey(id uuid.UUID) string {
-	return strings.Join([]string{sessionKey, id.String()}, sessionKeySeparator)
+	return strings.Join([]string{serviceKeyPrefix, sessionKey, id.String()}, sessionKeySeparator)
 }
