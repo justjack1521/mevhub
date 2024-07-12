@@ -26,17 +26,27 @@ func main() {
 
 	var logger = logrus.New()
 
+	var application = NewApplication(context.Background(), logger)
+
 	defer func() {
 		if r := recover(); r != nil {
 			logger.Error("Panic: %v", r)
 			os.Exit(1)
+			return
+		}
+		if err := application.Shutdown(); err != nil {
+			fmt.Println(err)
 		}
 	}()
 
-	var application = NewApplication(context.Background(), logger)
+	var interceptions []grpc.UnaryServerInterceptor
+	if application.Services.NewRelic != nil {
+		interceptions = append(interceptions, nrgrpc.UnaryServerInterceptor(application.Services.NewRelic.Application))
+	}
+	interceptions = append(interceptions, mevrpc.IdentityExtractionUnaryServerInterceptor)
 
 	options := []grpc.ServerOption{
-		grpc.ChainUnaryInterceptor(nrgrpc.UnaryServerInterceptor(application.Services.NewRelic.Application)),
+		grpc.ChainUnaryInterceptor(interceptions...),
 	}
 
 	application.Start()
@@ -45,12 +55,6 @@ func main() {
 		svc := ports.NewMultiGrpcServer(application)
 		services.RegisterMeviusMultiServiceServer(svr, svc)
 	}, options...)
-
-	defer func(application *app.CoreApplication) {
-		if err := application.Shutdown(); err != nil {
-			fmt.Println(err)
-		}
-	}(application)
 
 }
 
