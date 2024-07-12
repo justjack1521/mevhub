@@ -15,8 +15,8 @@ func (c CancelLobbyCommand) CommandName() string {
 	return "cancel.lobby"
 }
 
-func NewCancelLobbyCommand() CancelLobbyCommand {
-	return CancelLobbyCommand{}
+func NewCancelLobbyCommand() *CancelLobbyCommand {
+	return &CancelLobbyCommand{}
 }
 
 var (

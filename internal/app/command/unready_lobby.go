@@ -16,8 +16,8 @@ func (c UnreadyLobbyCommand) CommandName() string {
 	return "unready.lobby"
 }
 
-func NewUnreadyLobbyCommand(id uuid.UUID) UnreadyLobbyCommand {
-	return UnreadyLobbyCommand{LobbyID: id}
+func NewUnreadyLobbyCommand(id uuid.UUID) *UnreadyLobbyCommand {
+	return &UnreadyLobbyCommand{LobbyID: id}
 }
 
 type UnreadyLobbyCommandHandler struct {

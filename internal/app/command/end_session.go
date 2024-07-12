@@ -13,8 +13,8 @@ func (e EndSessionCommand) CommandName() string {
 	return "end.session"
 }
 
-func NewEndSessionCommand() EndSessionCommand {
-	return EndSessionCommand{}
+func NewEndSessionCommand() *EndSessionCommand {
+	return &EndSessionCommand{}
 }
 
 type EndSessionCommandHandler struct {

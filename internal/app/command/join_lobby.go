@@ -19,8 +19,8 @@ func (c JoinLobbyCommand) CommandName() string {
 	return "join.lobby"
 }
 
-func NewJoinLobbyCommand(id uuid.UUID, deck, slot int, stamina, invite bool) JoinLobbyCommand {
-	return JoinLobbyCommand{
+func NewJoinLobbyCommand(id uuid.UUID, deck, slot int, stamina, invite bool) *JoinLobbyCommand {
+	return &JoinLobbyCommand{
 		LobbyID:    id,
 		DeckIndex:  deck,
 		SlotIndex:  slot,

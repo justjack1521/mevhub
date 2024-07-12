@@ -15,8 +15,8 @@ func (c WatchLobbyCommand) CommandName() string {
 	return "inspect.lobby"
 }
 
-func NewWatchLobbyCommand(lobby uuid.UUID) WatchLobbyCommand {
-	return WatchLobbyCommand{LobbyID: lobby}
+func NewWatchLobbyCommand(lobby uuid.UUID) *WatchLobbyCommand {
+	return &WatchLobbyCommand{LobbyID: lobby}
 }
 
 type WatchLobbyCommandHandler struct {

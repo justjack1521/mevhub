@@ -13,8 +13,8 @@ type SendStampCommand struct {
 	StampID uuid.UUID
 }
 
-func NewSendStampCommand(id uuid.UUID) SendStampCommand {
-	return SendStampCommand{StampID: id}
+func NewSendStampCommand(id uuid.UUID) *SendStampCommand {
+	return &SendStampCommand{StampID: id}
 }
 
 func (c SendStampCommand) CommandName() string {

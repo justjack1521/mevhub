@@ -28,8 +28,8 @@ func (c CreateLobbyCommand) CommandName() string {
 	return "create.lobby"
 }
 
-func NewCreateLobbyCommand(quest uuid.UUID, deck int, comment string, options CreateLobbyOptions) CreateLobbyCommand {
-	return CreateLobbyCommand{
+func NewCreateLobbyCommand(quest uuid.UUID, deck int, comment string, options CreateLobbyOptions) *CreateLobbyCommand {
+	return &CreateLobbyCommand{
 		LobbyID:   uuid.NewV4(),
 		QuestID:   quest,
 		PartyID:   fmt.Sprintf("%08d", rand.Intn(100000000)),

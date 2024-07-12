@@ -9,8 +9,8 @@ type CreateSessionCommand struct {
 	BasicCommand
 }
 
-func NewCreateSessionCommand() CreateSessionCommand {
-	return CreateSessionCommand{}
+func NewCreateSessionCommand() *CreateSessionCommand {
+	return &CreateSessionCommand{}
 }
 
 func (c CreateSessionCommand) CommandName() string {

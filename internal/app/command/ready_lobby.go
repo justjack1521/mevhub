@@ -17,8 +17,8 @@ func (c ReadyLobbyCommand) CommandName() string {
 	return "ready.lobby"
 }
 
-func NewReadyLobbyCommand(id uuid.UUID, deck int) ReadyLobbyCommand {
-	return ReadyLobbyCommand{LobbyID: id, DeckIndex: deck}
+func NewReadyLobbyCommand(id uuid.UUID, deck int) *ReadyLobbyCommand {
+	return &ReadyLobbyCommand{LobbyID: id, DeckIndex: deck}
 }
 
 type ReadyLobbyCommandHandler struct {

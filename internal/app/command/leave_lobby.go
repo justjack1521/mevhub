@@ -14,8 +14,8 @@ func (c LeaveLobbyCommand) CommandName() string {
 	return "leave.lobby"
 }
 
-func NewLeaveLobbyCommand() LeaveLobbyCommand {
-	return LeaveLobbyCommand{}
+func NewLeaveLobbyCommand() *LeaveLobbyCommand {
+	return &LeaveLobbyCommand{}
 }
 
 type LeaveLobbyCommandHandler struct {
