@@ -7,16 +7,7 @@ import (
 	"mevhub/internal/app/command"
 )
 
-func (g MultiGrpcServer) WatchLobby(context context.Context, request *protomulti.WatchLobbyRequest) (*protomulti.WatchLobbyResponse, error) {
-	ctx, err := g.NewContext(context)
-	if err != nil {
-		return nil, err
-	}
-	return g.internal.WatchLobby(ctx, request)
-}
-
-func (g *MultiGrpcServerImplementation) WatchLobby(ctx GrpcContext, request *protomulti.WatchLobbyRequest) (*protomulti.WatchLobbyResponse, error) {
-
+func (g MultiGrpcServer) WatchLobby(ctx context.Context, request *protomulti.WatchLobbyRequest) (*protomulti.WatchLobbyResponse, error) {
 	id, err := uuid.FromString(request.LobbyId)
 	if err != nil {
 		return nil, err
@@ -24,10 +15,9 @@ func (g *MultiGrpcServerImplementation) WatchLobby(ctx GrpcContext, request *pro
 
 	var cmd = command.NewWatchLobbyCommand(id)
 
-	if err := g.app.SubApplications.Lobby.Commands.WatchLobby.Handle(command.NewContext(ctx.Context, ctx.ClientID), cmd); err != nil {
+	if err := g.app.SubApplications.Lobby.Commands.WatchLobby.Handle(g.NewCommandContext(ctx), cmd); err != nil {
 		return nil, err
 	}
 
 	return &protomulti.WatchLobbyResponse{}, nil
-
 }

@@ -4,25 +4,34 @@ import (
 	"github.com/go-redis/redis/v8"
 	services "github.com/justjack1521/mevium/pkg/genproto/service"
 	"github.com/justjack1521/mevium/pkg/mevent"
-	"github.com/nats-io/nats.go"
+	"github.com/justjack1521/mevrelic"
 	"github.com/sirupsen/logrus"
 	"github.com/wagslane/go-rabbitmq"
 	"gorm.io/gorm"
 	"mevhub/internal/adapter/cache"
 	"mevhub/internal/adapter/database"
-	"mevhub/internal/adapter/extern"
+	"mevhub/internal/adapter/external"
 	"mevhub/internal/adapter/memory"
-	"mevhub/internal/decorator"
+	"mevhub/internal/adapter/serial"
 	"mevhub/internal/domain/game"
 	"mevhub/internal/domain/lobby"
 	"mevhub/internal/domain/session"
 )
 
-type Application struct {
+type CoreApplication struct {
 	SubApplications *SubApplications
 	repositories    *Repositories
 	data            *DataRepositories
-	services        *Services
+	Services        ApplicationServices
+}
+
+func (a *CoreApplication) Start() {
+	a.Services.EventPublisher.Notify(mevent.ApplicationStartEvent{})
+}
+
+func (a *CoreApplication) Shutdown() error {
+	a.Services.EventPublisher.Notify(mevent.ApplicationShutdownEvent{})
+	return nil
 }
 
 type SubApplications struct {
@@ -47,60 +56,66 @@ type DataRepositories struct {
 	LobbyPlayerSummary lobby.PlayerSummaryRepository
 }
 
-type Services struct {
+type ApplicationServices struct {
 	Logger             *logrus.Logger
 	EventPublisher     *mevent.Publisher
 	Redis              *redis.Client
 	RabbitMQConnection *rabbitmq.Conn
-	NATSConnection     *nats.Conn
+	IdentityService    services.MeviusIdentityServiceClient
+	NewRelic           *mevrelic.NewRelic
 }
 
-func NewApplication(db *gorm.DB, client *redis.Client, logger *logrus.Logger, conn *rabbitmq.Conn, game services.MeviusGameServiceClient) *Application {
-	var application = &Application{
-		repositories: &Repositories{
-			Quests: database.NewGameQuestDatabaseRepository(db),
-		},
-		data: &DataRepositories{
-			SessionInstance:    memory.NewLobbySessionRedisRepository(client),
-			LobbyInstance:      memory.NewLobbyInstanceRedisRepository(client),
-			LobbyParticipant:   memory.NewLobbyParticipantRedisRepository(client),
-			LobbySearch:        memory.NewLobbySearchRepository(client),
-			LobbySummary:       database.NewLobbySummaryDatabaseRepository(db),
-			LobbyPlayerSummary: cache.NewLazyLoadedLobbyPlayerSummaryRepository(extern.NewLobbyPlayerSummaryExternalRepository(game), memory.NewLobbyPlayerSlotSummaryRepository(client)),
-			GameInstance:       database.NewGameInstanceDatabaseRepository(db),
-			GameSummary:        nil,
-			GamePlayerSummary:  extern.NewGamePlayerSummaryExternalRepository(game),
-		},
-		services: &Services{
-			Logger:             logger,
-			EventPublisher:     mevent.NewPublisher(mevent.PublisherWithLogger(logger)),
-			Redis:              client,
-			RabbitMQConnection: conn,
-		},
+type CoreApplicationConfigurationOption func(c *CoreApplication) *CoreApplication
+
+func New() *CoreApplication {
+	return &CoreApplication{}
+}
+
+func NewApplication(db *gorm.DB, client *redis.Client, logger *logrus.Logger, conn *rabbitmq.Conn, identity services.MeviusIdentityServiceClient, options ...CoreApplicationConfigurationOption) *CoreApplication {
+	var application = New().BuildServices(client, conn, logger, identity).BuildRepos(db, client).BuildDataRepos(db, client, identity).BuildSubApps()
+	for _, opt := range options {
+		opt(application)
 	}
-	application.SubApplications = &SubApplications{}
-	application.SubApplications.Game = NewGameApplication(application)
-	application.SubApplications.Lobby = NewLobbyApplication(application)
 	return application
 }
 
-func (a *Application) Start() {
-	a.services.EventPublisher.Notify(mevent.ApplicationStartEvent{})
+func (a *CoreApplication) BuildServices(client *redis.Client, mq *rabbitmq.Conn, logger *logrus.Logger, identity services.MeviusIdentityServiceClient) *CoreApplication {
+	publisher := mevent.NewPublisher(mevent.PublisherWithLogger(logger))
+	a.Services = ApplicationServices{
+		Logger:             logger,
+		EventPublisher:     publisher,
+		Redis:              client,
+		RabbitMQConnection: mq,
+		IdentityService:    identity,
+	}
+	return a
 }
 
-func (a *Application) Shutdown() error {
-	a.services.EventPublisher.Notify(mevent.ApplicationShutdownEvent{})
-	return nil
+func (a *CoreApplication) BuildRepos(db *gorm.DB, client *redis.Client) *CoreApplication {
+	a.repositories = &Repositories{
+		Quests: database.NewGameQuestDatabaseRepository(db),
+	}
+	return a
 }
 
-func ApplyStandardCommandDecorators[C decorator.Command](core *Application, actual decorator.CommandHandler[C]) decorator.CommandHandler[C] {
-	var logger = decorator.NewCommandHandlerWithLogger[C](core.services.Logger, actual)
-	var qualifier = NewCommandHandlerWithSession[C](core.data.SessionInstance, logger)
-	return qualifier
+func (a *CoreApplication) BuildDataRepos(db *gorm.DB, client *redis.Client, identity services.MeviusIdentityServiceClient) *CoreApplication {
+	a.data = &DataRepositories{
+		SessionInstance:    memory.NewLobbySessionRedisRepository(client),
+		LobbyInstance:      memory.NewLobbyInstanceRedisRepository(client),
+		LobbyParticipant:   memory.NewLobbyParticipantRedisRepository(client),
+		LobbySearch:        memory.NewLobbySearchRepository(client),
+		LobbySummary:       database.NewLobbySummaryDatabaseRepository(db),
+		LobbyPlayerSummary: cache.NewLobbyPlayerSummaryRepository(external.NewLobbyPlayerSummaryRepository(identity), memory.NewPlayerSummaryRepository(client, serial.LobbyPlayerSummaryJSONSerialiser{})),
+		GameInstance:       database.NewGameInstanceDatabaseRepository(db),
+		GameSummary:        nil,
+		GamePlayerSummary:  nil,
+	}
+	return a
 }
 
-func ApplyStandardQueryDecorators[Q decorator.Query, R any](core *Application, actual decorator.QueryHandler[Q, R]) decorator.QueryHandler[Q, R] {
-	var logger = decorator.NewQueryHandlerWithLogger[Q, R](core.services.Logger, actual)
-	var qualifier = NewQueryHandlerWithSession[Q, R](core.data.SessionInstance, logger)
-	return qualifier
+func (a *CoreApplication) BuildSubApps() *CoreApplication {
+	a.SubApplications = &SubApplications{}
+	a.SubApplications.Game = NewGameApplication(a)
+	a.SubApplications.Lobby = NewLobbyApplication(a)
+	return a
 }

@@ -184,12 +184,12 @@ func (r *LobbyPlayerSlotSummaryRedisRepository) CreateLoadout(ctx context.Contex
 }
 
 func (r *LobbyPlayerSlotSummaryRedisRepository) GenerateIdentityKey(player uuid.UUID) string {
-	return strings.Join([]string{serviceKeyPrefix, playerIdentityKey, player.String()}, ":")
+	return strings.Join([]string{serviceKey, playerIdentityKey, player.String()}, ":")
 }
 
 func (r *LobbyPlayerSlotSummaryRedisRepository) GenerateLoadoutKey(player uuid.UUID, index int) string {
 	return strings.Join([]string{
-		serviceKeyPrefix,
+		serviceKey,
 		playerLoadoutKey,
 		player.String(),
 		strconv.Itoa(index),

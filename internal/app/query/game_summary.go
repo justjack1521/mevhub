@@ -9,7 +9,7 @@ type GameSummaryQuery struct {
 	InstanceID uuid.UUID
 }
 
-func (g GameSummaryQuery) QueryName() string {
+func (g GameSummaryQuery) CommandName() string {
 	return "game.summary"
 }
 
@@ -25,6 +25,6 @@ func NewGameSummaryQueryHandler(summary game.SummaryReadRepository) *GameSummary
 	return &GameSummaryQueryHandler{SummaryRepository: summary}
 }
 
-func (h *GameSummaryQueryHandler) Handle(ctx *Context, qry GameSummaryQuery) (game.Summary, error) {
+func (h *GameSummaryQueryHandler) Handle(ctx Context, qry GameSummaryQuery) (game.Summary, error) {
 	panic(nil)
 }

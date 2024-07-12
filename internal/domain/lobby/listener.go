@@ -15,7 +15,7 @@ const (
 
 type NotificationListener struct {
 	LobbyID  uuid.UUID
-	ClientID uuid.UUID
+	UserID   uuid.UUID
 	PlayerID uuid.UUID
 	Level    ListenerLevel
 }
@@ -35,6 +35,6 @@ type NotificationListenerRepository interface {
 	NotificationListenerWriteRepository
 }
 
-func NewNotificationListener(instance, client, player uuid.UUID, level ListenerLevel) *NotificationListener {
-	return &NotificationListener{LobbyID: instance, ClientID: client, PlayerID: player, Level: level}
+func NewNotificationListener(instance, user, player uuid.UUID, level ListenerLevel) *NotificationListener {
+	return &NotificationListener{LobbyID: instance, UserID: user, PlayerID: player, Level: level}
 }

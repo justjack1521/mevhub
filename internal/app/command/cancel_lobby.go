@@ -35,38 +35,38 @@ func NewCancelLobbyCommandHandler(publisher *mevent.Publisher, sessions session.
 	return &CancelLobbyCommandHandler{EventPublisher: publisher, SessionRepository: sessions, InstanceRepository: instances, ParticipantRepository: participants}
 }
 
-func (h *CancelLobbyCommandHandler) Handle(ctx *Context, cmd CancelLobbyCommand) error {
+func (h *CancelLobbyCommandHandler) Handle(ctx Context, cmd CancelLobbyCommand) error {
 
-	current, err := h.SessionRepository.QueryByID(ctx.Context, ctx.ClientID)
+	current, err := h.SessionRepository.QueryByID(ctx, ctx.UserID())
 	if err != nil {
 		return ErrFailedHandleCancelLobbyCommand(err)
 	}
 
-	instance, err := h.InstanceRepository.QueryByID(ctx.Context, current.LobbyID)
+	instance, err := h.InstanceRepository.QueryByID(ctx, current.LobbyID)
 	if err != nil {
 		return ErrFailedHandleCancelLobbyCommand(err)
 	}
 
-	if err := instance.CanCancel(ctx.ClientID); err != nil {
+	if err := instance.CanCancel(ctx.UserID()); err != nil {
 		return ErrFailedHandleCancelLobbyCommand(err)
 	}
 
-	if err := h.InstanceRepository.Delete(ctx.Context, current.LobbyID); err != nil {
+	if err := h.InstanceRepository.Delete(ctx, current.LobbyID); err != nil {
 		return ErrFailedHandleCancelLobbyCommand(err)
 	}
 
-	h.EventPublisher.Notify(lobby.NewInstanceDeletedEvent(ctx.Context, current.LobbyID))
+	h.EventPublisher.Notify(lobby.NewInstanceDeletedEvent(ctx, current.LobbyID))
 
-	participants, err := h.ParticipantRepository.QueryAllForLobby(ctx.Context, current.LobbyID)
+	participants, err := h.ParticipantRepository.QueryAllForLobby(ctx, current.LobbyID)
 	if err != nil {
 		return err
 	}
 
 	for _, participant := range participants {
-		if err := h.ParticipantRepository.Delete(ctx.Context, participant); err != nil {
+		if err := h.ParticipantRepository.Delete(ctx, participant); err != nil {
 			return err
 		}
-		h.EventPublisher.Notify(lobby.NewParticipantDeletedEvent(ctx.Context, participant.ClientID, participant.PlayerID, participant.LobbyID, participant.PlayerSlot))
+		h.EventPublisher.Notify(lobby.NewParticipantDeletedEvent(ctx, participant.ClientID, participant.PlayerID, participant.LobbyID, participant.PlayerSlot))
 	}
 
 	return nil

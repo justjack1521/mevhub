@@ -30,7 +30,7 @@ func (r *LobbyChannelRepository) QueryAllForLobby(ctx context.Context, id uuid.U
 		if err != nil {
 			continue
 		}
-		members = append(members, lobby.NotificationListener{ClientID: member})
+		members = append(members, lobby.NotificationListener{UserID: member})
 	}
 	return members, nil
 }
@@ -61,5 +61,5 @@ func (r *LobbyChannelRepository) DeleteAll(ctx context.Context, id uuid.UUID) er
 }
 
 func (r *LobbyChannelRepository) GenerateKeyForLobby(id uuid.UUID) string {
-	return strings.Join([]string{serviceKeyPrefix, lobbyChannelKey, id.String()}, ":")
+	return strings.Join([]string{serviceKey, lobbyChannelKey, id.String()}, ":")
 }

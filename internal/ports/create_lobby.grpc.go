@@ -8,15 +8,6 @@ import (
 )
 
 func (g MultiGrpcServer) CreateLobby(context context.Context, request *protomulti.CreateLobbyRequest) (*protomulti.CreateLobbyResponse, error) {
-	ctx, err := g.NewContext(context)
-	if err != nil {
-		return nil, err
-	}
-	return g.internal.CreateLobby(ctx, request)
-}
-
-func (g *MultiGrpcServerImplementation) CreateLobby(context GrpcContext, request *protomulti.CreateLobbyRequest) (*protomulti.CreateLobbyResponse, error) {
-
 	quest, err := uuid.FromString(request.QuestId)
 	if err != nil {
 		return nil, err
@@ -29,7 +20,7 @@ func (g *MultiGrpcServerImplementation) CreateLobby(context GrpcContext, request
 
 	var cmd = command.NewCreateLobbyCommand(quest, int(request.DeckIndex), request.Comment, options)
 
-	if err := g.app.SubApplications.Lobby.Commands.CreateLobby.Handle(command.NewContext(context.Context, context.ClientID), cmd); err != nil {
+	if err := g.app.SubApplications.Lobby.Commands.CreateLobby.Handle(g.NewCommandContext(context), cmd); err != nil {
 		return nil, err
 	}
 
@@ -37,5 +28,4 @@ func (g *MultiGrpcServerImplementation) CreateLobby(context GrpcContext, request
 		LobbyId: cmd.LobbyID.String(),
 		PartyId: cmd.PartyID,
 	}, nil
-
 }

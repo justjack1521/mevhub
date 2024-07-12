@@ -90,7 +90,8 @@ func (r *LobbySearchRedisRepository) ZAddArgs(instance lobby.SearchEntry) redis.
 }
 
 func (r *LobbySearchRedisRepository) GenerateKeysFromQuery(qry lobby.SearchQuery) []string {
-	var identifier = strings.Join([]string{LobbyKeyPrefix, qry.ModeIdentifier, LobbyKeySuffix}, LobbyKeyPrimarySeparator)
+
+	var identifier = r.GenerateIdentifierKey(qry.ModeIdentifier)
 
 	if len(qry.Levels) == 0 {
 		return []string{identifier}
@@ -125,7 +126,7 @@ func (r *LobbySearchRedisRepository) GenerateKeysFromQuery(qry lobby.SearchQuery
 
 func (r *LobbySearchRedisRepository) GenerateKeysFromInstance(instance lobby.SearchEntry) []string {
 
-	var identifier = strings.Join([]string{LobbyKeyPrefix, instance.ModeIdentifier, LobbyKeySuffix}, LobbyKeyPrimarySeparator)
+	var identifier = r.GenerateIdentifierKey(instance.ModeIdentifier)
 	var tier = strings.Join([]string{identifier, strconv.Itoa(instance.Level)}, LobbyKeySecondarySeparator)
 
 	if len(instance.Categories) == 0 {
@@ -138,4 +139,8 @@ func (r *LobbySearchRedisRepository) GenerateKeysFromInstance(instance lobby.Sea
 		result[index] = strings.Join([]string{tier, category.String()}, LobbyKeySecondarySeparator)
 	}
 	return result
+}
+
+func (r *LobbySearchRedisRepository) GenerateIdentifierKey(identifier string) string {
+	return strings.Join([]string{LobbyKeyPrefix, identifier, LobbyKeySuffix}, LobbyKeyPrimarySeparator)
 }

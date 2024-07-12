@@ -58,7 +58,7 @@ func (s *SummaryQueryService) QueryByID(ctx context.Context, id uuid.UUID) (Summ
 	var players = make([]PlayerSlotSummary, len(participants))
 
 	for index, value := range participants {
-		player, err := s.PlayerSummary.Query(ctx, value.PlayerID, value.DeckIndex)
+		player, err := s.PlayerSummary.Query(ctx, value.PlayerID)
 		if err != nil {
 			return Summary{}, ErrFailedQueryLobbySummary(id, err)
 		}

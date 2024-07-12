@@ -6,7 +6,7 @@ import (
 )
 
 type LobbyParticipantRedis struct {
-	ClientID        string `redis:"ClientID"`
+	ClientID        string `redis:"UserID"`
 	PlayerID        string `redis:"PlayerID"`
 	LobbyID         string `redis:"LobbyID"`
 	Role            string `redis:"Role"`
@@ -39,7 +39,7 @@ func (x *LobbyParticipantRedis) ToEntity() *lobby.Participant {
 
 func (x *LobbyParticipantRedis) ToMapStringInterface() map[string]interface{} {
 	return map[string]interface{}{
-		"ClientID":        x.ClientID,
+		"UserID":          x.ClientID,
 		"PlayerID":        x.PlayerID,
 		"LobbyID":         x.LobbyID,
 		"RoleRestriction": x.RoleRestriction,

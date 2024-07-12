@@ -1,7 +1,7 @@
 package translate
 
 import (
-	"fmt"
+	"github.com/justjack1521/mevium/pkg/genproto/protoidentity"
 	"github.com/justjack1521/mevium/pkg/genproto/protomulti"
 	uuid "github.com/satori/go.uuid"
 	"mevhub/internal/domain/lobby"
@@ -10,9 +10,8 @@ import (
 type LobbySummaryTranslator Translator[lobby.Summary, *protomulti.ProtoLobbySummary]
 type LobbyPlayerSlotSummaryTranslator Translator[lobby.PlayerSlotSummary, *protomulti.ProtoLobbyPlayerSlot]
 type LobbyPlayerSummaryTranslator Translator[lobby.PlayerSummary, *protomulti.ProtoLobbyPlayer]
-type LobbyJobCardTranslator Translator[lobby.PlayerJobCardSummary, *protomulti.ProtoLobbyJobCard]
-type LobbyWeaponTranslator Translator[lobby.PlayerWeaponSummary, *protomulti.ProtoLobbyWeapon]
-type LobbyAbilityCardTranslator Translator[lobby.PlayerAbilityCardSummary, *protomulti.ProtoLobbyAbilityCard]
+type LobbyIdentityTranslator Translator[lobby.PlayerIdentity, *protoidentity.ProtoPlayerIdentity]
+type LobbyLoadoutTranslator Translator[lobby.PlayerLoadout, *protoidentity.ProtoPlayerLoadoutIdentity]
 
 type lobbySummaryTranslator struct {
 	slot LobbyPlayerSlotSummaryTranslator
@@ -94,172 +93,137 @@ func NewLobbyPlayerSlotSummaryTranslator() LobbyPlayerSlotSummaryTranslator {
 }
 
 type lobbyPlayerSummaryTranslator struct {
-	job    LobbyJobCardTranslator
-	weapon LobbyWeaponTranslator
-	card   LobbyAbilityCardTranslator
+	identity LobbyIdentityTranslator
+	loadout  LobbyLoadoutTranslator
 }
 
 func NewLobbyPlayerSummaryTranslator() LobbyPlayerSummaryTranslator {
 	return lobbyPlayerSummaryTranslator{
-		job:    lobbyJobCardTranslator{},
-		weapon: lobbyWeaponTranslator{},
-		card:   lobbyAbilityCardTranslator{},
+		identity: NewLobbyPlayerIdentityTranslator(),
+		loadout:  NewLobbyPlayerLoadoutTranslator(),
 	}
 }
 
 func (t lobbyPlayerSummaryTranslator) Marshall(data lobby.PlayerSummary) (out *protomulti.ProtoLobbyPlayer, err error) {
 
-	job, err := t.job.Marshall(data.Loadout.JobCard)
+	identity, err := t.identity.Marshall(data.Identity)
 	if err != nil {
 		return nil, err
 	}
 
-	weapon, err := t.weapon.Marshall(data.Loadout.Weapon)
+	loadout, err := t.loadout.Marshall(data.Loadout)
 	if err != nil {
 		return nil, err
 	}
 
-	var cards = make([]*protomulti.ProtoLobbyAbilityCard, len(data.Loadout.AbilityCards))
-	for index, value := range data.Loadout.AbilityCards {
-		card, err := t.card.Marshall(value)
-		if err != nil {
-			return nil, err
-		}
-		cards[index] = card
-	}
+	return &protomulti.ProtoLobbyPlayer{
+		Identity: identity,
+		Loadout:  loadout,
+	}, nil
 
-	var result = &protomulti.ProtoLobbyPlayer{
-		PlayerId:      data.Identity.PlayerID.String(),
-		PlayerName:    data.Identity.PlayerName,
-		PlayerComment: data.Identity.PlayerComment,
-		PlayerLevel:   int32(data.Identity.PlayerLevel),
-		DeckIndex:     int32(data.Loadout.DeckIndex),
-		JobCard:       job,
-		Weapon:        weapon,
-		AbilityCards:  cards,
-	}
-	return result, nil
 }
 
 func (t lobbyPlayerSummaryTranslator) Unmarshall(data *protomulti.ProtoLobbyPlayer) (out lobby.PlayerSummary, err error) {
-
-	job, err := t.job.Unmarshall(data.JobCard)
+	identity, err := t.identity.Unmarshall(data.Identity)
 	if err != nil {
 		return lobby.PlayerSummary{}, err
 	}
 
-	weapon, err := t.weapon.Unmarshall(data.Weapon)
+	loadout, err := t.loadout.Unmarshall(data.Loadout)
 	if err != nil {
 		return lobby.PlayerSummary{}, err
 	}
 
-	var cards = make([]lobby.PlayerAbilityCardSummary, len(data.AbilityCards))
+	return lobby.PlayerSummary{
+		Identity: identity,
+		Loadout:  loadout,
+	}, nil
+}
+
+type lobbyPlayerIdentityTranslator struct {
+}
+
+func NewLobbyPlayerIdentityTranslator() LobbyIdentityTranslator {
+	return lobbyPlayerIdentityTranslator{}
+}
+
+func (t lobbyPlayerIdentityTranslator) Marshall(data lobby.PlayerIdentity) (out *protoidentity.ProtoPlayerIdentity, err error) {
+	return &protoidentity.ProtoPlayerIdentity{
+		PlayerId:      data.PlayerID.String(),
+		PlayerName:    data.PlayerName,
+		PlayerLevel:   int32(data.PlayerLevel),
+		PlayerComment: data.PlayerComment,
+	}, nil
+}
+
+func (t lobbyPlayerIdentityTranslator) Unmarshall(data *protoidentity.ProtoPlayerIdentity) (out lobby.PlayerIdentity, err error) {
+	return lobby.PlayerIdentity{
+		PlayerID:      uuid.FromStringOrNil(data.PlayerId),
+		PlayerName:    data.PlayerName,
+		PlayerComment: data.PlayerComment,
+		PlayerLevel:   int(data.PlayerLevel),
+	}, nil
+}
+
+type lobbyPlayerLoadoutTranslator struct {
+}
+
+func NewLobbyPlayerLoadoutTranslator() LobbyLoadoutTranslator {
+	return lobbyPlayerLoadoutTranslator{}
+}
+
+func (t lobbyPlayerLoadoutTranslator) Marshall(data lobby.PlayerLoadout) (out *protoidentity.ProtoPlayerLoadoutIdentity, err error) {
+	var result = &protoidentity.ProtoPlayerLoadoutIdentity{
+		JobCardId:       data.JobCard.JobCardID.String(),
+		SubJobIndex:     int32(data.JobCard.SubJobIndex),
+		WeaponId:        data.Weapon.WeaponID.String(),
+		SubWeaponUnlock: int32(data.Weapon.SubWeaponUnlock),
+		AbilityCards:    make([]*protoidentity.ProtoPlayerCardIdentity, len(data.AbilityCards)),
+	}
+
 	for index, value := range data.AbilityCards {
-		card, err := t.card.Unmarshall(value)
-		if err != nil {
-			return lobby.PlayerSummary{}, err
+		result.AbilityCards[index] = &protoidentity.ProtoPlayerCardIdentity{
+			AbilityCardId:    value.AbilityCardID.String(),
+			AbilityCardLevel: int32(value.AbilityCardLevel),
+			AbilityLevel:     int32(value.AbilityLevel),
+			ExtraSkillUnlock: int32(value.ExtraSkillUnlock),
+			OverBoostLevel:   int32(value.OverBoostLevel),
+			SlotIndex:        int32(value.SlotIndex),
 		}
-		cards[index] = card
 	}
 
-	var result = lobby.PlayerSummary{
-		Identity: lobby.PlayerIdentity{
-			PlayerID:      uuid.FromStringOrNil(data.PlayerId),
-			PlayerName:    data.PlayerName,
-			PlayerComment: data.PlayerComment,
-			PlayerLevel:   int(data.PlayerLevel),
+	return result, nil
+
+}
+
+func (t lobbyPlayerLoadoutTranslator) Unmarshall(data *protoidentity.ProtoPlayerLoadoutIdentity) (out lobby.PlayerLoadout, err error) {
+
+	var result = lobby.PlayerLoadout{
+		DeckIndex: 0,
+		JobCard: lobby.PlayerJobCardSummary{
+			JobCardID:      uuid.FromStringOrNil(data.JobCardId),
+			SubJobIndex:    int(data.SubJobIndex),
+			CrownLevel:     0,
+			OverBoostLevel: 0,
 		},
-		Loadout: lobby.PlayerLoadout{
-			DeckIndex:    int(data.DeckIndex),
-			JobCard:      job,
-			Weapon:       weapon,
-			AbilityCards: cards,
+		Weapon: lobby.PlayerWeaponSummary{
+			WeaponID:        uuid.FromStringOrNil(data.WeaponId),
+			SubWeaponUnlock: int(data.SubWeaponUnlock),
 		},
+		AbilityCards: make([]lobby.PlayerAbilityCardSummary, len(data.AbilityCards)),
 	}
+
+	for index, value := range data.AbilityCards {
+		result.AbilityCards[index] = lobby.PlayerAbilityCardSummary{
+			AbilityCardID:    uuid.FromStringOrNil(value.AbilityCardId),
+			SlotIndex:        int(value.SlotIndex),
+			AbilityCardLevel: int(value.AbilityCardLevel),
+			AbilityLevel:     int(value.AbilityLevel),
+			ExtraSkillUnlock: int(value.ExtraSkillUnlock),
+			OverBoostLevel:   int(value.OverBoostLevel),
+		}
+	}
+
 	return result, nil
-}
 
-var (
-	ErrFailedUnmarshalLobbyJobCard = func(err error) error {
-		return fmt.Errorf("failed to unmarshall lobby job card: %w", err)
-	}
-)
-
-type lobbyJobCardTranslator struct {
-}
-
-func (t lobbyJobCardTranslator) Marshall(data lobby.PlayerJobCardSummary) (out *protomulti.ProtoLobbyJobCard, err error) {
-	var result = &protomulti.ProtoLobbyJobCard{
-		JobCardId:      data.JobCardID.String(),
-		SubJobIndex:    int32(data.SubJobIndex),
-		OverBoostLevel: int32(data.OverBoostLevel),
-		CrownLevel:     int32(data.CrownLevel),
-	}
-	return result, nil
-}
-
-func (t lobbyJobCardTranslator) Unmarshall(data *protomulti.ProtoLobbyJobCard) (out lobby.PlayerJobCardSummary, err error) {
-	id, err := uuid.FromString(data.JobCardId)
-	if err != nil {
-		return lobby.PlayerJobCardSummary{}, ErrFailedUnmarshalLobbyJobCard(err)
-	}
-	var result = lobby.PlayerJobCardSummary{
-		JobCardID:      id,
-		SubJobIndex:    int(data.SubJobIndex),
-		OverBoostLevel: int(data.OverBoostLevel),
-	}
-	return result, nil
-}
-
-var (
-	ErrFailedUnmarshallLobbyWeapon = func(err error) error {
-		return fmt.Errorf("failed to unmarshall lobby weapon: %w", err)
-	}
-)
-
-type lobbyWeaponTranslator struct {
-}
-
-func (t lobbyWeaponTranslator) Marshall(data lobby.PlayerWeaponSummary) (out *protomulti.ProtoLobbyWeapon, err error) {
-	var result = &protomulti.ProtoLobbyWeapon{
-		WeaponId:        data.WeaponID.String(),
-		SubWeaponUnlock: int32(data.SubWeaponUnlock),
-	}
-	return result, nil
-}
-
-func (t lobbyWeaponTranslator) Unmarshall(data *protomulti.ProtoLobbyWeapon) (out lobby.PlayerWeaponSummary, err error) {
-	id, err := uuid.FromString(data.WeaponId)
-	if err != nil {
-		return lobby.PlayerWeaponSummary{}, ErrFailedUnmarshallLobbyWeapon(err)
-	}
-	var result = lobby.PlayerWeaponSummary{
-		WeaponID:        id,
-		SubWeaponUnlock: int(data.SubWeaponUnlock),
-	}
-	return result, nil
-}
-
-type lobbyAbilityCardTranslator struct {
-}
-
-func (t lobbyAbilityCardTranslator) Marshall(data lobby.PlayerAbilityCardSummary) (out *protomulti.ProtoLobbyAbilityCard, err error) {
-	var result = &protomulti.ProtoLobbyAbilityCard{
-		AbilityCardId:    data.AbilityCardID.String(),
-		AbilityCardLevel: int32(data.AbilityCardLevel),
-		AbilityLevel:     int32(data.AbilityLevel),
-		OverBoostLevel:   int32(data.OverBoostLevel),
-	}
-	return result, nil
-}
-
-func (t lobbyAbilityCardTranslator) Unmarshall(data *protomulti.ProtoLobbyAbilityCard) (out lobby.PlayerAbilityCardSummary, err error) {
-	var result = lobby.PlayerAbilityCardSummary{
-		AbilityCardID:    uuid.FromStringOrNil(data.AbilityCardId),
-		SlotIndex:        int(data.SlotIndex),
-		AbilityCardLevel: int(data.AbilityCardLevel),
-		AbilityLevel:     int(data.AbilityLevel),
-		OverBoostLevel:   int(data.OverBoostLevel),
-	}
-	return result, nil
 }

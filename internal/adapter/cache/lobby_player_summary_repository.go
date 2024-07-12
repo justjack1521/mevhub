@@ -6,31 +6,31 @@ import (
 	"mevhub/internal/domain/lobby"
 )
 
-type LazyLoadedLobbyPlayerSummaryRepository struct {
+type LobbyPlayerSummaryRepository struct {
 	source lobby.PlayerSummaryReadRepository
 	cache  lobby.PlayerSummaryRepository
 }
 
-func NewLazyLoadedLobbyPlayerSummaryRepository(source lobby.PlayerSummaryReadRepository, cache lobby.PlayerSummaryRepository) *LazyLoadedLobbyPlayerSummaryRepository {
-	return &LazyLoadedLobbyPlayerSummaryRepository{source: source, cache: cache}
+func NewLobbyPlayerSummaryRepository(source lobby.PlayerSummaryReadRepository, cache lobby.PlayerSummaryRepository) *LobbyPlayerSummaryRepository {
+	return &LobbyPlayerSummaryRepository{source: source, cache: cache}
 }
 
-func (r *LazyLoadedLobbyPlayerSummaryRepository) Query(ctx context.Context, id uuid.UUID, index int) (lobby.PlayerSummary, error) {
-	hit, err := r.cache.Query(ctx, id, index)
-	if err != nil {
-		miss, err := r.source.Query(ctx, id, index)
-		if err != nil {
-			return lobby.PlayerSummary{}, err
-		}
-		if err := r.cache.Create(ctx, miss); err != nil {
-			return lobby.PlayerSummary{}, err
-		}
-		return miss, nil
-
+func (r *LobbyPlayerSummaryRepository) Query(ctx context.Context, id uuid.UUID) (lobby.PlayerSummary, error) {
+	hit, err := r.cache.Query(ctx, id)
+	if err == nil {
+		return hit, nil
 	}
-	return hit, nil
+
+	miss, err := r.source.Query(ctx, id)
+	if err != nil {
+		return lobby.PlayerSummary{}, err
+	}
+
+	r.cache.Create(ctx, miss)
+
+	return miss, nil
 }
 
-func (r *LazyLoadedLobbyPlayerSummaryRepository) Create(ctx context.Context, player lobby.PlayerSummary) error {
+func (r *LobbyPlayerSummaryRepository) Create(ctx context.Context, player lobby.PlayerSummary) error {
 	return r.cache.Create(ctx, player)
 }

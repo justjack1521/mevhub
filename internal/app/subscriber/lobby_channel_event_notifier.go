@@ -66,7 +66,7 @@ func (s *LobbyChannelEventNotifier) HandleParticipantDeleted(event lobby.Partici
 
 func (s *LobbyChannelEventNotifier) HandleParticipantAdded(event lobby.ParticipantCreatedEvent) error {
 
-	summary, err := s.PlayerSummaryRepository.Query(event.Context(), event.PlayerID(), event.DeckIndex())
+	summary, err := s.PlayerSummaryRepository.Query(event.Context(), event.PlayerID())
 	if err != nil {
 		return err
 	}
@@ -90,7 +90,7 @@ func (s *LobbyChannelEventNotifier) HandleParticipantAdded(event lobby.Participa
 
 func (s *LobbyChannelEventNotifier) HandleParticipantDeckChange(event lobby.ParticipantDeckChangeEvent) error {
 
-	summary, err := s.PlayerSummaryRepository.Query(event.Context(), event.PlayerID(), event.DeckIndex())
+	summary, err := s.PlayerSummaryRepository.Query(event.Context(), event.PlayerID())
 	if err != nil {
 		return err
 	}

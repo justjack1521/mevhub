@@ -26,9 +26,9 @@ func NewWatchLobbyCommandHandler(publisher *mevent.Publisher) *WatchLobbyCommand
 	return &WatchLobbyCommandHandler{EventPublisher: publisher}
 }
 
-func (h *WatchLobbyCommandHandler) Handle(ctx *Context, cmd WatchLobbyCommand) error {
+func (h *WatchLobbyCommandHandler) Handle(ctx Context, cmd WatchLobbyCommand) error {
 
-	h.EventPublisher.Notify(lobby.NewWatcherAddedEvent(ctx, cmd.LobbyID, ctx.ClientID, ctx.Session.PlayerID))
+	h.EventPublisher.Notify(lobby.NewWatcherAddedEvent(ctx, cmd.LobbyID, ctx.UserID(), ctx.PlayerID()))
 
 	return nil
 

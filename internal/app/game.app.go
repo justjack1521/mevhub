@@ -23,7 +23,7 @@ type GameApplicationCommands struct {
 type GameApplicationTranslators struct {
 }
 
-func NewGameApplication(core *Application) *GameApplication {
+func NewGameApplication(core *CoreApplication) *GameApplication {
 	var application = &GameApplication{
 		consumers:   []ApplicationConsumer{},
 		subscribers: []ApplicationSubscriber{},
@@ -35,9 +35,9 @@ func NewGameApplication(core *Application) *GameApplication {
 	return application
 }
 
-type GameSummaryQueryHandler decorator.QueryHandler[query.GameSummaryQuery, game.Summary]
+type GameSummaryQueryHandler decorator.QueryHandler[query.Context, query.GameSummaryQuery, game.Summary]
 
-func (a *GameApplication) NewGameSummaryQueryHandler(core *Application) GameSummaryQueryHandler {
+func (a *GameApplication) NewGameSummaryQueryHandler(core *CoreApplication) GameSummaryQueryHandler {
 	var actual = query.NewGameSummaryQueryHandler(core.data.GameSummary)
-	return ApplyStandardQueryDecorators[query.GameSummaryQuery, game.Summary](core, actual)
+	return actual
 }

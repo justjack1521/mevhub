@@ -9,15 +9,6 @@ import (
 )
 
 func (g MultiGrpcServer) SearchLobby(ctx context.Context, request *protomulti.SearchLobbyRequest) (*protomulti.SearchLobbyResponse, error) {
-	c, err := g.NewContext(ctx)
-	if err != nil {
-		return nil, err
-	}
-	return g.internal.SearchLobby(c, request)
-}
-
-func (g *MultiGrpcServerImplementation) SearchLobby(ctx GrpcContext, request *protomulti.SearchLobbyRequest) (*protomulti.SearchLobbyResponse, error) {
-
 	var levels = make([]int, len(request.Levels))
 	for index, level := range request.Levels {
 		levels[index] = int(level)
@@ -35,7 +26,7 @@ func (g *MultiGrpcServerImplementation) SearchLobby(ctx GrpcContext, request *pr
 		Categories:         categories,
 	}
 
-	results, err := g.app.SubApplications.Lobby.Queries.SearchLobby.Handle(query.NewContext(ctx.Context, ctx.ClientID), query.NewSearchLobbyQuery(qry, request.PartyId))
+	results, err := g.app.SubApplications.Lobby.Queries.SearchLobby.Handle(g.NewCommandContext(ctx), query.NewSearchLobbyQuery(qry, request.PartyId))
 	if err != nil {
 		return nil, err
 	}
@@ -51,5 +42,4 @@ func (g *MultiGrpcServerImplementation) SearchLobby(ctx GrpcContext, request *pr
 	}
 
 	return &protomulti.SearchLobbyResponse{Lobbies: lobbies}, nil
-
 }

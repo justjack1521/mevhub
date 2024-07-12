@@ -6,6 +6,8 @@ import (
 	"github.com/justjack1521/mevconn"
 	services "github.com/justjack1521/mevium/pkg/genproto/service"
 	"github.com/justjack1521/mevium/pkg/server"
+	"github.com/justjack1521/mevrpc"
+	"github.com/newrelic/go-agent/v3/integrations/nrgrpc"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"math/rand"
@@ -14,6 +16,7 @@ import (
 	"mevhub/internal/adapter/memory"
 	"mevhub/internal/app"
 	"mevhub/internal/ports"
+	"os"
 	"time"
 )
 
@@ -23,10 +26,17 @@ func main() {
 
 	var logger = logrus.New()
 
+	defer func() {
+		if r := recover(); r != nil {
+			logger.Error("Panic: %v", r)
+			os.Exit(1)
+		}
+	}()
+
 	var application = NewApplication(context.Background(), logger)
 
 	options := []grpc.ServerOption{
-		grpc.UnaryInterceptor(ports.ServerInterceptor(logger)),
+		grpc.ChainUnaryInterceptor(nrgrpc.UnaryServerInterceptor(application.Services.NewRelic.Application)),
 	}
 
 	application.Start()
@@ -36,7 +46,7 @@ func main() {
 		services.RegisterMeviusMultiServiceServer(svr, svc)
 	}, options...)
 
-	defer func(application *app.Application) {
+	defer func(application *app.CoreApplication) {
 		if err := application.Shutdown(); err != nil {
 			fmt.Println(err)
 		}
@@ -44,7 +54,7 @@ func main() {
 
 }
 
-func NewApplication(ctx context.Context, logger *logrus.Logger) *app.Application {
+func NewApplication(ctx context.Context, logger *logrus.Logger) *app.CoreApplication {
 
 	db, err := database.NewPostgresConnection()
 	if err != nil {
@@ -61,23 +71,24 @@ func NewApplication(ctx context.Context, logger *logrus.Logger) *app.Application
 		panic(fmt.Errorf("failed to connect to message bus: %w", err))
 	}
 
-	game, err := DialToGameClient()
+	identity, err := DialToIdentityClient()
 	if err != nil {
 		panic(fmt.Errorf("failed to connect to game client: %w", err))
 	}
 
-	return app.NewApplication(db, rds, logger, msg, game)
+	return app.NewApplication(db, rds, logger, msg, identity)
 
 }
 
-func DialToGameClient() (services.MeviusGameServiceClient, error) {
+func DialToIdentityClient() (services.MeviusIdentityServiceClient, error) {
 	config, err := mevconn.CreateGrpcServiceConfig(mevconn.GAMESERVICENAME)
 	if err != nil {
 		return nil, err
 	}
-	conn, err := grpc.Dial(config.ConnectionString(), grpc.WithInsecure())
+	conn, err := grpc.Dial(config.ConnectionString(), grpc.WithChainUnaryInterceptor(nrgrpc.UnaryClientInterceptor, mevrpc.IdentityCopyUnaryClientInterceptor), grpc.WithInsecure())
 	if err != nil {
 		return nil, err
 	}
-	return services.NewMeviusGameServiceClient(conn), nil
+	fmt.Println(fmt.Sprintf("Connected to %s", config.ConnectionString()))
+	return services.NewMeviusIdentityServiceClient(conn), nil
 }

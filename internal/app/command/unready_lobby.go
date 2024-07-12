@@ -30,27 +30,27 @@ func NewUnreadyLobbyCommandHandler(publisher *mevent.Publisher, sessions session
 	return &UnreadyLobbyCommandHandler{EventPublisher: publisher, SessionRepository: sessions, InstanceRepository: instances, ParticipantRepository: participants}
 }
 
-func (h *UnreadyLobbyCommandHandler) Handle(ctx *Context, cmd UnreadyLobbyCommand) error {
+func (h *UnreadyLobbyCommandHandler) Handle(ctx Context, cmd UnreadyLobbyCommand) error {
 
-	current, err := h.SessionRepository.QueryByID(ctx.Context, ctx.ClientID)
+	current, err := h.SessionRepository.QueryByID(ctx, ctx.UserID())
 	if err != nil {
 		return err
 	}
 
-	participant, err := h.ParticipantRepository.QueryParticipantForLobby(ctx.Context, current.LobbyID, current.PartySlot)
+	participant, err := h.ParticipantRepository.QueryParticipantForLobby(ctx, current.LobbyID, current.PartySlot)
 	if err != nil {
 		return err
 	}
 
-	if err := participant.SetReady(ctx.Session.PlayerID, false); err != nil {
+	if err := participant.SetReady(ctx.PlayerID(), false); err != nil {
 		return err
 	}
 
-	if err := h.ParticipantRepository.Update(ctx.Context, participant); err != nil {
+	if err := h.ParticipantRepository.Update(ctx, participant); err != nil {
 		return err
 	}
 
-	h.EventPublisher.Notify(lobby.NewParticipantUnreadyEvent(ctx.Context, current.ClientID, current.LobbyID, current.PartySlot))
+	h.EventPublisher.Notify(lobby.NewParticipantUnreadyEvent(ctx, current.ClientID, current.LobbyID, current.PartySlot))
 
 	return nil
 

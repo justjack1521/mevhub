@@ -115,13 +115,13 @@ func (s *LobbyNotificationChanneler) HandleDelete(event lobby.InstanceDeletedEve
 		Data:    n,
 	}
 
-	m, err := message.MarshallBinary()
+	bytes, err := message.MarshallBinary()
 	if err != nil {
 		return
 	}
 
 	for _, listener := range listeners {
-		if err := s.publisher.Publish(m, listener.ClientID, rabbitmv.ClientNotification); err != nil {
+		if err := s.publisher.Publish(event.Context(), bytes, listener.UserID, listener.PlayerID, rabbitmv.ClientNotification); err != nil {
 			return
 		}
 	}
@@ -186,7 +186,7 @@ func (c *LobbyInstanceNotificationChannel) Publish(ctx context.Context, message 
 	}
 
 	for _, listener := range listeners {
-		if err := c.manager.publisher.Publish(message, listener.ClientID, rabbitmv.ClientNotification); err != nil {
+		if err := c.manager.publisher.Publish(ctx, message, listener.UserID, listener.PlayerID, rabbitmv.ClientNotification); err != nil {
 			return err
 		}
 	}

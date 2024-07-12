@@ -57,5 +57,6 @@ type PlayerAbilityCardSummary struct {
 	SlotIndex        int
 	AbilityCardLevel int
 	AbilityLevel     int
+	ExtraSkillUnlock int
 	OverBoostLevel   int
 }

@@ -2,21 +2,18 @@ package command
 
 import (
 	"github.com/justjack1521/mevium/pkg/mevent"
-	uuid "github.com/satori/go.uuid"
 	"mevhub/internal/domain/session"
 )
 
 type EndSessionCommand struct {
-	SysID    uuid.UUID
-	PlayerID uuid.UUID
 }
 
 func (e EndSessionCommand) CommandName() string {
 	return "end.session"
 }
 
-func NewEndSessionCommand(id uuid.UUID, player uuid.UUID) EndSessionCommand {
-	return EndSessionCommand{SysID: id, PlayerID: player}
+func NewEndSessionCommand() EndSessionCommand {
+	return EndSessionCommand{}
 }
 
 type EndSessionCommandHandler struct {
@@ -29,9 +26,9 @@ func NewEndSessionCommandHandler(publisher *mevent.Publisher, read session.Insta
 	return &EndSessionCommandHandler{EventPublisher: publisher, SessionReadRepository: read, SessionWriteRepository: write}
 }
 
-func (h *EndSessionCommandHandler) Handle(ctx *Context, cmd EndSessionCommand) error {
+func (h *EndSessionCommandHandler) Handle(ctx Context, cmd EndSessionCommand) error {
 
-	instance, err := h.SessionReadRepository.QueryByID(ctx, cmd.SysID)
+	instance, err := h.SessionReadRepository.QueryByID(ctx, ctx.UserID())
 	if err != nil {
 		return err
 	}

@@ -8,26 +8,17 @@ import (
 )
 
 func (g MultiGrpcServer) ReadyLobby(ctx context.Context, request *protomulti.ReadyLobbyRequest) (*protomulti.ReadyLobbyResponse, error) {
-	c, err := g.NewContext(ctx)
-	if err != nil {
-		return nil, err
-	}
-	return g.internal.ReadyLobby(c, request)
-}
 
-func (g *MultiGrpcServerImplementation) ReadyLobby(ctx GrpcContext, request *protomulti.ReadyLobbyRequest) (*protomulti.ReadyLobbyResponse, error) {
-
-	id, err := uuid.FromString(request.LobbyId)
+	lobby, err := uuid.FromString(request.LobbyId)
 	if err != nil {
 		return nil, err
 	}
 
-	var cmd = command.NewReadyLobbyCommand(id, int(request.DeckIndex))
+	var cmd = command.NewReadyLobbyCommand(lobby, int(request.DeckIndex))
 
-	if err := g.app.SubApplications.Lobby.Commands.ReadyLobby.Handle(command.NewContext(ctx.Context, ctx.ClientID), cmd); err != nil {
+	if err := g.app.SubApplications.Lobby.Commands.ReadyLobby.Handle(g.NewCommandContext(ctx), cmd); err != nil {
 		return nil, err
 	}
 
 	return &protomulti.ReadyLobbyResponse{}, nil
-
 }

@@ -16,7 +16,7 @@ type LobbyApplication struct {
 	Translators *LobbyApplicationTranslators
 	consumers   []ApplicationConsumer
 	subscribers []ApplicationSubscriber
-	services    *Services
+	services    *ApplicationServices
 }
 
 type LobbyApplicationQueries struct {
@@ -42,7 +42,7 @@ type LobbyApplicationTranslators struct {
 	LobbyPlayer     translate.LobbyPlayerSummaryTranslator
 }
 
-func NewLobbyApplication(core *Application) *LobbyApplication {
+func NewLobbyApplication(core *CoreApplication) *LobbyApplication {
 	var application = &LobbyApplication{
 		consumers: []ApplicationConsumer{},
 	}
@@ -67,99 +67,87 @@ func NewLobbyApplication(core *Application) *LobbyApplication {
 		LobbyPlayer:     translate.NewLobbyPlayerSummaryTranslator(),
 	}
 	application.subscribers = []ApplicationSubscriber{
-		subscriber.NewLobbyNotificationChanneler(core.services.EventPublisher, core.services.Redis, core.services.RabbitMQConnection, memory.NewLobbyChannelRepository(core.services.Redis)),
-		subscriber.NewLobbyPlayerSummaryWriter(core.services.EventPublisher, core.data.LobbyPlayerSummary),
-		subscriber.NewLobbySummaryWriter(core.services.EventPublisher, core.repositories.Quests, core.data.LobbySummary),
-		subscriber.NewLobbySearchWriter(core.services.EventPublisher, core.data.LobbySearch),
-		subscriber.NewLobbyChannelEventNotifier(core.services.EventPublisher, core.data.LobbyPlayerSummary, application.Translators.LobbyPlayer),
-		subscriber.NewLobbyClientNotifier(core.services.EventPublisher, core.services.Redis),
-		subscriber.NewSessionLobbyWriter(core.services.EventPublisher, core.data.SessionInstance),
+		subscriber.NewLobbyNotificationChanneler(core.Services.EventPublisher, core.Services.Redis, core.Services.RabbitMQConnection, memory.NewLobbyChannelRepository(core.Services.Redis)),
+		subscriber.NewLobbyPlayerSummaryWriter(core.Services.EventPublisher, core.data.LobbyPlayerSummary),
+		subscriber.NewLobbySummaryWriter(core.Services.EventPublisher, core.repositories.Quests, core.data.LobbySummary),
+		subscriber.NewLobbySearchWriter(core.Services.EventPublisher, core.data.LobbySearch),
+		subscriber.NewLobbyChannelEventNotifier(core.Services.EventPublisher, core.data.LobbyPlayerSummary, application.Translators.LobbyPlayer),
+		subscriber.NewLobbyClientNotifier(core.Services.EventPublisher, core.Services.Redis),
+		subscriber.NewSessionLobbyWriter(core.Services.EventPublisher, core.data.SessionInstance),
 	}
 	return application
 }
 
-type SearchLobbyQueryHandler decorator.QueryHandler[query.SearchLobbyQuery, []lobby.Summary]
+type CreateSessionCommandHandler decorator.CommandHandler[command.Context, command.CreateSessionCommand]
+type EndSessionCommandHandler decorator.CommandHandler[command.Context, command.EndSessionCommand]
+type CreateLobbyCommandHandler decorator.CommandHandler[command.Context, command.CreateLobbyCommand]
+type CancelLobbyCommandHandler decorator.CommandHandler[command.Context, command.CancelLobbyCommand]
+type WatchLobbyCommandHandler decorator.CommandHandler[command.Context, command.WatchLobbyCommand]
+type JoinLobbyCommandHandler decorator.CommandHandler[command.Context, command.JoinLobbyCommand]
+type LeaveLobbyCommandHandler decorator.CommandHandler[command.Context, command.LeaveLobbyCommand]
+type ReadyLobbyCommandHandler decorator.CommandHandler[command.Context, command.ReadyLobbyCommand]
+type UnreadyLobbyCommandHandler decorator.CommandHandler[command.Context, command.UnreadyLobbyCommand]
+type SendStampCommandHandler decorator.CommandHandler[command.Context, command.SendStampCommand]
 
-func (a *LobbyApplication) NewSearchLobbyQueryHandler(core *Application) SearchLobbyQueryHandler {
+type SearchLobbyQueryHandler decorator.QueryHandler[query.Context, query.SearchLobbyQuery, []lobby.Summary]
+type SearchPlayerQueryHandler decorator.QueryHandler[query.Context, query.SearchPlayerQuery, lobby.PlayerSummary]
+
+func (a *LobbyApplication) NewSearchLobbyQueryHandler(core *CoreApplication) SearchLobbyQueryHandler {
 	var actual = query.NewSearchLobbyQueryHandler(core.data.LobbySearch, lobby.NewSummaryQueryService(core.data.LobbyInstance, core.data.LobbyParticipant, core.data.LobbySummary, core.data.LobbyPlayerSummary))
-	return ApplyStandardQueryDecorators[query.SearchLobbyQuery, []lobby.Summary](core, actual)
+	return actual
 }
 
-type SearchPlayerQueryHandler decorator.QueryHandler[query.SearchPlayerQuery, lobby.PlayerSummary]
-
-func (a *LobbyApplication) NewSearchPlayerQueryHandler(core *Application) SearchPlayerQueryHandler {
+func (a *LobbyApplication) NewSearchPlayerQueryHandler(core *CoreApplication) SearchPlayerQueryHandler {
 	var actual = query.NewSearchPlayerQueryHandler(core.data.LobbyParticipant, core.data.SessionInstance, core.data.LobbyPlayerSummary)
-	return ApplyStandardQueryDecorators[query.SearchPlayerQuery, lobby.PlayerSummary](core, actual)
+	return actual
 }
 
-type CreateSessionCommandHandler decorator.CommandHandler[command.CreateSessionCommand]
-
-func (a *LobbyApplication) NewCreateSessionCommandHandler(core *Application) CreateSessionCommandHandler {
-	var actual = command.NewCreateSessionCommandHandler(core.services.EventPublisher, core.data.SessionInstance)
-	var logger = decorator.NewCommandHandlerWithLogger[command.CreateSessionCommand](core.services.Logger, actual)
-	return logger
+func (a *LobbyApplication) NewCreateSessionCommandHandler(core *CoreApplication) CreateSessionCommandHandler {
+	var actual = command.NewCreateSessionCommandHandler(core.Services.EventPublisher, core.data.SessionInstance)
+	return actual
 }
 
-type EndSessionCommandHandler decorator.CommandHandler[command.EndSessionCommand]
-
-func (a *LobbyApplication) NewEndSessionCommandHandler(core *Application) EndSessionCommandHandler {
-	var actual = command.NewEndSessionCommandHandler(core.services.EventPublisher, core.data.SessionInstance, core.data.SessionInstance)
-	var logger = decorator.NewCommandHandlerWithLogger[command.EndSessionCommand](core.services.Logger, actual)
-	return logger
+func (a *LobbyApplication) NewEndSessionCommandHandler(core *CoreApplication) EndSessionCommandHandler {
+	var actual = command.NewEndSessionCommandHandler(core.Services.EventPublisher, core.data.SessionInstance, core.data.SessionInstance)
+	return actual
 }
 
-type CreateLobbyCommandHandler decorator.CommandHandler[command.CreateLobbyCommand]
-
-func (a *LobbyApplication) NewCreateLobbyCommandHandler(core *Application) CreateLobbyCommandHandler {
-	var actual = command.NewCreateLobbyCommandHandler(core.services.EventPublisher, core.data.LobbyInstance, core.repositories.Quests, core.data.LobbyParticipant)
-	return ApplyStandardCommandDecorators[command.CreateLobbyCommand](core, actual)
+func (a *LobbyApplication) NewCreateLobbyCommandHandler(core *CoreApplication) CreateLobbyCommandHandler {
+	var actual = command.NewCreateLobbyCommandHandler(core.Services.EventPublisher, core.data.LobbyInstance, core.repositories.Quests, core.data.LobbyParticipant)
+	return actual
 }
 
-type CancelLobbyCommandHandler decorator.CommandHandler[command.CancelLobbyCommand]
-
-func (a *LobbyApplication) NewCancelLobbyCommandHandler(core *Application) CancelLobbyCommandHandler {
-	var actual = command.NewCancelLobbyCommandHandler(core.services.EventPublisher, core.data.SessionInstance, core.data.LobbyInstance, core.data.LobbyParticipant)
-	return ApplyStandardCommandDecorators[command.CancelLobbyCommand](core, actual)
+func (a *LobbyApplication) NewCancelLobbyCommandHandler(core *CoreApplication) CancelLobbyCommandHandler {
+	var actual = command.NewCancelLobbyCommandHandler(core.Services.EventPublisher, core.data.SessionInstance, core.data.LobbyInstance, core.data.LobbyParticipant)
+	return actual
 }
 
-type WatchLobbyCommandHandler decorator.CommandHandler[command.WatchLobbyCommand]
-
-func (a *LobbyApplication) NewWatchLobbyCommandHandler(core *Application) WatchLobbyCommandHandler {
-	var actual = command.NewWatchLobbyCommandHandler(core.services.EventPublisher)
-	return ApplyStandardCommandDecorators[command.WatchLobbyCommand](core, actual)
+func (a *LobbyApplication) NewWatchLobbyCommandHandler(core *CoreApplication) WatchLobbyCommandHandler {
+	var actual = command.NewWatchLobbyCommandHandler(core.Services.EventPublisher)
+	return actual
 }
 
-type JoinLobbyCommandHandler decorator.CommandHandler[command.JoinLobbyCommand]
-
-func (a *LobbyApplication) NewJoinLobbyCommandHandler(core *Application) JoinLobbyCommandHandler {
-	var actual = command.NewJoinLobbyCommandHandler(core.services.EventPublisher, core.data.LobbyInstance, core.data.LobbyParticipant)
-	return ApplyStandardCommandDecorators[command.JoinLobbyCommand](core, actual)
+func (a *LobbyApplication) NewJoinLobbyCommandHandler(core *CoreApplication) JoinLobbyCommandHandler {
+	var actual = command.NewJoinLobbyCommandHandler(core.Services.EventPublisher, core.data.LobbyInstance, core.data.LobbyParticipant)
+	return actual
 }
 
-type LeaveLobbyCommandHandler decorator.CommandHandler[command.LeaveLobbyCommand]
-
-func (a *LobbyApplication) NewLeaveLobbyCommand(core *Application) LeaveLobbyCommandHandler {
-	var actual = command.NewLeaveLobbyCommandHandler(core.services.EventPublisher, core.data.SessionInstance, core.data.LobbyParticipant)
-	return ApplyStandardCommandDecorators[command.LeaveLobbyCommand](core, actual)
+func (a *LobbyApplication) NewLeaveLobbyCommand(core *CoreApplication) LeaveLobbyCommandHandler {
+	var actual = command.NewLeaveLobbyCommandHandler(core.Services.EventPublisher, core.data.SessionInstance, core.data.LobbyParticipant)
+	return actual
 }
 
-type ReadyLobbyCommandHandler decorator.CommandHandler[command.ReadyLobbyCommand]
-
-func (a *LobbyApplication) NewReadyLobbyCommandHandler(core *Application) ReadyLobbyCommandHandler {
-	var actual = command.NewReadyLobbyCommandHandler(core.services.EventPublisher, core.data.SessionInstance, core.data.LobbyInstance, core.data.LobbyParticipant)
-	return ApplyStandardCommandDecorators[command.ReadyLobbyCommand](core, actual)
+func (a *LobbyApplication) NewReadyLobbyCommandHandler(core *CoreApplication) ReadyLobbyCommandHandler {
+	var actual = command.NewReadyLobbyCommandHandler(core.Services.EventPublisher, core.data.SessionInstance, core.data.LobbyInstance, core.data.LobbyParticipant)
+	return actual
 }
 
-type UnreadyLobbyCommandHandler decorator.CommandHandler[command.UnreadyLobbyCommand]
-
-func (a *LobbyApplication) NewUnreadyLobbyCommandHandler(core *Application) UnreadyLobbyCommandHandler {
-	var actual = command.NewUnreadyLobbyCommandHandler(core.services.EventPublisher, core.data.SessionInstance, core.data.LobbyInstance, core.data.LobbyParticipant)
-	return ApplyStandardCommandDecorators[command.UnreadyLobbyCommand](core, actual)
+func (a *LobbyApplication) NewUnreadyLobbyCommandHandler(core *CoreApplication) UnreadyLobbyCommandHandler {
+	var actual = command.NewUnreadyLobbyCommandHandler(core.Services.EventPublisher, core.data.SessionInstance, core.data.LobbyInstance, core.data.LobbyParticipant)
+	return actual
 }
 
-type SendStampCommandHandler decorator.CommandHandler[command.SendStampCommand]
-
-func (a *LobbyApplication) NewSendStampCommandHandler(core *Application) SendStampCommandHandler {
-	var actual = command.NewSendStampCommandHandler(core.services.EventPublisher, core.data.SessionInstance)
-	return ApplyStandardCommandDecorators[command.SendStampCommand](core, actual)
+func (a *LobbyApplication) NewSendStampCommandHandler(core *CoreApplication) SendStampCommandHandler {
+	var actual = command.NewSendStampCommandHandler(core.Services.EventPublisher, core.data.SessionInstance)
+	return actual
 }

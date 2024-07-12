@@ -1,7 +1,6 @@
 package command
 
 import (
-	"errors"
 	"github.com/justjack1521/mevium/pkg/mevent"
 	"mevhub/internal/domain/lobby"
 	"mevhub/internal/domain/session"
@@ -28,22 +27,20 @@ func NewLeaveLobbyCommandHandler(publisher *mevent.Publisher, sessions session.I
 	return &LeaveLobbyCommandHandler{EventPublisher: publisher, SessionRepository: sessions, ParticipantRepository: participants}
 }
 
-func (h *LeaveLobbyCommandHandler) Handle(ctx *Context, cmd LeaveLobbyCommand) error {
+func (h *LeaveLobbyCommandHandler) Handle(ctx Context, cmd LeaveLobbyCommand) error {
 
-	if ctx.Session.CanLeaveLobby() == false {
-		return errors.New("player has already left lobby")
-	}
+	current, err := h.SessionRepository.QueryByID(ctx, ctx.UserID())
 
-	participant, err := h.ParticipantRepository.QueryParticipantForLobby(ctx.Context, ctx.Session.LobbyID, ctx.Session.PartySlot)
+	participant, err := h.ParticipantRepository.QueryParticipantForLobby(ctx, current.LobbyID, current.PartySlot)
 	if err != nil {
 		return err
 	}
 
-	if err := h.ParticipantRepository.Delete(ctx.Context, participant); err != nil {
+	if err := h.ParticipantRepository.Delete(ctx, participant); err != nil {
 		return err
 	}
 
-	h.EventPublisher.Notify(lobby.NewParticipantDeletedEvent(ctx.Context, participant.ClientID, participant.PlayerID, participant.LobbyID, participant.PlayerSlot))
+	h.EventPublisher.Notify(lobby.NewParticipantDeletedEvent(ctx, participant.ClientID, participant.PlayerID, participant.LobbyID, participant.PlayerSlot))
 
 	return nil
 

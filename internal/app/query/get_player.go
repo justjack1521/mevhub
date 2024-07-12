@@ -15,7 +15,7 @@ func NewSearchPlayerQuery(id uuid.UUID, slot int) SearchPlayerQuery {
 	return SearchPlayerQuery{LobbyID: id, PartySlot: slot}
 }
 
-func (q SearchPlayerQuery) QueryName() string {
+func (c SearchPlayerQuery) CommandName() string {
 	return "search.player"
 }
 
@@ -29,19 +29,19 @@ func NewSearchPlayerQueryHandler(participant lobby.ParticipantRepository, sessio
 	return &SearchPlayerQueryHandler{ParticipantRepository: participant, SessionRepository: session, SummaryRepository: summary}
 }
 
-func (h *SearchPlayerQueryHandler) Handle(ctx *Context, qry SearchPlayerQuery) (lobby.PlayerSummary, error) {
+func (h *SearchPlayerQueryHandler) Handle(ctx Context, qry SearchPlayerQuery) (lobby.PlayerSummary, error) {
 
-	participant, err := h.ParticipantRepository.QueryParticipantForLobby(ctx.Context, qry.LobbyID, qry.PartySlot)
+	participant, err := h.ParticipantRepository.QueryParticipantForLobby(ctx, qry.LobbyID, qry.PartySlot)
 	if err != nil {
 		return lobby.PlayerSummary{}, err
 	}
 
-	current, err := h.SessionRepository.QueryByID(ctx.Context, participant.ClientID)
+	current, err := h.SessionRepository.QueryByID(ctx, participant.ClientID)
 	if err != nil {
 		return lobby.PlayerSummary{}, err
 	}
 
-	summary, err := h.SummaryRepository.Query(ctx.Context, current.PlayerID, current.DeckIndex)
+	summary, err := h.SummaryRepository.Query(ctx, current.PlayerID)
 	if err != nil {
 		return lobby.PlayerSummary{}, err
 	}

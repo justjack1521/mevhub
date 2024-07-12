@@ -6,7 +6,7 @@ import (
 )
 
 type SessionInstanceRedis struct {
-	ClientID  string `redis:"ClientID"`
+	ClientID  string `redis:"UserID"`
 	PlayerID  string `redis:"PlayerID"`
 	DeckIndex int    `redis:"DeckIndex"`
 	LobbyID   string `redis:"LobbyID"`
@@ -25,7 +25,7 @@ func (x *SessionInstanceRedis) ToEntity() *session.Instance {
 
 func (x *SessionInstanceRedis) ToMapStringInterface() map[string]interface{} {
 	return map[string]interface{}{
-		"ClientID":  x.ClientID,
+		"UserID":    x.ClientID,
 		"PlayerID":  x.PlayerID,
 		"DeckIndex": x.DeckIndex,
 		"LobbyID":   x.LobbyID,

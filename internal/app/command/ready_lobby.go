@@ -31,34 +31,34 @@ func NewReadyLobbyCommandHandler(publisher *mevent.Publisher, sessions session.I
 	return &ReadyLobbyCommandHandler{EventPublisher: publisher, SessionRepository: sessions, InstanceRepository: instances, ParticipantRepository: participants}
 }
 
-func (h *ReadyLobbyCommandHandler) Handle(ctx *Context, cmd ReadyLobbyCommand) error {
+func (h *ReadyLobbyCommandHandler) Handle(ctx Context, cmd ReadyLobbyCommand) error {
 
-	current, err := h.SessionRepository.QueryByID(ctx.Context, ctx.ClientID)
+	current, err := h.SessionRepository.QueryByID(ctx, ctx.UserID())
 	if err != nil {
 		return err
 	}
 
-	participant, err := h.ParticipantRepository.QueryParticipantForLobby(ctx.Context, current.LobbyID, current.PartySlot)
+	participant, err := h.ParticipantRepository.QueryParticipantForLobby(ctx, current.LobbyID, current.PartySlot)
 	if err != nil {
 		return err
 	}
 
-	if err := participant.SetReady(ctx.Session.PlayerID, true); err != nil {
+	if err := participant.SetReady(ctx.PlayerID(), true); err != nil {
 		return err
 	}
 
-	if err := participant.SetDeckIndex(ctx.Session.PlayerID, cmd.DeckIndex); err != nil {
+	if err := participant.SetDeckIndex(ctx.PlayerID(), cmd.DeckIndex); err != nil {
 		return err
 	}
 
-	if err := h.ParticipantRepository.Update(ctx.Context, participant); err != nil {
+	if err := h.ParticipantRepository.Update(ctx, participant); err != nil {
 		return err
 	}
 
-	h.EventPublisher.Notify(lobby.NewParticipantReadyEvent(ctx.Context, ctx.ClientID, current.LobbyID, participant.DeckIndex, participant.PlayerSlot))
+	h.EventPublisher.Notify(lobby.NewParticipantReadyEvent(ctx, ctx.UserID(), current.LobbyID, participant.DeckIndex, participant.PlayerSlot))
 
 	if participant.DeckIndex != cmd.DeckIndex {
-		h.EventPublisher.Notify(lobby.NewParticipantDeckChangeEvent(ctx.Context, ctx.ClientID, ctx.Session.PlayerID, current.LobbyID, cmd.DeckIndex, participant.PlayerSlot))
+		h.EventPublisher.Notify(lobby.NewParticipantDeckChangeEvent(ctx, ctx.UserID(), ctx.PlayerID(), current.LobbyID, cmd.DeckIndex, participant.PlayerSlot))
 	}
 
 	return nil

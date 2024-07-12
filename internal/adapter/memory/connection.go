@@ -6,10 +6,11 @@ import (
 	"fmt"
 	"github.com/go-redis/redis/v8"
 	"github.com/justjack1521/mevconn"
+	"github.com/newrelic/go-agent/v3/integrations/nrredis-v8"
 )
 
 const (
-	serviceKeyPrefix = "mevmulti"
+	serviceKey = "mevmulti"
 )
 
 var (
@@ -23,12 +24,14 @@ func NewRedisConnection(ctx context.Context) (*redis.Client, error) {
 	if err != nil {
 		return nil, ErrFailedConnectToRedis(err)
 	}
-	client := redis.NewClient(&redis.Options{
+	var options = &redis.Options{
 		Addr:      config.DSN(),
 		Username:  config.Username(),
 		Password:  config.Password(),
 		TLSConfig: &tls.Config{ServerName: config.Host()},
-	})
+	}
+	client := redis.NewClient(options)
+	client.AddHook(nrredis.NewHook(options))
 	_, err = client.Ping(ctx).Result()
 	if err != nil {
 		return nil, ErrFailedConnectToRedis(err)

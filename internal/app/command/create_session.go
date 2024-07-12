@@ -2,17 +2,14 @@ package command
 
 import (
 	"github.com/justjack1521/mevium/pkg/mevent"
-	uuid "github.com/satori/go.uuid"
 	"mevhub/internal/domain/session"
 )
 
 type CreateSessionCommand struct {
-	ClientID uuid.UUID
-	PlayerID uuid.UUID
 }
 
-func NewCreateSessionCommand(client, player uuid.UUID) CreateSessionCommand {
-	return CreateSessionCommand{ClientID: client, PlayerID: player}
+func NewCreateSessionCommand() CreateSessionCommand {
+	return CreateSessionCommand{}
 }
 
 func (c CreateSessionCommand) CommandName() string {
@@ -28,11 +25,11 @@ func NewCreateSessionCommandHandler(publisher *mevent.Publisher, sessions sessio
 	return &CreateSessionCommandHandler{EventPublisher: publisher, SessionRepository: sessions}
 }
 
-func (h *CreateSessionCommandHandler) Handle(ctx *Context, cmd CreateSessionCommand) error {
+func (h *CreateSessionCommandHandler) Handle(ctx Context, cmd CreateSessionCommand) error {
 
 	var instance = &session.Instance{
-		ClientID: cmd.ClientID,
-		PlayerID: cmd.PlayerID,
+		ClientID: ctx.UserID(),
+		PlayerID: ctx.PlayerID(),
 	}
 
 	if err := h.SessionRepository.Create(ctx, instance); err != nil {

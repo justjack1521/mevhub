@@ -28,7 +28,7 @@ var (
 )
 
 type PlayerSummaryReadRepository interface {
-	Query(ctx context.Context, id uuid.UUID, index int) (PlayerSummary, error)
+	Query(ctx context.Context, id uuid.UUID) (PlayerSummary, error)
 }
 
 var (

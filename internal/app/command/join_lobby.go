@@ -1,7 +1,6 @@
 package command
 
 import (
-	"errors"
 	"github.com/justjack1521/mevium/pkg/mevent"
 	uuid "github.com/satori/go.uuid"
 	"mevhub/internal/domain/lobby"
@@ -40,18 +39,14 @@ func NewJoinLobbyCommandHandler(publishes *mevent.Publisher, instances lobby.Ins
 	return &JoinLobbyCommandHandler{EventPublisher: publishes, InstanceRepository: instances, ParticipantRepository: participants, ParticipantFactory: lobby.ParticipantFactory{}}
 }
 
-func (h *JoinLobbyCommandHandler) Handle(ctx *Context, cmd JoinLobbyCommand) error {
+func (h *JoinLobbyCommandHandler) Handle(ctx Context, cmd JoinLobbyCommand) error {
 
-	if ctx.Session.CanJoinLobby() == false {
-		return errors.New("player has already joined lobby")
-	}
-
-	instance, err := h.InstanceRepository.QueryByID(ctx.Context, cmd.LobbyID)
+	instance, err := h.InstanceRepository.QueryByID(ctx, cmd.LobbyID)
 	if err != nil {
 		return err
 	}
 
-	participant, err := h.ParticipantFactory.Create(ctx.ClientID, ctx.Session.PlayerID, instance, lobby.ParticipantFactoryOptions{
+	participant, err := h.ParticipantFactory.Create(ctx.UserID(), ctx.PlayerID(), instance, lobby.ParticipantFactoryOptions{
 		RoleID:     uuid.Nil,
 		SlotIndex:  cmd.SlotIndex,
 		DeckIndex:  cmd.DeckIndex,
@@ -62,11 +57,11 @@ func (h *JoinLobbyCommandHandler) Handle(ctx *Context, cmd JoinLobbyCommand) err
 		return err
 	}
 
-	if err := h.ParticipantRepository.Create(ctx.Context, participant); err != nil {
+	if err := h.ParticipantRepository.Create(ctx, participant); err != nil {
 		return err
 	}
 
-	h.EventPublisher.Notify(lobby.NewParticipantCreatedEvent(ctx.Context, participant.ClientID, participant.PlayerID, participant.LobbyID, participant.DeckIndex, participant.PlayerSlot))
+	h.EventPublisher.Notify(lobby.NewParticipantCreatedEvent(ctx, participant.ClientID, participant.PlayerID, participant.LobbyID, participant.DeckIndex, participant.PlayerSlot))
 
 	return nil
 

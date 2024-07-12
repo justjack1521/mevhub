@@ -9,7 +9,7 @@ type SearchLobbyQuery struct {
 	query lobby.SearchQuery
 }
 
-func (s SearchLobbyQuery) QueryName() string {
+func (s SearchLobbyQuery) CommandName() string {
 	return "search.lobby"
 }
 
@@ -26,7 +26,7 @@ func NewSearchLobbyQueryHandler(lobbies lobby.SearchReadRepository, summaries lo
 	return &SearchLobbyQueryHandler{SearchRepository: lobbies, SummaryRepository: summaries}
 }
 
-func (h *SearchLobbyQueryHandler) Handle(ctx *Context, qry SearchLobbyQuery) ([]lobby.Summary, error) {
+func (h *SearchLobbyQueryHandler) Handle(ctx Context, qry SearchLobbyQuery) ([]lobby.Summary, error) {
 
 	var summaries = make([]lobby.Summary, 0)
 
@@ -37,12 +37,12 @@ func (h *SearchLobbyQueryHandler) Handle(ctx *Context, qry SearchLobbyQuery) ([]
 		}
 		summaries = append(summaries, summary)
 	} else {
-		lobbies, err := h.SearchRepository.Query(ctx.Context, qry.query)
+		lobbies, err := h.SearchRepository.Query(ctx, qry.query)
 		if err != nil {
 			return nil, err
 		}
 		for _, value := range lobbies {
-			summary, err := h.SummaryRepository.QueryByID(ctx.Context, value.LobbyID)
+			summary, err := h.SummaryRepository.QueryByID(ctx, value.LobbyID)
 			if err != nil {
 				continue
 			}

@@ -1,46 +1,37 @@
 package decorator
 
 import (
+	"context"
 	"github.com/sirupsen/logrus"
-	"mevhub/internal/app/command"
 )
+
+type Context interface {
+	context.Context
+}
 
 type Command interface {
 	CommandName() string
 }
 
-type CommandHandler[C Command] interface {
-	Handle(ctx *command.Context, cmd C) error
+type CommandHandler[CTX Context, C Command] interface {
+	Handle(ctx CTX, cmd C) error
 }
 
-type CommandHandlerWithLogger[C Command] struct {
+type QueryHandler[CTX Context, C Command, R any] interface {
+	Handle(ctx CTX, cmd C) (R, error)
+}
+
+type LoggerCommandDecorator[CTX Context, C Command] struct {
 	logger *logrus.Logger
-	base   CommandHandler[C]
+	base   CommandHandler[CTX, C]
 }
 
-func NewCommandHandlerWithLogger[C Command](logger *logrus.Logger, base CommandHandler[C]) CommandHandler[C] {
-	return &CommandHandlerWithLogger[C]{
-		logger: logger,
-		base:   base,
+func NewCommandHandlerWithLogger[CTX Context, C Command](base CommandHandler[CTX, C]) CommandHandler[CTX, C] {
+	return LoggerCommandDecorator[CTX, C]{
+		base: base,
 	}
 }
 
-func (h *CommandHandlerWithLogger[C]) Handle(ctx *command.Context, cmd C) (err error) {
-	var entry = h.logger.WithFields(logrus.Fields{
-		"client.id":    ctx.ClientID,
-		"command.name": cmd.CommandName(),
-	})
-
-	entry.Info("Executing Command")
-
-	defer func() {
-		if err == nil {
-			entry.Info("Command Executed")
-		} else {
-			entry.WithError(err).Error("Command Failed")
-		}
-	}()
-
+func (h LoggerCommandDecorator[CTX, C]) Handle(ctx CTX, cmd C) error {
 	return h.base.Handle(ctx, cmd)
-
 }
