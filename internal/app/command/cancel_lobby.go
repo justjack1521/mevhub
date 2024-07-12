@@ -8,6 +8,7 @@ import (
 )
 
 type CancelLobbyCommand struct {
+	BasicCommand
 }
 
 func (c CancelLobbyCommand) CommandName() string {
@@ -35,7 +36,7 @@ func NewCancelLobbyCommandHandler(publisher *mevent.Publisher, sessions session.
 	return &CancelLobbyCommandHandler{EventPublisher: publisher, SessionRepository: sessions, InstanceRepository: instances, ParticipantRepository: participants}
 }
 
-func (h *CancelLobbyCommandHandler) Handle(ctx Context, cmd CancelLobbyCommand) error {
+func (h *CancelLobbyCommandHandler) Handle(ctx Context, cmd *CancelLobbyCommand) error {
 
 	current, err := h.SessionRepository.QueryByID(ctx, ctx.UserID())
 	if err != nil {
@@ -55,7 +56,7 @@ func (h *CancelLobbyCommandHandler) Handle(ctx Context, cmd CancelLobbyCommand) 
 		return ErrFailedHandleCancelLobbyCommand(err)
 	}
 
-	h.EventPublisher.Notify(lobby.NewInstanceDeletedEvent(ctx, current.LobbyID))
+	cmd.QueueEvent(lobby.NewInstanceDeletedEvent(ctx, current.LobbyID))
 
 	participants, err := h.ParticipantRepository.QueryAllForLobby(ctx, current.LobbyID)
 	if err != nil {
@@ -66,7 +67,7 @@ func (h *CancelLobbyCommandHandler) Handle(ctx Context, cmd CancelLobbyCommand) 
 		if err := h.ParticipantRepository.Delete(ctx, participant); err != nil {
 			return err
 		}
-		h.EventPublisher.Notify(lobby.NewParticipantDeletedEvent(ctx, participant.ClientID, participant.PlayerID, participant.LobbyID, participant.PlayerSlot))
+		cmd.QueueEvent(lobby.NewParticipantDeletedEvent(ctx, participant.ClientID, participant.PlayerID, participant.LobbyID, participant.PlayerSlot))
 	}
 
 	return nil

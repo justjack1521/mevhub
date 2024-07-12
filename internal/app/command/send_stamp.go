@@ -9,6 +9,7 @@ import (
 )
 
 type SendStampCommand struct {
+	BasicCommand
 	StampID uuid.UUID
 }
 
@@ -29,7 +30,7 @@ func NewSendStampCommandHandler(publisher *mevent.Publisher, sessions session.In
 	return &SendStampCommandHandler{EventPublisher: publisher, SessionRepository: sessions}
 }
 
-func (h *SendStampCommandHandler) Handle(ctx Context, cmd SendStampCommand) error {
+func (h *SendStampCommandHandler) Handle(ctx Context, cmd *SendStampCommand) error {
 
 	current, err := h.SessionRepository.QueryByID(ctx, ctx.UserID())
 	if err != nil {
@@ -47,8 +48,7 @@ func (h *SendStampCommandHandler) Handle(ctx Context, cmd SendStampCommand) erro
 		return err
 	}
 
-	var message = consumer.NewLobbyClientNotificationEvent(ctx, protomulti.MultiNotificationType_STAMP_SEND, current.LobbyID, bytes)
-	h.EventPublisher.Notify(message)
+	cmd.QueueEvent(consumer.NewLobbyClientNotificationEvent(ctx, protomulti.MultiNotificationType_STAMP_SEND, current.LobbyID, bytes))
 
 	return nil
 

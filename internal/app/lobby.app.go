@@ -78,16 +78,16 @@ func NewLobbyApplication(core *CoreApplication) *LobbyApplication {
 	return application
 }
 
-type CreateSessionCommandHandler decorator.CommandHandler[command.Context, command.CreateSessionCommand]
-type EndSessionCommandHandler decorator.CommandHandler[command.Context, command.EndSessionCommand]
-type CreateLobbyCommandHandler decorator.CommandHandler[command.Context, command.CreateLobbyCommand]
-type CancelLobbyCommandHandler decorator.CommandHandler[command.Context, command.CancelLobbyCommand]
-type WatchLobbyCommandHandler decorator.CommandHandler[command.Context, command.WatchLobbyCommand]
-type JoinLobbyCommandHandler decorator.CommandHandler[command.Context, command.JoinLobbyCommand]
-type LeaveLobbyCommandHandler decorator.CommandHandler[command.Context, command.LeaveLobbyCommand]
-type ReadyLobbyCommandHandler decorator.CommandHandler[command.Context, command.ReadyLobbyCommand]
-type UnreadyLobbyCommandHandler decorator.CommandHandler[command.Context, command.UnreadyLobbyCommand]
-type SendStampCommandHandler decorator.CommandHandler[command.Context, command.SendStampCommand]
+type CreateSessionCommandHandler decorator.CommandHandler[command.Context, *command.CreateSessionCommand]
+type EndSessionCommandHandler decorator.CommandHandler[command.Context, *command.EndSessionCommand]
+type CreateLobbyCommandHandler decorator.CommandHandler[command.Context, *command.CreateLobbyCommand]
+type CancelLobbyCommandHandler decorator.CommandHandler[command.Context, *command.CancelLobbyCommand]
+type WatchLobbyCommandHandler decorator.CommandHandler[command.Context, *command.WatchLobbyCommand]
+type JoinLobbyCommandHandler decorator.CommandHandler[command.Context, *command.JoinLobbyCommand]
+type LeaveLobbyCommandHandler decorator.CommandHandler[command.Context, *command.LeaveLobbyCommand]
+type ReadyLobbyCommandHandler decorator.CommandHandler[command.Context, *command.ReadyLobbyCommand]
+type UnreadyLobbyCommandHandler decorator.CommandHandler[command.Context, *command.UnreadyLobbyCommand]
+type SendStampCommandHandler decorator.CommandHandler[command.Context, *command.SendStampCommand]
 
 type SearchLobbyQueryHandler decorator.QueryHandler[query.Context, query.SearchLobbyQuery, []lobby.Summary]
 type SearchPlayerQueryHandler decorator.QueryHandler[query.Context, query.SearchPlayerQuery, lobby.PlayerSummary]
@@ -104,50 +104,50 @@ func (a *LobbyApplication) NewSearchPlayerQueryHandler(core *CoreApplication) Se
 
 func (a *LobbyApplication) NewCreateSessionCommandHandler(core *CoreApplication) CreateSessionCommandHandler {
 	var actual = command.NewCreateSessionCommandHandler(core.Services.EventPublisher, core.data.SessionInstance)
-	return actual
+	return decorator.NewStandardCommandDecorator[command.Context, *command.CreateSessionCommand](core.Services.EventPublisher, actual)
 }
 
 func (a *LobbyApplication) NewEndSessionCommandHandler(core *CoreApplication) EndSessionCommandHandler {
 	var actual = command.NewEndSessionCommandHandler(core.Services.EventPublisher, core.data.SessionInstance, core.data.SessionInstance)
-	return actual
+	return decorator.NewStandardCommandDecorator[command.Context, *command.EndSessionCommand](core.Services.EventPublisher, actual)
 }
 
 func (a *LobbyApplication) NewCreateLobbyCommandHandler(core *CoreApplication) CreateLobbyCommandHandler {
 	var actual = command.NewCreateLobbyCommandHandler(core.Services.EventPublisher, core.data.LobbyInstance, core.repositories.Quests, core.data.LobbyParticipant)
-	return actual
+	return decorator.NewStandardCommandDecorator[command.Context, *command.CreateLobbyCommand](core.Services.EventPublisher, actual)
 }
 
 func (a *LobbyApplication) NewCancelLobbyCommandHandler(core *CoreApplication) CancelLobbyCommandHandler {
 	var actual = command.NewCancelLobbyCommandHandler(core.Services.EventPublisher, core.data.SessionInstance, core.data.LobbyInstance, core.data.LobbyParticipant)
-	return actual
+	return decorator.NewStandardCommandDecorator[command.Context, *command.CancelLobbyCommand](core.Services.EventPublisher, actual)
 }
 
 func (a *LobbyApplication) NewWatchLobbyCommandHandler(core *CoreApplication) WatchLobbyCommandHandler {
 	var actual = command.NewWatchLobbyCommandHandler(core.Services.EventPublisher)
-	return actual
+	return decorator.NewStandardCommandDecorator[command.Context, *command.WatchLobbyCommand](core.Services.EventPublisher, actual)
 }
 
 func (a *LobbyApplication) NewJoinLobbyCommandHandler(core *CoreApplication) JoinLobbyCommandHandler {
 	var actual = command.NewJoinLobbyCommandHandler(core.Services.EventPublisher, core.data.LobbyInstance, core.data.LobbyParticipant)
-	return actual
+	return decorator.NewStandardCommandDecorator[command.Context, *command.JoinLobbyCommand](core.Services.EventPublisher, actual)
 }
 
 func (a *LobbyApplication) NewLeaveLobbyCommand(core *CoreApplication) LeaveLobbyCommandHandler {
 	var actual = command.NewLeaveLobbyCommandHandler(core.Services.EventPublisher, core.data.SessionInstance, core.data.LobbyParticipant)
-	return actual
+	return decorator.NewStandardCommandDecorator[command.Context, *command.LeaveLobbyCommand](core.Services.EventPublisher, actual)
 }
 
 func (a *LobbyApplication) NewReadyLobbyCommandHandler(core *CoreApplication) ReadyLobbyCommandHandler {
 	var actual = command.NewReadyLobbyCommandHandler(core.Services.EventPublisher, core.data.SessionInstance, core.data.LobbyInstance, core.data.LobbyParticipant)
-	return actual
+	return decorator.NewStandardCommandDecorator[command.Context, *command.ReadyLobbyCommand](core.Services.EventPublisher, actual)
 }
 
 func (a *LobbyApplication) NewUnreadyLobbyCommandHandler(core *CoreApplication) UnreadyLobbyCommandHandler {
 	var actual = command.NewUnreadyLobbyCommandHandler(core.Services.EventPublisher, core.data.SessionInstance, core.data.LobbyInstance, core.data.LobbyParticipant)
-	return actual
+	return decorator.NewStandardCommandDecorator[command.Context, *command.UnreadyLobbyCommand](core.Services.EventPublisher, actual)
 }
 
 func (a *LobbyApplication) NewSendStampCommandHandler(core *CoreApplication) SendStampCommandHandler {
 	var actual = command.NewSendStampCommandHandler(core.Services.EventPublisher, core.data.SessionInstance)
-	return actual
+	return decorator.NewStandardCommandDecorator[command.Context, *command.SendStampCommand](core.Services.EventPublisher, actual)
 }

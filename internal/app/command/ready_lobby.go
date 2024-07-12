@@ -8,6 +8,7 @@ import (
 )
 
 type ReadyLobbyCommand struct {
+	BasicCommand
 	LobbyID   uuid.UUID
 	DeckIndex int
 }
@@ -31,7 +32,7 @@ func NewReadyLobbyCommandHandler(publisher *mevent.Publisher, sessions session.I
 	return &ReadyLobbyCommandHandler{EventPublisher: publisher, SessionRepository: sessions, InstanceRepository: instances, ParticipantRepository: participants}
 }
 
-func (h *ReadyLobbyCommandHandler) Handle(ctx Context, cmd ReadyLobbyCommand) error {
+func (h *ReadyLobbyCommandHandler) Handle(ctx Context, cmd *ReadyLobbyCommand) error {
 
 	current, err := h.SessionRepository.QueryByID(ctx, ctx.UserID())
 	if err != nil {
@@ -55,10 +56,10 @@ func (h *ReadyLobbyCommandHandler) Handle(ctx Context, cmd ReadyLobbyCommand) er
 		return err
 	}
 
-	h.EventPublisher.Notify(lobby.NewParticipantReadyEvent(ctx, ctx.UserID(), current.LobbyID, participant.DeckIndex, participant.PlayerSlot))
+	cmd.QueueEvent(lobby.NewParticipantReadyEvent(ctx, ctx.UserID(), current.LobbyID, participant.DeckIndex, participant.PlayerSlot))
 
 	if participant.DeckIndex != cmd.DeckIndex {
-		h.EventPublisher.Notify(lobby.NewParticipantDeckChangeEvent(ctx, ctx.UserID(), ctx.PlayerID(), current.LobbyID, cmd.DeckIndex, participant.PlayerSlot))
+		cmd.QueueEvent(lobby.NewParticipantDeckChangeEvent(ctx, ctx.UserID(), ctx.PlayerID(), current.LobbyID, cmd.DeckIndex, participant.PlayerSlot))
 	}
 
 	return nil

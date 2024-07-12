@@ -10,6 +10,7 @@ import (
 )
 
 type CreateLobbyCommand struct {
+	BasicCommand
 	LobbyID   uuid.UUID
 	QuestID   uuid.UUID
 	PartyID   string
@@ -56,7 +57,7 @@ func NewCreateLobbyCommandHandler(publisher *mevent.Publisher, instances lobby.I
 	}
 }
 
-func (h *CreateLobbyCommandHandler) Handle(ctx Context, cmd CreateLobbyCommand) error {
+func (h *CreateLobbyCommandHandler) Handle(ctx Context, cmd *CreateLobbyCommand) error {
 
 	quest, err := h.QuestRepository.QueryByID(cmd.QuestID)
 	if err != nil {
@@ -81,6 +82,12 @@ func (h *CreateLobbyCommandHandler) Handle(ctx Context, cmd CreateLobbyCommand) 
 		return err
 	}
 
+	if err := h.InstanceRepository.Create(ctx, instance); err != nil {
+		return err
+	}
+
+	cmd.QueueEvent(lobby.NewInstanceCreatedEvent(ctx, instance.SysID, cmd.QuestID, cmd.PartyID, cmd.Comment, instance.MinimumPlayerLevel))
+
 	participant, err := h.ParticipantFactory.Create(ctx.UserID(), ctx.PlayerID(), instance, lobby.ParticipantFactoryOptions{
 		RoleID:     uuid.Nil,
 		SlotIndex:  0,
@@ -91,17 +98,11 @@ func (h *CreateLobbyCommandHandler) Handle(ctx Context, cmd CreateLobbyCommand) 
 		return err
 	}
 
-	if err := h.InstanceRepository.Create(ctx, instance); err != nil {
-		return err
-	}
-
-	h.EventPublisher.Notify(lobby.NewInstanceCreatedEvent(ctx, instance.SysID, cmd.QuestID, cmd.PartyID, cmd.Comment, instance.MinimumPlayerLevel))
-
 	if err := h.ParticipantRepository.Create(ctx, participant); err != nil {
 		return err
 	}
 
-	h.EventPublisher.Notify(lobby.NewParticipantCreatedEvent(ctx, participant.ClientID, participant.PlayerID, participant.LobbyID, participant.DeckIndex, participant.PlayerSlot))
+	cmd.QueueEvent(lobby.NewParticipantCreatedEvent(ctx, participant.ClientID, participant.PlayerID, participant.LobbyID, participant.DeckIndex, participant.PlayerSlot))
 
 	return nil
 

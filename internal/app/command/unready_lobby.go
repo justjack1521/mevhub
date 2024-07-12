@@ -8,6 +8,7 @@ import (
 )
 
 type UnreadyLobbyCommand struct {
+	BasicCommand
 	LobbyID uuid.UUID
 }
 
@@ -30,7 +31,7 @@ func NewUnreadyLobbyCommandHandler(publisher *mevent.Publisher, sessions session
 	return &UnreadyLobbyCommandHandler{EventPublisher: publisher, SessionRepository: sessions, InstanceRepository: instances, ParticipantRepository: participants}
 }
 
-func (h *UnreadyLobbyCommandHandler) Handle(ctx Context, cmd UnreadyLobbyCommand) error {
+func (h *UnreadyLobbyCommandHandler) Handle(ctx Context, cmd *UnreadyLobbyCommand) error {
 
 	current, err := h.SessionRepository.QueryByID(ctx, ctx.UserID())
 	if err != nil {
@@ -50,7 +51,7 @@ func (h *UnreadyLobbyCommandHandler) Handle(ctx Context, cmd UnreadyLobbyCommand
 		return err
 	}
 
-	h.EventPublisher.Notify(lobby.NewParticipantUnreadyEvent(ctx, current.ClientID, current.LobbyID, current.PartySlot))
+	cmd.QueueEvent(lobby.NewParticipantUnreadyEvent(ctx, current.ClientID, current.LobbyID, current.PartySlot))
 
 	return nil
 

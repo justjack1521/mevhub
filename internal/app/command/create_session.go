@@ -6,6 +6,7 @@ import (
 )
 
 type CreateSessionCommand struct {
+	BasicCommand
 }
 
 func NewCreateSessionCommand() CreateSessionCommand {
@@ -25,7 +26,7 @@ func NewCreateSessionCommandHandler(publisher *mevent.Publisher, sessions sessio
 	return &CreateSessionCommandHandler{EventPublisher: publisher, SessionRepository: sessions}
 }
 
-func (h *CreateSessionCommandHandler) Handle(ctx Context, cmd CreateSessionCommand) error {
+func (h *CreateSessionCommandHandler) Handle(ctx Context, cmd *CreateSessionCommand) error {
 
 	var instance = &session.Instance{
 		ClientID: ctx.UserID(),
@@ -36,7 +37,7 @@ func (h *CreateSessionCommandHandler) Handle(ctx Context, cmd CreateSessionComma
 		return err
 	}
 
-	h.EventPublisher.Notify(session.NewInstanceCreatedEvent(ctx, instance.ClientID, instance.PlayerID))
+	cmd.QueueEvent(session.NewInstanceCreatedEvent(ctx, instance.ClientID, instance.PlayerID))
 
 	return nil
 

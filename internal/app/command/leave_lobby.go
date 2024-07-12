@@ -7,6 +7,7 @@ import (
 )
 
 type LeaveLobbyCommand struct {
+	BasicCommand
 }
 
 func (c LeaveLobbyCommand) CommandName() string {
@@ -27,7 +28,7 @@ func NewLeaveLobbyCommandHandler(publisher *mevent.Publisher, sessions session.I
 	return &LeaveLobbyCommandHandler{EventPublisher: publisher, SessionRepository: sessions, ParticipantRepository: participants}
 }
 
-func (h *LeaveLobbyCommandHandler) Handle(ctx Context, cmd LeaveLobbyCommand) error {
+func (h *LeaveLobbyCommandHandler) Handle(ctx Context, cmd *LeaveLobbyCommand) error {
 
 	current, err := h.SessionRepository.QueryByID(ctx, ctx.UserID())
 
@@ -40,7 +41,7 @@ func (h *LeaveLobbyCommandHandler) Handle(ctx Context, cmd LeaveLobbyCommand) er
 		return err
 	}
 
-	h.EventPublisher.Notify(lobby.NewParticipantDeletedEvent(ctx, participant.ClientID, participant.PlayerID, participant.LobbyID, participant.PlayerSlot))
+	cmd.QueueEvent(lobby.NewParticipantDeletedEvent(ctx, participant.ClientID, participant.PlayerID, participant.LobbyID, participant.PlayerSlot))
 
 	return nil
 

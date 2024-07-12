@@ -7,6 +7,7 @@ import (
 )
 
 type JoinLobbyCommand struct {
+	BasicCommand
 	LobbyID    uuid.UUID
 	DeckIndex  int
 	SlotIndex  int
@@ -39,7 +40,7 @@ func NewJoinLobbyCommandHandler(publishes *mevent.Publisher, instances lobby.Ins
 	return &JoinLobbyCommandHandler{EventPublisher: publishes, InstanceRepository: instances, ParticipantRepository: participants, ParticipantFactory: lobby.ParticipantFactory{}}
 }
 
-func (h *JoinLobbyCommandHandler) Handle(ctx Context, cmd JoinLobbyCommand) error {
+func (h *JoinLobbyCommandHandler) Handle(ctx Context, cmd *JoinLobbyCommand) error {
 
 	instance, err := h.InstanceRepository.QueryByID(ctx, cmd.LobbyID)
 	if err != nil {
@@ -61,7 +62,7 @@ func (h *JoinLobbyCommandHandler) Handle(ctx Context, cmd JoinLobbyCommand) erro
 		return err
 	}
 
-	h.EventPublisher.Notify(lobby.NewParticipantCreatedEvent(ctx, participant.ClientID, participant.PlayerID, participant.LobbyID, participant.DeckIndex, participant.PlayerSlot))
+	cmd.QueueEvent(lobby.NewParticipantCreatedEvent(ctx, participant.ClientID, participant.PlayerID, participant.LobbyID, participant.DeckIndex, participant.PlayerSlot))
 
 	return nil
 

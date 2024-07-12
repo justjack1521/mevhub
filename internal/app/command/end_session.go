@@ -6,6 +6,7 @@ import (
 )
 
 type EndSessionCommand struct {
+	BasicCommand
 }
 
 func (e EndSessionCommand) CommandName() string {
@@ -26,7 +27,7 @@ func NewEndSessionCommandHandler(publisher *mevent.Publisher, read session.Insta
 	return &EndSessionCommandHandler{EventPublisher: publisher, SessionReadRepository: read, SessionWriteRepository: write}
 }
 
-func (h *EndSessionCommandHandler) Handle(ctx Context, cmd EndSessionCommand) error {
+func (h *EndSessionCommandHandler) Handle(ctx Context, cmd *EndSessionCommand) error {
 
 	instance, err := h.SessionReadRepository.QueryByID(ctx, ctx.UserID())
 	if err != nil {
@@ -37,7 +38,7 @@ func (h *EndSessionCommandHandler) Handle(ctx Context, cmd EndSessionCommand) er
 		return err
 	}
 
-	h.EventPublisher.Notify(session.NewInstanceDeletedEvent(ctx, instance.ClientID, instance.ClientID, instance.PlayerID))
+	cmd.QueueEvent(session.NewInstanceDeletedEvent(ctx, instance.ClientID, instance.ClientID, instance.PlayerID))
 
 	return nil
 
