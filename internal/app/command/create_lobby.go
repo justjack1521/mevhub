@@ -88,21 +88,31 @@ func (h *CreateLobbyCommandHandler) Handle(ctx Context, cmd *CreateLobbyCommand)
 
 	cmd.QueueEvent(lobby.NewInstanceCreatedEvent(ctx, instance.SysID, cmd.QuestID, cmd.PartyID, cmd.Comment, instance.MinimumPlayerLevel))
 
-	participant, err := h.ParticipantFactory.Create(ctx.UserID(), ctx.PlayerID(), instance, lobby.ParticipantFactoryOptions{
-		RoleID:     uuid.Nil,
-		SlotIndex:  0,
-		DeckIndex:  cmd.DeckIndex,
-		UseStamina: true,
-	})
-	if err != nil {
-		return err
-	}
+	for i := 0; i < instance.PlayerSlotCount; i++ {
 
-	if err := h.ParticipantRepository.Create(ctx, participant); err != nil {
-		return err
-	}
+		var part = lobby.ParticipantJoinOptions{
+			RoleID:     uuid.Nil,
+			SlotIndex:  i,
+			DeckIndex:  0,
+			UseStamina: false,
+		}
 
-	cmd.QueueEvent(lobby.NewParticipantCreatedEvent(ctx, participant.ClientID, participant.PlayerID, participant.LobbyID, participant.DeckIndex, participant.PlayerSlot))
+		if i == 0 {
+			part.DeckIndex = cmd.DeckIndex
+			part.UseStamina = true
+		}
+
+		participant, err := h.ParticipantFactory.Create(ctx.UserID(), ctx.PlayerID(), instance, opts.SlotRestrictions[0], part)
+		if err != nil {
+			return err
+		}
+
+		if err := h.ParticipantRepository.Create(ctx, participant); err != nil {
+			return err
+		}
+		cmd.QueueEvent(lobby.NewParticipantCreatedEvent(ctx, participant.UserID, participant.PlayerID, participant.LobbyID, participant.DeckIndex, participant.PlayerSlot))
+
+	}
 
 	return nil
 

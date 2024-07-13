@@ -36,7 +36,7 @@ func (h *SearchPlayerQueryHandler) Handle(ctx Context, qry SearchPlayerQuery) (l
 		return lobby.PlayerSummary{}, err
 	}
 
-	current, err := h.SessionRepository.QueryByID(ctx, participant.ClientID)
+	current, err := h.SessionRepository.QueryByID(ctx, participant.UserID)
 	if err != nil {
 		return lobby.PlayerSummary{}, err
 	}

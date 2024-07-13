@@ -47,14 +47,18 @@ func (h *JoinLobbyCommandHandler) Handle(ctx Context, cmd *JoinLobbyCommand) err
 		return err
 	}
 
-	participant, err := h.ParticipantFactory.Create(ctx.UserID(), ctx.PlayerID(), instance, lobby.ParticipantFactoryOptions{
-		RoleID:     uuid.Nil,
+	participant, err := h.ParticipantRepository.QueryParticipantForLobby(ctx, instance.SysID, cmd.SlotIndex)
+	if err != nil {
+		return err
+	}
+
+	if err := participant.SetPlayer(ctx.UserID(), ctx.PlayerID(), lobby.ParticipantJoinOptions{
+		RoleID:     uuid.UUID{},
 		SlotIndex:  cmd.SlotIndex,
 		DeckIndex:  cmd.DeckIndex,
 		UseStamina: cmd.UseStamina,
 		FromInvite: cmd.FromInvite,
-	})
-	if err != nil {
+	}); err != nil {
 		return err
 	}
 
@@ -62,7 +66,7 @@ func (h *JoinLobbyCommandHandler) Handle(ctx Context, cmd *JoinLobbyCommand) err
 		return err
 	}
 
-	cmd.QueueEvent(lobby.NewParticipantCreatedEvent(ctx, participant.ClientID, participant.PlayerID, participant.LobbyID, participant.DeckIndex, participant.PlayerSlot))
+	cmd.QueueEvent(lobby.NewParticipantCreatedEvent(ctx, participant.UserID, participant.PlayerID, participant.LobbyID, participant.DeckIndex, participant.PlayerSlot))
 
 	return nil
 

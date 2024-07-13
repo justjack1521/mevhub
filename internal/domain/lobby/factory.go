@@ -25,13 +25,14 @@ type InstanceFactoryOptions struct {
 type PlayerSlotRestriction struct {
 	Index           int
 	RoleRestriction uuid.UUID
-	FromInvite      bool
+	InviteOnly      bool
 	Locked          bool
+	BotControl      bool
 }
 
 func (f InstanceFactory) Create(id uuid.UUID, party string, options InstanceFactoryOptions) (*Instance, error) {
 
-	instance, err := NewInstance(id, party)
+	instance, err := NewInstance(id, party, options)
 	if err != nil {
 		return nil, err
 	}
@@ -46,17 +47,6 @@ func (f InstanceFactory) Create(id uuid.UUID, party string, options InstanceFact
 		return nil, err
 	}
 
-	instance.PlayerSlots = make([]PlayerSlot, options.PlayerSlots)
-
-	for index := range instance.PlayerSlots {
-		restriction, _ := options.SlotRestrictions[index]
-		participant, err := instance.NewPlayerSlot(index, restriction)
-		if err != nil {
-			return nil, err
-		}
-		instance.PlayerSlots[index] = participant
-	}
-
 	return instance, nil
 
 }
@@ -64,7 +54,7 @@ func (f InstanceFactory) Create(id uuid.UUID, party string, options InstanceFact
 type ParticipantFactory struct {
 }
 
-type ParticipantFactoryOptions struct {
+type ParticipantJoinOptions struct {
 	RoleID     uuid.UUID
 	SlotIndex  int
 	DeckIndex  int
@@ -72,14 +62,12 @@ type ParticipantFactoryOptions struct {
 	FromInvite bool
 }
 
-func (f ParticipantFactory) Create(client, player uuid.UUID, instance *Instance, options ParticipantFactoryOptions) (*Participant, error) {
+func (f ParticipantFactory) Create(client, player uuid.UUID, instance *Instance, restriction PlayerSlotRestriction, options ParticipantJoinOptions) (*Participant, error) {
 
-	participant, err := instance.NewPlayerParticipant(client, player, options.SlotIndex)
+	participant, err := instance.NewPlayerParticipant(client, player, restriction, options)
 	if err != nil {
 		return nil, err
 	}
-
-	participant.FromInvite = options.FromInvite
 
 	if err := participant.SetRole(player, options.RoleID); err != nil {
 		return nil, err

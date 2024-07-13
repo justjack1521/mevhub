@@ -67,7 +67,7 @@ func (h *CancelLobbyCommandHandler) Handle(ctx Context, cmd *CancelLobbyCommand)
 		if err := h.ParticipantRepository.Delete(ctx, participant); err != nil {
 			return err
 		}
-		cmd.QueueEvent(lobby.NewParticipantDeletedEvent(ctx, participant.ClientID, participant.PlayerID, participant.LobbyID, participant.PlayerSlot))
+		cmd.QueueEvent(lobby.NewParticipantDeletedEvent(ctx, participant.UserID, participant.PlayerID, participant.LobbyID, participant.PlayerSlot))
 	}
 
 	return nil

@@ -41,7 +41,7 @@ func (h *LeaveLobbyCommandHandler) Handle(ctx Context, cmd *LeaveLobbyCommand) e
 		return err
 	}
 
-	cmd.QueueEvent(lobby.NewParticipantDeletedEvent(ctx, participant.ClientID, participant.PlayerID, participant.LobbyID, participant.PlayerSlot))
+	cmd.QueueEvent(lobby.NewParticipantDeletedEvent(ctx, participant.UserID, participant.PlayerID, participant.LobbyID, participant.PlayerSlot))
 
 	return nil
 

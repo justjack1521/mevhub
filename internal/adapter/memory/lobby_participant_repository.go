@@ -11,7 +11,7 @@ import (
 	"strings"
 )
 
-const lobbyKey = "lobby_participant"
+const lobbyParticipantKey = "lobby_participant"
 const lobbyKeySeparator = ":"
 
 type LobbyParticipantRedisRepository struct {
@@ -138,7 +138,7 @@ func (r *LobbyParticipantRedisRepository) ParticipantToTransfer(participant *lob
 		return dto.LobbyParticipantRedis{}, lobby.ErrParticipantNil
 	}
 	var result = dto.LobbyParticipantRedis{
-		ClientID:        participant.ClientID.String(),
+		ClientID:        participant.UserID.String(),
 		PlayerID:        participant.PlayerID.String(),
 		LobbyID:         participant.LobbyID.String(),
 		RoleRestriction: participant.RoleRestriction.String(),
@@ -155,9 +155,9 @@ func (r *LobbyParticipantRedisRepository) ParticipantToTransfer(participant *lob
 }
 
 func (r *LobbyParticipantRedisRepository) GenerateLobbyKey(id uuid.UUID) string {
-	return strings.Join([]string{serviceKey, lobbyKey, id.String(), "*"}, lobbyKeySeparator)
+	return strings.Join([]string{serviceKey, lobbyParticipantKey, id.String(), "*"}, lobbyKeySeparator)
 }
 
 func (r *LobbyParticipantRedisRepository) GenerateParticipantKey(id uuid.UUID, slot int) string {
-	return strings.Join([]string{serviceKey, lobbyKey, id.String(), strconv.Itoa(slot)}, lobbyKeySeparator)
+	return strings.Join([]string{serviceKey, lobbyParticipantKey, id.String(), strconv.Itoa(slot)}, lobbyKeySeparator)
 }

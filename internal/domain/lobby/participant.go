@@ -16,7 +16,7 @@ var (
 )
 
 type Participant struct {
-	ClientID        uuid.UUID
+	UserID          uuid.UUID
 	PlayerID        uuid.UUID
 	LobbyID         uuid.UUID
 	Role            uuid.UUID
@@ -28,10 +28,32 @@ type Participant struct {
 	UseStamina      bool
 	FromInvite      bool
 	Ready           bool
+	BotControl      bool
 }
 
 func (x *Participant) IsHost() bool {
 	return x.DeckIndex == 0
+}
+
+func (x *Participant) SetPlayer(user, player uuid.UUID, options ParticipantJoinOptions) error {
+
+	x.UserID = user
+	x.PlayerID = player
+
+	if err := x.SetRole(player, options.RoleID); err != nil {
+		return err
+	}
+
+	if err := x.SetUseStamina(player, options.UseStamina); err != nil {
+		return err
+	}
+
+	if err := x.SetDeckIndex(player, options.DeckIndex); err != nil {
+		return err
+	}
+
+	return nil
+
 }
 
 func (x *Participant) SetReady(player uuid.UUID, value bool) error {

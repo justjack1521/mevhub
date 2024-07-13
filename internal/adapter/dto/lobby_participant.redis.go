@@ -22,7 +22,7 @@ type LobbyParticipantRedis struct {
 
 func (x *LobbyParticipantRedis) ToEntity() *lobby.Participant {
 	return &lobby.Participant{
-		ClientID:        uuid.FromStringOrNil(x.ClientID),
+		UserID:          uuid.FromStringOrNil(x.ClientID),
 		PlayerID:        uuid.FromStringOrNil(x.PlayerID),
 		LobbyID:         uuid.FromStringOrNil(x.LobbyID),
 		RoleRestriction: uuid.FromStringOrNil(x.RoleRestriction),

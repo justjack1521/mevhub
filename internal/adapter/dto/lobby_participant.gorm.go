@@ -23,7 +23,7 @@ func (LobbyParticipantGorm) TableName() string {
 
 func (x *LobbyParticipantGorm) ToEntity() *lobby.Participant {
 	return &lobby.Participant{
-		ClientID:   x.ClientID,
+		UserID:     x.ClientID,
 		PlayerID:   x.PlayerID,
 		LobbyID:    x.GameInstanceID,
 		Role:       x.Role,

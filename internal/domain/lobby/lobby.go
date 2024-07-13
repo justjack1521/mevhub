@@ -23,19 +23,11 @@ type Instance struct {
 	PartyID            string
 	MinimumPlayerLevel int
 	Started            bool
+	PlayerSlotCount    int
 	RegisteredAt       time.Time
-	PlayerSlots        []PlayerSlot
 }
 
-type PlayerSlot struct {
-	Index           int
-	RoleRestriction uuid.UUID
-	InviteOnly      bool
-	BotControl      bool
-	Locked          bool
-}
-
-func NewInstance(id uuid.UUID, party string) (*Instance, error) {
+func NewInstance(id uuid.UUID, party string, options InstanceFactoryOptions) (*Instance, error) {
 
 	if id == uuid.Nil {
 		return nil, ErrFailedCreateNewInstance(ErrInstanceIDNil)
@@ -50,6 +42,7 @@ func NewInstance(id uuid.UUID, party string) (*Instance, error) {
 		MinimumPlayerLevel: 0,
 		PartyID:            party,
 		RegisteredAt:       time.Now().UTC(),
+		PlayerSlotCount:    options.PlayerSlots,
 	}, nil
 
 }
@@ -86,27 +79,23 @@ var (
 	}
 )
 
-func (x *Instance) NewPlayerSlot(slot int, restriction PlayerSlotRestriction) (PlayerSlot, error) {
-	if slot < 0 || slot >= len(x.PlayerSlots) {
-		return PlayerSlot{}, ErrFailedCreateNewParticipant(ErrInvalidPlayerSlot(slot, len(x.PlayerSlots)))
-	}
-	return PlayerSlot{
-		RoleRestriction: restriction.RoleRestriction,
-		InviteOnly:      restriction.FromInvite,
-		Locked:          restriction.Locked,
-		Index:           slot,
-	}, nil
-}
-
-func (x *Instance) NewPlayerParticipant(client, player uuid.UUID, slot int) (*Participant, error) {
-	if slot < 0 || slot >= len(x.PlayerSlots) {
-		return nil, ErrFailedCreateNewParticipant(ErrInvalidPlayerSlot(slot, len(x.PlayerSlots)))
+func (x *Instance) NewPlayerParticipant(client, player uuid.UUID, restriction PlayerSlotRestriction, options ParticipantJoinOptions) (*Participant, error) {
+	if options.SlotIndex < 0 || options.SlotIndex >= x.PlayerSlotCount {
+		return nil, ErrFailedCreateNewParticipant(ErrInvalidPlayerSlot(options.SlotIndex, x.PlayerSlotCount))
 	}
 	return &Participant{
-		ClientID:   client,
-		PlayerID:   player,
-		LobbyID:    x.SysID,
-		PlayerSlot: slot,
+		UserID:          client,
+		PlayerID:        player,
+		LobbyID:         x.SysID,
+		Role:            options.RoleID,
+		RoleRestriction: restriction.RoleRestriction,
+		InviteOnly:      restriction.InviteOnly,
+		Locked:          restriction.Locked,
+		PlayerSlot:      options.SlotIndex,
+		DeckIndex:       options.DeckIndex,
+		UseStamina:      options.UseStamina,
+		FromInvite:      options.FromInvite,
+		BotControl:      restriction.BotControl,
 	}, nil
 }
 
@@ -127,13 +116,8 @@ var (
 )
 
 func (x *Instance) CanAddParticipant(p *Participant) error {
-	if p.ClientID == x.HostID && p.PlayerSlot > 0 {
+	if p.UserID == x.HostID && p.PlayerSlot > 0 {
 		return ErrFailedAddParticipant(ErrHostCannotJoinOwnLobby)
-	}
-	for _, value := range x.PlayerSlots {
-		if value.InviteOnly && p.FromInvite == false {
-			return ErrFailedAddParticipant(ErrPlayerSlotInviteOnly(value.Index))
-		}
 	}
 	return nil
 }

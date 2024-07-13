@@ -57,7 +57,7 @@ func (r *LobbyParticipantDatabaseRepository) QueryAllForLobby(id uuid.UUID) ([]*
 
 func (r *LobbyParticipantDatabaseRepository) Create(participant *lobby.Participant) error {
 	var res = &dto.LobbyParticipantGorm{
-		ClientID:       participant.ClientID,
+		ClientID:       participant.UserID,
 		PlayerID:       participant.PlayerID,
 		GameInstanceID: participant.LobbyID,
 		PlayerSlot:     participant.PlayerSlot,
