@@ -123,14 +123,14 @@ func (x *Instance) CanAddParticipant(p *Participant) error {
 }
 
 var (
-	ErrClientNotLobbyHost = func(client uuid.UUID, id uuid.UUID) error {
-		return fmt.Errorf("client %s is not host of lobby %s", client, id)
+	ErrClientNotLobbyHost = func(user uuid.UUID, id uuid.UUID) error {
+		return fmt.Errorf("client %s is not host of lobby %s", user, id)
 	}
 )
 
-func (x *Instance) CanCancel(client uuid.UUID) error {
-	if x.HostID != client {
-		return ErrClientNotLobbyHost(client, x.HostID)
+func (x *Instance) CanCancel(user uuid.UUID) error {
+	if x.HostID != user {
+		return ErrClientNotLobbyHost(user, x.HostID)
 	}
 	return nil
 }

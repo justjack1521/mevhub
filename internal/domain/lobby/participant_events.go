@@ -56,10 +56,10 @@ func (e ParticipantReadyEvent) SlotIndex() int {
 }
 
 type ParticipantUnreadyEvent struct {
-	ctx    context.Context
-	client uuid.UUID
-	lobby  uuid.UUID
-	slot   int
+	ctx   context.Context
+	user  uuid.UUID
+	lobby uuid.UUID
+	slot  int
 }
 
 func (e ParticipantUnreadyEvent) Name() string {
@@ -69,7 +69,7 @@ func (e ParticipantUnreadyEvent) Name() string {
 func (e ParticipantUnreadyEvent) ToLogFields() logrus.Fields {
 	return logrus.Fields{
 		"event.name": e.Name(),
-		"client.id":  e.client,
+		"user.id":    e.user,
 		"lobby.id":   e.lobby,
 		"slot.index": e.slot,
 	}
@@ -87,20 +87,20 @@ func (e ParticipantUnreadyEvent) SlotIndex() int {
 	return e.slot
 }
 
-func NewParticipantUnreadyEvent(ctx context.Context, client uuid.UUID, lobby uuid.UUID, slot int) ParticipantUnreadyEvent {
-	return ParticipantUnreadyEvent{ctx: ctx, client: client, lobby: lobby, slot: slot}
+func NewParticipantUnreadyEvent(ctx context.Context, user uuid.UUID, lobby uuid.UUID, slot int) ParticipantUnreadyEvent {
+	return ParticipantUnreadyEvent{ctx: ctx, user: user, lobby: lobby, slot: slot}
 }
 
 type ParticipantDeletedEvent struct {
 	ctx    context.Context
-	client uuid.UUID
+	user   uuid.UUID
 	player uuid.UUID
 	lobby  uuid.UUID
 	slot   int
 }
 
-func NewParticipantDeletedEvent(ctx context.Context, client uuid.UUID, player uuid.UUID, lobby uuid.UUID, slot int) ParticipantDeletedEvent {
-	return ParticipantDeletedEvent{ctx: ctx, client: client, player: player, lobby: lobby, slot: slot}
+func NewParticipantDeletedEvent(ctx context.Context, user uuid.UUID, player uuid.UUID, lobby uuid.UUID, slot int) ParticipantDeletedEvent {
+	return ParticipantDeletedEvent{ctx: ctx, user: user, player: player, lobby: lobby, slot: slot}
 }
 
 func (e ParticipantDeletedEvent) Name() string {
@@ -110,7 +110,7 @@ func (e ParticipantDeletedEvent) Name() string {
 func (e ParticipantDeletedEvent) ToLogFields() logrus.Fields {
 	return logrus.Fields{
 		"event.name": e.Name(),
-		"client.id":  e.client,
+		"user.id":    e.user,
 		"player.id":  e.player,
 		"lobby.id":   e.lobby,
 	}
@@ -120,8 +120,8 @@ func (e ParticipantDeletedEvent) Context() context.Context {
 	return e.ctx
 }
 
-func (e ParticipantDeletedEvent) ClientID() uuid.UUID {
-	return e.client
+func (e ParticipantDeletedEvent) UserID() uuid.UUID {
+	return e.user
 }
 
 func (e ParticipantDeletedEvent) PlayerID() uuid.UUID {
@@ -138,7 +138,7 @@ func (e ParticipantDeletedEvent) SlotIndex() int {
 
 type ParticipantCreatedEvent struct {
 	ctx    context.Context
-	client uuid.UUID
+	user   uuid.UUID
 	player uuid.UUID
 	lobby  uuid.UUID
 	deck   int
@@ -146,7 +146,7 @@ type ParticipantCreatedEvent struct {
 }
 
 func NewParticipantCreatedEvent(ctx context.Context, client, player, lobby uuid.UUID, deck int, slot int) ParticipantCreatedEvent {
-	return ParticipantCreatedEvent{ctx: ctx, client: client, player: player, lobby: lobby, deck: deck, slot: slot}
+	return ParticipantCreatedEvent{ctx: ctx, user: client, player: player, lobby: lobby, deck: deck, slot: slot}
 }
 
 func (e ParticipantCreatedEvent) Name() string {
@@ -156,7 +156,7 @@ func (e ParticipantCreatedEvent) Name() string {
 func (e ParticipantCreatedEvent) ToLogFields() logrus.Fields {
 	return logrus.Fields{
 		"event.name": e.Name(),
-		"client.id":  e.client,
+		"user.id":    e.user,
 		"player.id":  e.player,
 		"lobby.id":   e.lobby,
 		"slot.index": e.slot,
@@ -171,8 +171,8 @@ func (e ParticipantCreatedEvent) LobbyID() uuid.UUID {
 	return e.lobby
 }
 
-func (e ParticipantCreatedEvent) ClientID() uuid.UUID {
-	return e.client
+func (e ParticipantCreatedEvent) UserID() uuid.UUID {
+	return e.user
 }
 
 func (e ParticipantCreatedEvent) PlayerID() uuid.UUID {
@@ -189,7 +189,7 @@ func (e ParticipantCreatedEvent) SlotIndex() int {
 
 type ParticipantDeckChangeEvent struct {
 	ctx    context.Context
-	client uuid.UUID
+	user   uuid.UUID
 	player uuid.UUID
 	id     uuid.UUID
 	deck   int
@@ -203,7 +203,7 @@ func (e ParticipantDeckChangeEvent) Name() string {
 func (e ParticipantDeckChangeEvent) ToLogFields() logrus.Fields {
 	return logrus.Fields{
 		"event.name": e.Name(),
-		"client.id":  e.client,
+		"user.id":    e.user,
 		"player.id":  e.player,
 		"lobby.id":   e.id,
 		"deck.index": e.deck,
@@ -214,8 +214,8 @@ func (e ParticipantDeckChangeEvent) Context() context.Context {
 	return e.ctx
 }
 
-func (e ParticipantDeckChangeEvent) ClientID() uuid.UUID {
-	return e.client
+func (e ParticipantDeckChangeEvent) UserID() uuid.UUID {
+	return e.user
 }
 
 func (e ParticipantDeckChangeEvent) PlayerID() uuid.UUID {
@@ -235,5 +235,5 @@ func (e ParticipantDeckChangeEvent) SlotIndex() int {
 }
 
 func NewParticipantDeckChangeEvent(ctx context.Context, client, player, id uuid.UUID, deck, slot int) ParticipantDeckChangeEvent {
-	return ParticipantDeckChangeEvent{ctx: ctx, client: client, player: player, id: id, deck: deck, slot: slot}
+	return ParticipantDeckChangeEvent{ctx: ctx, user: client, player: player, id: id, deck: deck, slot: slot}
 }

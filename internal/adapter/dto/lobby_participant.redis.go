@@ -6,7 +6,7 @@ import (
 )
 
 type LobbyParticipantRedis struct {
-	ClientID        string `redis:"UserID"`
+	UserID          string `redis:"UserID"`
 	PlayerID        string `redis:"PlayerID"`
 	LobbyID         string `redis:"LobbyID"`
 	Role            string `redis:"Role"`
@@ -22,7 +22,7 @@ type LobbyParticipantRedis struct {
 
 func (x *LobbyParticipantRedis) ToEntity() *lobby.Participant {
 	return &lobby.Participant{
-		UserID:          uuid.FromStringOrNil(x.ClientID),
+		UserID:          uuid.FromStringOrNil(x.UserID),
 		PlayerID:        uuid.FromStringOrNil(x.PlayerID),
 		LobbyID:         uuid.FromStringOrNil(x.LobbyID),
 		RoleRestriction: uuid.FromStringOrNil(x.RoleRestriction),
@@ -39,7 +39,7 @@ func (x *LobbyParticipantRedis) ToEntity() *lobby.Participant {
 
 func (x *LobbyParticipantRedis) ToMapStringInterface() map[string]interface{} {
 	return map[string]interface{}{
-		"UserID":          x.ClientID,
+		"UserID":          x.UserID,
 		"PlayerID":        x.PlayerID,
 		"LobbyID":         x.LobbyID,
 		"RoleRestriction": x.RoleRestriction,

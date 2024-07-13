@@ -16,7 +16,7 @@ func NewGameInstanceParticipantDatabaseRepository(db *gorm.DB) *LobbyParticipant
 }
 
 func (r *LobbyParticipantDatabaseRepository) QueryForClientID(id uuid.UUID) (*lobby.Participant, error) {
-	var cond = &dto.LobbyParticipantGorm{ClientID: id}
+	var cond = &dto.LobbyParticipantGorm{UserID: id}
 	var res = &dto.LobbyParticipantGorm{}
 	if err := r.database.Model(cond).First(res, cond).Error; err != nil {
 		return nil, err
@@ -57,7 +57,7 @@ func (r *LobbyParticipantDatabaseRepository) QueryAllForLobby(id uuid.UUID) ([]*
 
 func (r *LobbyParticipantDatabaseRepository) Create(participant *lobby.Participant) error {
 	var res = &dto.LobbyParticipantGorm{
-		ClientID:       participant.UserID,
+		UserID:         participant.UserID,
 		PlayerID:       participant.PlayerID,
 		GameInstanceID: participant.LobbyID,
 		PlayerSlot:     participant.PlayerSlot,

@@ -6,7 +6,7 @@ import (
 )
 
 type LobbyParticipantGorm struct {
-	ClientID       uuid.UUID `gorm:"column:client_id"`
+	UserID         uuid.UUID `gorm:"column:client_id"`
 	PlayerID       uuid.UUID `gorm:"column:player_id"`
 	GameInstanceID uuid.UUID `gorm:"column:game_instance"`
 	Role           uuid.UUID `gorm:"column:role"`
@@ -23,7 +23,7 @@ func (LobbyParticipantGorm) TableName() string {
 
 func (x *LobbyParticipantGorm) ToEntity() *lobby.Participant {
 	return &lobby.Participant{
-		UserID:     x.ClientID,
+		UserID:     x.UserID,
 		PlayerID:   x.PlayerID,
 		LobbyID:    x.GameInstanceID,
 		Role:       x.Role,

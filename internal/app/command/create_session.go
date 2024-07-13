@@ -29,7 +29,7 @@ func NewCreateSessionCommandHandler(publisher *mevent.Publisher, sessions sessio
 func (h *CreateSessionCommandHandler) Handle(ctx Context, cmd *CreateSessionCommand) error {
 
 	var instance = &session.Instance{
-		ClientID: ctx.UserID(),
+		UserID:   ctx.UserID(),
 		PlayerID: ctx.PlayerID(),
 	}
 
@@ -37,7 +37,7 @@ func (h *CreateSessionCommandHandler) Handle(ctx Context, cmd *CreateSessionComm
 		return err
 	}
 
-	cmd.QueueEvent(session.NewInstanceCreatedEvent(ctx, instance.ClientID, instance.PlayerID))
+	cmd.QueueEvent(session.NewInstanceCreatedEvent(ctx, instance.UserID, instance.PlayerID))
 
 	return nil
 

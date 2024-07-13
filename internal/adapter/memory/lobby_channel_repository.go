@@ -35,18 +35,18 @@ func (r *LobbyChannelRepository) QueryAllForLobby(ctx context.Context, id uuid.U
 	return members, nil
 }
 
-func (r *LobbyChannelRepository) Create(ctx context.Context, id uuid.UUID, client uuid.UUID) error {
+func (r *LobbyChannelRepository) Create(ctx context.Context, id uuid.UUID, user uuid.UUID) error {
 	var key = r.GenerateKeyForLobby(id)
-	if err := r.client.SAdd(ctx, key, client.String()).Err(); err != nil {
+	if err := r.client.SAdd(ctx, key, user.String()).Err(); err != nil {
 		return err
 	}
 	r.client.Expire(ctx, key, lobby.KeepAliveTime)
 	return nil
 }
 
-func (r *LobbyChannelRepository) Delete(ctx context.Context, id uuid.UUID, client uuid.UUID) error {
+func (r *LobbyChannelRepository) Delete(ctx context.Context, id uuid.UUID, user uuid.UUID) error {
 	var key = r.GenerateKeyForLobby(id)
-	if err := r.client.SRem(ctx, key, client.String()).Err(); err != nil {
+	if err := r.client.SRem(ctx, key, user.String()).Err(); err != nil {
 		return err
 	}
 	return nil

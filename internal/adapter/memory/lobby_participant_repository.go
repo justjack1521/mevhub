@@ -138,7 +138,7 @@ func (r *LobbyParticipantRedisRepository) ParticipantToTransfer(participant *lob
 		return dto.LobbyParticipantRedis{}, lobby.ErrParticipantNil
 	}
 	var result = dto.LobbyParticipantRedis{
-		ClientID:        participant.UserID.String(),
+		UserID:          participant.UserID.String(),
 		PlayerID:        participant.PlayerID.String(),
 		LobbyID:         participant.LobbyID.String(),
 		RoleRestriction: participant.RoleRestriction.String(),

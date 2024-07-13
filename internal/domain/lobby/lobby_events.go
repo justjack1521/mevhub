@@ -91,12 +91,12 @@ func (e InstanceDeletedEvent) LobbyID() uuid.UUID {
 type WatcherAddedEvent struct {
 	ctx    context.Context
 	id     uuid.UUID
-	client uuid.UUID
+	user   uuid.UUID
 	player uuid.UUID
 }
 
-func NewWatcherAddedEvent(ctx context.Context, id uuid.UUID, client uuid.UUID, player uuid.UUID) WatcherAddedEvent {
-	return WatcherAddedEvent{ctx: ctx, id: id, client: client, player: player}
+func NewWatcherAddedEvent(ctx context.Context, id uuid.UUID, user uuid.UUID, player uuid.UUID) WatcherAddedEvent {
+	return WatcherAddedEvent{ctx: ctx, id: id, user: user, player: player}
 }
 
 func (e WatcherAddedEvent) Name() string {
@@ -107,7 +107,7 @@ func (e WatcherAddedEvent) ToLogFields() logrus.Fields {
 	return logrus.Fields{
 		"event.name": e.Name(),
 		"lobby.id":   e.id,
-		"client.id":  e.client,
+		"user.id":    e.user,
 		"player.id":  e.player,
 	}
 }
@@ -116,8 +116,8 @@ func (e WatcherAddedEvent) Context() context.Context {
 	return e.ctx
 }
 
-func (e WatcherAddedEvent) ClientID() uuid.UUID {
-	return e.client
+func (e WatcherAddedEvent) UserID() uuid.UUID {
+	return e.user
 }
 
 func (e WatcherAddedEvent) PlayerID() uuid.UUID {

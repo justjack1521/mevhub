@@ -43,7 +43,7 @@ func (r *SessionInstanceRedisRepository) Create(ctx context.Context, instance *s
 		return err
 	}
 
-	var key = r.GenerateSessionKey(instance.ClientID)
+	var key = r.GenerateSessionKey(instance.UserID)
 
 	if err := r.client.HSet(ctx, key, result.ToMapStringInterface()).Err(); err != nil {
 		return err
@@ -57,7 +57,7 @@ func (r *SessionInstanceRedisRepository) Update(ctx context.Context, instance *s
 	if err != nil {
 		return err
 	}
-	var key = r.GenerateSessionKey(instance.ClientID)
+	var key = r.GenerateSessionKey(instance.UserID)
 
 	if err := r.client.HSet(ctx, key, result.ToMapStringInterface()).Err(); err != nil {
 		return err
@@ -67,7 +67,7 @@ func (r *SessionInstanceRedisRepository) Update(ctx context.Context, instance *s
 }
 
 func (r *SessionInstanceRedisRepository) Delete(ctx context.Context, instance *session.Instance) error {
-	if err := r.client.HDel(ctx, r.GenerateSessionKey(instance.ClientID)).Err(); err != nil {
+	if err := r.client.HDel(ctx, r.GenerateSessionKey(instance.UserID)).Err(); err != nil {
 		return err
 	}
 	return nil
@@ -78,7 +78,7 @@ func (r *SessionInstanceRedisRepository) InstanceToTransfer(instance *session.In
 		return dto.SessionInstanceRedis{}, errors.New("session instance is nil")
 	}
 	return dto.SessionInstanceRedis{
-		ClientID:  instance.ClientID.String(),
+		UserID:    instance.UserID.String(),
 		PlayerID:  instance.PlayerID.String(),
 		DeckIndex: instance.DeckIndex,
 		LobbyID:   instance.LobbyID.String(),

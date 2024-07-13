@@ -34,7 +34,7 @@ func (s *SessionLobbyWriter) Notify(event mevent.Event) {
 
 func (s *SessionLobbyWriter) HandleParticipantCreate(event lobby.ParticipantCreatedEvent) error {
 
-	instance, err := s.SessionRepository.QueryByID(event.Context(), event.ClientID())
+	instance, err := s.SessionRepository.QueryByID(event.Context(), event.UserID())
 	if err != nil {
 		return err
 	}
@@ -53,7 +53,7 @@ func (s *SessionLobbyWriter) HandleParticipantCreate(event lobby.ParticipantCrea
 
 func (s *SessionLobbyWriter) HandleParticipantDelete(event lobby.ParticipantDeletedEvent) error {
 
-	instance, err := s.SessionRepository.QueryByID(event.Context(), event.ClientID())
+	instance, err := s.SessionRepository.QueryByID(event.Context(), event.UserID())
 	if err != nil {
 		return err
 	}

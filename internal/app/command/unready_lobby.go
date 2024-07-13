@@ -51,7 +51,7 @@ func (h *UnreadyLobbyCommandHandler) Handle(ctx Context, cmd *UnreadyLobbyComman
 		return err
 	}
 
-	cmd.QueueEvent(lobby.NewParticipantUnreadyEvent(ctx, current.ClientID, current.LobbyID, current.PartySlot))
+	cmd.QueueEvent(lobby.NewParticipantUnreadyEvent(ctx, current.UserID, current.LobbyID, current.PartySlot))
 
 	return nil
 

@@ -7,12 +7,12 @@ import (
 
 type InstanceFactory struct {
 	ctx    context.Context
-	client uuid.UUID
+	user   uuid.UUID
 	player uuid.UUID
 }
 
-func NewInstanceFactory(ctx context.Context, client uuid.UUID) InstanceFactory {
-	return InstanceFactory{ctx: ctx, client: client}
+func NewInstanceFactory(ctx context.Context, user uuid.UUID) InstanceFactory {
+	return InstanceFactory{ctx: ctx, user: user}
 }
 
 type InstanceFactoryOptions struct {
@@ -37,7 +37,7 @@ func (f InstanceFactory) Create(id uuid.UUID, party string, options InstanceFact
 		return nil, err
 	}
 
-	instance.HostID = f.client
+	instance.HostID = f.user
 
 	if err := instance.SetQuestID(options.QuestID); err != nil {
 		return nil, err

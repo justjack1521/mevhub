@@ -5,7 +5,7 @@ import (
 )
 
 type Instance struct {
-	ClientID  uuid.UUID
+	UserID    uuid.UUID
 	PlayerID  uuid.UUID
 	LobbyID   uuid.UUID
 	PartySlot int

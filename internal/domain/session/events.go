@@ -16,12 +16,12 @@ type InstanceEvent interface {
 
 type InstanceCreatedEvent struct {
 	ctx    context.Context
-	client uuid.UUID
+	user   uuid.UUID
 	player uuid.UUID
 }
 
-func NewInstanceCreatedEvent(ctx context.Context, client uuid.UUID, player uuid.UUID) InstanceCreatedEvent {
-	return InstanceCreatedEvent{ctx: ctx, client: client, player: player}
+func NewInstanceCreatedEvent(ctx context.Context, user uuid.UUID, player uuid.UUID) InstanceCreatedEvent {
+	return InstanceCreatedEvent{ctx: ctx, user: user, player: player}
 }
 
 func (e InstanceCreatedEvent) Name() string {
@@ -31,7 +31,7 @@ func (e InstanceCreatedEvent) Name() string {
 func (e InstanceCreatedEvent) ToLogFields() logrus.Fields {
 	return logrus.Fields{
 		"event.name": e.Name(),
-		"client.id":  e.client,
+		"user.id":    e.user,
 		"player.id":  e.player,
 	}
 }
@@ -40,8 +40,8 @@ func (e InstanceCreatedEvent) Context() context.Context {
 	return e.ctx
 }
 
-func (e InstanceCreatedEvent) ClientID() uuid.UUID {
-	return e.client
+func (e InstanceCreatedEvent) UserID() uuid.UUID {
+	return e.user
 }
 
 func (e InstanceCreatedEvent) PlayerID() uuid.UUID {
@@ -51,12 +51,12 @@ func (e InstanceCreatedEvent) PlayerID() uuid.UUID {
 type InstanceDeletedEvent struct {
 	ctx    context.Context
 	id     uuid.UUID
-	client uuid.UUID
+	user   uuid.UUID
 	player uuid.UUID
 }
 
-func NewInstanceDeletedEvent(ctx context.Context, id uuid.UUID, client uuid.UUID, player uuid.UUID) InstanceDeletedEvent {
-	return InstanceDeletedEvent{ctx: ctx, id: id, client: client, player: player}
+func NewInstanceDeletedEvent(ctx context.Context, id uuid.UUID, user uuid.UUID, player uuid.UUID) InstanceDeletedEvent {
+	return InstanceDeletedEvent{ctx: ctx, id: id, user: user, player: player}
 }
 
 func (e InstanceDeletedEvent) Name() string {
@@ -67,7 +67,7 @@ func (e InstanceDeletedEvent) ToLogFields() logrus.Fields {
 	return logrus.Fields{
 		"event.name": e.Name(),
 		"session.id": e.id,
-		"client.id":  e.client,
+		"user.id":    e.user,
 		"player.id":  e.player,
 	}
 }
@@ -76,8 +76,8 @@ func (e InstanceDeletedEvent) Context() context.Context {
 	return e.ctx
 }
 
-func (e InstanceDeletedEvent) ClientID() uuid.UUID {
-	return e.client
+func (e InstanceDeletedEvent) UserID() uuid.UUID {
+	return e.user
 }
 
 func (e InstanceDeletedEvent) PlayerID() uuid.UUID {
