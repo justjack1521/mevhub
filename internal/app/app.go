@@ -103,7 +103,7 @@ func (a *CoreApplication) BuildDataRepos(db *gorm.DB, client *redis.Client, iden
 		LobbyParticipant:   memory.NewLobbyParticipantRedisRepository(client),
 		LobbySearch:        memory.NewLobbySearchRepository(client),
 		LobbySummary:       database.NewLobbySummaryDatabaseRepository(db),
-		LobbyPlayerSummary: cache.NewLobbyPlayerSummaryRepository(external.NewLobbyPlayerSummaryRepository(identity), memory.NewPlayerSummaryRepository(client, serial.LobbyPlayerSummaryJSONSerialiser{})),
+		LobbyPlayerSummary: cache.NewLobbyPlayerSummaryRepository(external.NewLobbyPlayerSummaryRepository(identity), memory.NewPlayerSummaryRepository(client, serial.NewLobbyPlayerSummaryJSONSerialiser())),
 		GameInstance:       database.NewGameInstanceDatabaseRepository(db),
 		GameSummary:        nil,
 		GamePlayerSummary:  nil,

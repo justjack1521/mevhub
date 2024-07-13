@@ -17,11 +17,15 @@ type LobbyPlayerSummarySerialiser interface {
 	Unmarshall(data []byte) (lobby.PlayerSummary, error)
 }
 
-type LobbyPlayerSummaryJSONSerialiser struct {
+type lobbyPlayerSummaryJSONSerialiser struct {
 	Factory translate.LobbyPlayerSummaryTranslator
 }
 
-func (s LobbyPlayerSummaryJSONSerialiser) Marshall(data lobby.PlayerSummary) ([]byte, error) {
+func NewLobbyPlayerSummaryJSONSerialiser() LobbyPlayerSummarySerialiser {
+	return lobbyPlayerSummaryJSONSerialiser{Factory: translate.NewLobbyPlayerSummaryTranslator()}
+}
+
+func (s lobbyPlayerSummaryJSONSerialiser) Marshall(data lobby.PlayerSummary) ([]byte, error) {
 	p, err := s.Factory.Marshall(data)
 	if err != nil {
 		return nil, err
@@ -29,7 +33,7 @@ func (s LobbyPlayerSummaryJSONSerialiser) Marshall(data lobby.PlayerSummary) ([]
 	return json.Marshal(p)
 }
 
-func (s LobbyPlayerSummaryJSONSerialiser) Unmarshall(data []byte) (lobby.PlayerSummary, error) {
+func (s lobbyPlayerSummaryJSONSerialiser) Unmarshall(data []byte) (lobby.PlayerSummary, error) {
 	if len(data) == 0 {
 		return lobby.PlayerSummary{}, ErrLobbyPlayerSummaryIsNil
 	}
