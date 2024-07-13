@@ -81,14 +81,14 @@ var (
 	ErrFailedCreateNewParticipant = func(err error) error {
 		return fmt.Errorf("failed to create new participant instance: %w", err)
 	}
-	ErrInvalidPlayerSlot = func(index int) error {
-		return fmt.Errorf("invalid player slot: %d", index)
+	ErrInvalidPlayerSlot = func(index int, max int) error {
+		return fmt.Errorf("invalid player slot: %d max slots: %d", index, max)
 	}
 )
 
 func (x *Instance) NewPlayerSlot(slot int, restriction PlayerSlotRestriction) (PlayerSlot, error) {
-	if slot < 0 || slot > len(x.PlayerSlots) {
-		return PlayerSlot{}, ErrFailedCreateNewParticipant(ErrInvalidPlayerSlot(slot))
+	if slot < 0 || slot >= len(x.PlayerSlots) {
+		return PlayerSlot{}, ErrFailedCreateNewParticipant(ErrInvalidPlayerSlot(slot, len(x.PlayerSlots)))
 	}
 	return PlayerSlot{
 		RoleRestriction: restriction.RoleRestriction,
@@ -99,8 +99,8 @@ func (x *Instance) NewPlayerSlot(slot int, restriction PlayerSlotRestriction) (P
 }
 
 func (x *Instance) NewPlayerParticipant(client, player uuid.UUID, slot int) (*Participant, error) {
-	if slot < 0 || slot > len(x.PlayerSlots) {
-		return nil, ErrFailedCreateNewParticipant(ErrInvalidPlayerSlot(slot))
+	if slot < 0 || slot >= len(x.PlayerSlots) {
+		return nil, ErrFailedCreateNewParticipant(ErrInvalidPlayerSlot(slot, len(x.PlayerSlots)))
 	}
 	return &Participant{
 		ClientID:   client,
