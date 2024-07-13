@@ -142,5 +142,5 @@ func (r *LobbySearchRedisRepository) GenerateKeysFromInstance(instance lobby.Sea
 }
 
 func (r *LobbySearchRedisRepository) GenerateIdentifierKey(identifier string) string {
-	return strings.Join([]string{LobbyKeyPrefix, identifier, LobbyKeySuffix}, LobbyKeyPrimarySeparator)
+	return strings.Join([]string{serviceKey, LobbyKeyPrefix, identifier, LobbyKeySuffix}, LobbyKeyPrimarySeparator)
 }

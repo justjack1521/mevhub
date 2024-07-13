@@ -6,6 +6,7 @@ import (
 	"github.com/justjack1521/mevconn"
 	services "github.com/justjack1521/mevium/pkg/genproto/service"
 	"github.com/justjack1521/mevium/pkg/server"
+	"github.com/justjack1521/mevrelic"
 	"github.com/justjack1521/mevrpc"
 	"github.com/newrelic/go-agent/v3/integrations/nrgrpc"
 	"github.com/sirupsen/logrus"
@@ -40,7 +41,7 @@ func main() {
 	}()
 
 	var interceptions []grpc.UnaryServerInterceptor
-	if application.Services.NewRelic != nil {
+	if application.Services.NewRelic != nil && application.Services.NewRelic.Application != nil {
 		interceptions = append(interceptions, nrgrpc.UnaryServerInterceptor(application.Services.NewRelic.Application))
 	}
 	interceptions = append(interceptions, mevrpc.IdentityExtractionUnaryServerInterceptor)
@@ -80,7 +81,12 @@ func NewApplication(ctx context.Context, logger *logrus.Logger) *app.CoreApplica
 		panic(fmt.Errorf("failed to connect to game client: %w", err))
 	}
 
-	return app.NewApplication(db, rds, logger, msg, identity)
+	nrl, err := mevrelic.NewRelicApplication()
+	if err != nil {
+		panic(err)
+	}
+
+	return app.NewApplication(db, rds, logger, msg, identity, app.ApplicationWithNewRelic(nrl))
 
 }
 

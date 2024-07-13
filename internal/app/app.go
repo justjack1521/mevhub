@@ -65,8 +65,6 @@ type ApplicationServices struct {
 	NewRelic           *mevrelic.NewRelic
 }
 
-type CoreApplicationConfigurationOption func(c *CoreApplication) *CoreApplication
-
 func New() *CoreApplication {
 	return &CoreApplication{}
 }
@@ -118,4 +116,16 @@ func (a *CoreApplication) BuildSubApps() *CoreApplication {
 	a.SubApplications.Game = NewGameApplication(a)
 	a.SubApplications.Lobby = NewLobbyApplication(a)
 	return a
+}
+
+type CoreApplicationConfigurationOption func(c *CoreApplication) *CoreApplication
+
+func ApplicationWithNewRelic(relic *mevrelic.NewRelic) CoreApplicationConfigurationOption {
+	return func(c *CoreApplication) *CoreApplication {
+		c.Services.NewRelic = relic
+		if c.Services.Logger != nil {
+			c.Services.NewRelic.Attach(c.Services.Logger)
+		}
+		return c
+	}
 }
