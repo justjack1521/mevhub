@@ -97,12 +97,17 @@ func (h *CreateLobbyCommandHandler) Handle(ctx Context, cmd *CreateLobbyCommand)
 			UseStamina: false,
 		}
 
+		var user = uuid.Nil
+		var player = uuid.Nil
+
 		if i == 0 {
 			part.DeckIndex = cmd.DeckIndex
 			part.UseStamina = true
+			user = ctx.UserID()
+			player = ctx.PlayerID()
 		}
 
-		participant, err := h.ParticipantFactory.Create(ctx.UserID(), ctx.PlayerID(), instance, opts.SlotRestrictions[0], part)
+		participant, err := h.ParticipantFactory.Create(user, player, instance, opts.SlotRestrictions[0], part)
 		if err != nil {
 			return err
 		}
@@ -110,7 +115,10 @@ func (h *CreateLobbyCommandHandler) Handle(ctx Context, cmd *CreateLobbyCommand)
 		if err := h.ParticipantRepository.Create(ctx, participant); err != nil {
 			return err
 		}
-		cmd.QueueEvent(lobby.NewParticipantCreatedEvent(ctx, participant.UserID, participant.PlayerID, participant.LobbyID, participant.DeckIndex, participant.PlayerSlot))
+
+		if uuid.Equal(player, uuid.Nil) == false {
+			cmd.QueueEvent(lobby.NewParticipantCreatedEvent(ctx, participant.UserID, participant.PlayerID, participant.LobbyID, participant.DeckIndex, participant.PlayerSlot))
+		}
 
 	}
 

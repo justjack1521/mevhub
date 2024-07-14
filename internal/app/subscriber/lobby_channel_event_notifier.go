@@ -66,6 +66,10 @@ func (s *LobbyChannelEventNotifier) HandleParticipantDeleted(event lobby.Partici
 
 func (s *LobbyChannelEventNotifier) HandleParticipantAdded(event lobby.ParticipantCreatedEvent) error {
 
+	if uuid.Equal(event.PlayerID(), uuid.Nil) {
+		return nil
+	}
+
 	summary, err := s.PlayerSummaryRepository.Query(event.Context(), event.PlayerID())
 	if err != nil {
 		return err
