@@ -9,7 +9,7 @@ import (
 type LobbyInstanceRedis struct {
 	SysID              string `redis:"SysID"`
 	QuestID            string `redis:"QuestID"`
-	HostID             string `redis:"HostID"`
+	HostPlayerID       string `redis:"HostPlayerID"`
 	PartyID            string `redis:"PartyID"`
 	MinimumPlayerLevel int    `redis:"MinimumPlayerLevel"`
 	Started            bool   `redis:"Started"`
@@ -22,7 +22,7 @@ func (x *LobbyInstanceRedis) ToEntity() *lobby.Instance {
 		SysID:              uuid.FromStringOrNil(x.SysID),
 		QuestID:            uuid.FromStringOrNil(x.QuestID),
 		PartyID:            x.PartyID,
-		HostID:             uuid.FromStringOrNil(x.HostID),
+		HostPlayerID:       uuid.FromStringOrNil(x.HostPlayerID),
 		MinimumPlayerLevel: x.MinimumPlayerLevel,
 		Started:            x.Started,
 		PlayerSlotCount:    x.PlayerSlotCount,
@@ -34,7 +34,7 @@ func (x *LobbyInstanceRedis) ToMapStringInterface() map[string]interface{} {
 	var result = map[string]interface{}{
 		"SysID":              x.SysID,
 		"QuestID":            x.QuestID,
-		"HostID":             x.HostID,
+		"HostPlayerID":       x.HostPlayerID,
 		"PartyID":            x.PartyID,
 		"MinimumPlayerLevel": x.MinimumPlayerLevel,
 		"Started":            x.Started,

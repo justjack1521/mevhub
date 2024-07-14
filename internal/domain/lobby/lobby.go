@@ -19,7 +19,7 @@ var (
 type Instance struct {
 	SysID              uuid.UUID
 	QuestID            uuid.UUID
-	HostID             uuid.UUID
+	HostPlayerID       uuid.UUID
 	PartyID            string
 	MinimumPlayerLevel int
 	Started            bool
@@ -74,7 +74,7 @@ func (x *Instance) SetMinPlayerLevel(level int) error {
 }
 
 func (x *Instance) StartLobby(player uuid.UUID) error {
-	if uuid.Equal(x.HostID, player) == false {
+	if uuid.Equal(x.HostPlayerID, player) == false {
 		return ErrNonHostPlayerCannotStartLobby(player)
 	}
 	x.Started = true
@@ -127,21 +127,21 @@ var (
 )
 
 func (x *Instance) CanAddParticipant(p *Participant) error {
-	if p.UserID == x.HostID && p.PlayerSlot > 0 {
+	if p.PlayerID == x.HostPlayerID && p.PlayerSlot > 0 {
 		return ErrFailedAddParticipant(ErrHostCannotJoinOwnLobby)
 	}
 	return nil
 }
 
 var (
-	ErrClientNotLobbyHost = func(user uuid.UUID, id uuid.UUID) error {
-		return fmt.Errorf("client %s is not host of lobby %s", user, id)
+	ErrPlayerNotLobbyHost = func(user uuid.UUID, id uuid.UUID) error {
+		return fmt.Errorf("player %s is not host of lobby %s", user, id)
 	}
 )
 
-func (x *Instance) CanCancel(user uuid.UUID) error {
-	if x.HostID != user {
-		return ErrClientNotLobbyHost(user, x.HostID)
+func (x *Instance) CanCancel(player uuid.UUID) error {
+	if x.HostPlayerID != player {
+		return ErrPlayerNotLobbyHost(player, x.HostPlayerID)
 	}
 	return nil
 }

@@ -69,7 +69,7 @@ func (r *LobbyInstanceRedisRepository) Create(ctx context.Context, instance *lob
 	var result = &dto.LobbyInstanceRedis{
 		SysID:              instance.SysID.String(),
 		QuestID:            instance.QuestID.String(),
-		HostID:             instance.HostID.String(),
+		HostPlayerID:       instance.HostPlayerID.String(),
 		PartyID:            instance.PartyID,
 		MinimumPlayerLevel: instance.MinimumPlayerLevel,
 		Started:            instance.Started,

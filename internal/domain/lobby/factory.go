@@ -37,7 +37,7 @@ func (f InstanceFactory) Create(id uuid.UUID, party string, options InstanceFact
 		return nil, err
 	}
 
-	instance.HostID = f.user
+	instance.HostPlayerID = f.player
 
 	if err := instance.SetQuestID(options.QuestID); err != nil {
 		return nil, err

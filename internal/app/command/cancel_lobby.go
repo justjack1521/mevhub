@@ -48,7 +48,7 @@ func (h *CancelLobbyCommandHandler) Handle(ctx Context, cmd *CancelLobbyCommand)
 		return ErrFailedHandleCancelLobbyCommand(err)
 	}
 
-	if err := instance.CanCancel(ctx.UserID()); err != nil {
+	if err := instance.CanCancel(ctx.PlayerID()); err != nil {
 		return ErrFailedHandleCancelLobbyCommand(err)
 	}
 
