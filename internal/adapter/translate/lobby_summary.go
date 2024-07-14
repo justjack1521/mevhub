@@ -174,15 +174,21 @@ func NewLobbyPlayerLoadoutTranslator() LobbyLoadoutTranslator {
 
 func (t lobbyPlayerLoadoutTranslator) Marshall(data lobby.PlayerLoadout) (out *protoidentity.ProtoPlayerLoadoutIdentity, err error) {
 	var result = &protoidentity.ProtoPlayerLoadoutIdentity{
-		JobCardId:       data.JobCard.JobCardID.String(),
-		SubJobIndex:     int32(data.JobCard.SubJobIndex),
-		WeaponId:        data.Weapon.WeaponID.String(),
-		SubWeaponUnlock: int32(data.Weapon.SubWeaponUnlock),
-		AbilityCards:    make([]*protoidentity.ProtoPlayerCardIdentity, len(data.AbilityCards)),
+		JobCard: &protoidentity.ProtoPlayerJobIdentity{
+			JobCardId:      data.JobCard.JobCardID.String(),
+			SubJobIndex:    int32(data.JobCard.SubJobIndex),
+			CrownLevel:     int32(data.JobCard.CrownLevel),
+			OverBoostLevel: int32(data.JobCard.OverBoostLevel),
+		},
+		Weapon: &protoidentity.ProtoPlayerWeaponIdentity{
+			WeaponId:        data.Weapon.WeaponID.String(),
+			SubWeaponUnlock: int32(data.Weapon.SubWeaponUnlock),
+		},
+		AbilityCards: make([]*protoidentity.ProtoAbilityCardIdentity, len(data.AbilityCards)),
 	}
 
 	for index, value := range data.AbilityCards {
-		result.AbilityCards[index] = &protoidentity.ProtoPlayerCardIdentity{
+		result.AbilityCards[index] = &protoidentity.ProtoAbilityCardIdentity{
 			AbilityCardId:    value.AbilityCardID.String(),
 			AbilityCardLevel: int32(value.AbilityCardLevel),
 			AbilityLevel:     int32(value.AbilityLevel),
@@ -201,14 +207,14 @@ func (t lobbyPlayerLoadoutTranslator) Unmarshall(data *protoidentity.ProtoPlayer
 	var result = lobby.PlayerLoadout{
 		DeckIndex: 0,
 		JobCard: lobby.PlayerJobCardSummary{
-			JobCardID:      uuid.FromStringOrNil(data.JobCardId),
-			SubJobIndex:    int(data.SubJobIndex),
-			CrownLevel:     0,
-			OverBoostLevel: 0,
+			JobCardID:      uuid.FromStringOrNil(data.JobCard.JobCardId),
+			SubJobIndex:    int(data.JobCard.SubJobIndex),
+			CrownLevel:     int(data.JobCard.CrownLevel),
+			OverBoostLevel: int(data.JobCard.SubJobIndex),
 		},
 		Weapon: lobby.PlayerWeaponSummary{
-			WeaponID:        uuid.FromStringOrNil(data.WeaponId),
-			SubWeaponUnlock: int(data.SubWeaponUnlock),
+			WeaponID:        uuid.FromStringOrNil(data.Weapon.WeaponId),
+			SubWeaponUnlock: int(data.Weapon.SubWeaponUnlock),
 		},
 		AbilityCards: make([]lobby.PlayerAbilityCardSummary, len(data.AbilityCards)),
 	}
