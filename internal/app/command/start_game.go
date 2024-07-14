@@ -44,6 +44,10 @@ func (h *StartLobbyCommandHandler) Handle(ctx Context, cmd *StartLobbyCommand) e
 
 	cmd.QueueEvent(lobby.NewInstanceStartedEvent(ctx, instance.SysID))
 
+	if err := h.InstanceRepository.Create(ctx, instance); err != nil {
+		return err
+	}
+
 	return nil
 
 }

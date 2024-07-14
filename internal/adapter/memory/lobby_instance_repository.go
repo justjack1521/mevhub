@@ -67,11 +67,13 @@ func (r *LobbyInstanceRedisRepository) QueryByPartyID(ctx context.Context, party
 func (r *LobbyInstanceRedisRepository) Create(ctx context.Context, instance *lobby.Instance) error {
 	var key = r.GenerateLobbyInstanceKey(instance.SysID)
 	var result = &dto.LobbyInstanceRedis{
-		LobbyID:            instance.SysID.String(),
+		SysID:              instance.SysID.String(),
 		QuestID:            instance.QuestID.String(),
 		HostID:             instance.HostID.String(),
 		PartyID:            instance.PartyID,
 		MinimumPlayerLevel: instance.MinimumPlayerLevel,
+		Started:            instance.Started,
+		PlayerSlotCount:    instance.PlayerSlotCount,
 		RegisteredAt:       instance.RegisteredAt.Unix(),
 	}
 	if err := r.client.HSet(ctx, key, result.ToMapStringInterface()).Err(); err != nil {
@@ -79,7 +81,7 @@ func (r *LobbyInstanceRedisRepository) Create(ctx context.Context, instance *lob
 	}
 	r.client.Expire(ctx, key, lobby.KeepAliveTime)
 
-	if err := r.client.Set(ctx, r.GenerateLobbyPartyKey(instance.PartyID), result.LobbyID, lobby.KeepAliveTime).Err(); err != nil {
+	if err := r.client.Set(ctx, r.GenerateLobbyPartyKey(instance.PartyID), result.SysID, lobby.KeepAliveTime).Err(); err != nil {
 		return lobby.ErrFailedCreateLobbyInstance(err)
 	}
 
