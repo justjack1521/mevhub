@@ -11,8 +11,8 @@ type InstanceFactory struct {
 	player uuid.UUID
 }
 
-func NewInstanceFactory(ctx context.Context, user uuid.UUID) InstanceFactory {
-	return InstanceFactory{ctx: ctx, user: user}
+func NewInstanceFactory(ctx context.Context, user uuid.UUID, player uuid.UUID) InstanceFactory {
+	return InstanceFactory{ctx: ctx, user: user, player: player}
 }
 
 type InstanceFactoryOptions struct {
@@ -62,9 +62,9 @@ type ParticipantJoinOptions struct {
 	FromInvite bool
 }
 
-func (f ParticipantFactory) Create(client, player uuid.UUID, instance *Instance, restriction PlayerSlotRestriction, options ParticipantJoinOptions) (*Participant, error) {
+func (f ParticipantFactory) Create(user, player uuid.UUID, instance *Instance, restriction PlayerSlotRestriction, options ParticipantJoinOptions) (*Participant, error) {
 
-	participant, err := instance.NewPlayerParticipant(client, player, restriction, options)
+	participant, err := instance.NewPlayerParticipant(user, player, restriction, options)
 	if err != nil {
 		return nil, err
 	}

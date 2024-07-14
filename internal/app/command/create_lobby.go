@@ -64,7 +64,7 @@ func (h *CreateLobbyCommandHandler) Handle(ctx Context, cmd *CreateLobbyCommand)
 		return err
 	}
 
-	var factory = lobby.NewInstanceFactory(ctx, ctx.UserID())
+	var factory = lobby.NewInstanceFactory(ctx, ctx.UserID(), ctx.PlayerID())
 
 	var opts = lobby.InstanceFactoryOptions{
 		QuestID:            quest.SysID,
