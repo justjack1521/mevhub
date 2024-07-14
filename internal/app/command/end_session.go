@@ -10,7 +10,7 @@ type EndSessionCommand struct {
 }
 
 func (e EndSessionCommand) CommandName() string {
-	return "end.session"
+	return "session.end"
 }
 
 func NewEndSessionCommand() *EndSessionCommand {

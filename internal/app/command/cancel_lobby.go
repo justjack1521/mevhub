@@ -12,7 +12,7 @@ type CancelLobbyCommand struct {
 }
 
 func (c CancelLobbyCommand) CommandName() string {
-	return "cancel.lobby"
+	return "lobby.cancel"
 }
 
 func NewCancelLobbyCommand() *CancelLobbyCommand {

@@ -12,7 +12,7 @@ type WatchLobbyCommand struct {
 }
 
 func (c WatchLobbyCommand) CommandName() string {
-	return "inspect.lobby"
+	return "lobby.watch"
 }
 
 func NewWatchLobbyCommand(lobby uuid.UUID) *WatchLobbyCommand {

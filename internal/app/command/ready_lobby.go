@@ -14,7 +14,7 @@ type ReadyLobbyCommand struct {
 }
 
 func (c ReadyLobbyCommand) CommandName() string {
-	return "ready.lobby"
+	return "lobby.ready"
 }
 
 func NewReadyLobbyCommand(id uuid.UUID, deck int) *ReadyLobbyCommand {

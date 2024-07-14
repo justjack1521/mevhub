@@ -11,7 +11,7 @@ type LeaveLobbyCommand struct {
 }
 
 func (c LeaveLobbyCommand) CommandName() string {
-	return "leave.lobby"
+	return "lobby.leave"
 }
 
 func NewLeaveLobbyCommand() *LeaveLobbyCommand {

@@ -7,34 +7,38 @@ import (
 )
 
 type LobbyInstanceRedis struct {
-	LobbyID            string `redis:"LobbyID"`
+	SysID              string `redis:"SysID"`
 	QuestID            string `redis:"QuestID"`
-	PartyID            string `redis:"PartyID"`
 	HostID             string `redis:"HostID"`
+	PartyID            string `redis:"PartyID"`
 	MinimumPlayerLevel int    `redis:"MinimumPlayerLevel"`
 	Started            bool   `redis:"Started"`
+	PlayerSlotCount    int    `redis:"PlayerSlotCount"`
 	RegisteredAt       int64  `redis:"RegisteredAt"`
 }
 
 func (x *LobbyInstanceRedis) ToEntity() *lobby.Instance {
 	return &lobby.Instance{
-		SysID:              uuid.FromStringOrNil(x.LobbyID),
+		SysID:              uuid.FromStringOrNil(x.SysID),
 		QuestID:            uuid.FromStringOrNil(x.QuestID),
 		PartyID:            x.PartyID,
 		HostID:             uuid.FromStringOrNil(x.HostID),
 		MinimumPlayerLevel: x.MinimumPlayerLevel,
+		Started:            x.Started,
+		PlayerSlotCount:    x.PlayerSlotCount,
 		RegisteredAt:       time.Unix(x.RegisteredAt, 0),
 	}
 }
 
 func (x *LobbyInstanceRedis) ToMapStringInterface() map[string]interface{} {
 	var result = map[string]interface{}{
-		"LobbyID":            x.LobbyID,
+		"SysID":              x.SysID,
 		"QuestID":            x.QuestID,
-		"PartyID":            x.PartyID,
 		"HostID":             x.HostID,
+		"PartyID":            x.PartyID,
 		"MinimumPlayerLevel": x.MinimumPlayerLevel,
 		"Started":            x.Started,
+		"PlayerSlotCount":    x.PlayerSlotCount,
 		"RegisteredAt":       x.RegisteredAt,
 	}
 	return result

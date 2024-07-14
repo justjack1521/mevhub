@@ -23,7 +23,7 @@ type ClientNotification interface {
 
 func NewLobbyChannelEventNotifier(publisher *mevent.Publisher, summary lobby.PlayerSummaryReadRepository, translator translate.LobbyPlayerSummaryTranslator) *LobbyChannelEventNotifier {
 	var subscriber = &LobbyChannelEventNotifier{EventPublisher: publisher, PlayerSummaryRepository: summary, PlayerSummaryTranslator: translator}
-	publisher.Subscribe(subscriber, lobby.ParticipantCreatedEvent{}, lobby.ParticipantDeletedEvent{}, lobby.ParticipantReadyEvent{}, lobby.ParticipantUnreadyEvent{})
+	publisher.Subscribe(subscriber, lobby.ParticipantCreatedEvent{}, lobby.ParticipantDeletedEvent{}, lobby.ParticipantReadyEvent{}, lobby.ParticipantUnreadyEvent{}, lobby.InstanceStartedEvent{})
 	return subscriber
 }
 
@@ -49,7 +49,21 @@ func (s *LobbyChannelEventNotifier) Notify(event mevent.Event) {
 		if err := s.HandleParticipantDeckChange(actual); err != nil {
 			fmt.Println(err)
 		}
+	case lobby.InstanceStartedEvent:
+		if err := s.HandleLobbyStartEvent(actual); err != nil {
+			fmt.Println(err)
+		}
 	}
+}
+
+func (s *LobbyChannelEventNotifier) HandleLobbyStartEvent(event lobby.InstanceStartedEvent) error {
+
+	var notification = &protomulti.LobbyStartNotification{
+		LobbyId: event.LobbyID().String(),
+	}
+
+	return s.publish(event.Context(), protomulti.MultiNotificationType_LOBBY_START, event.LobbyID(), notification)
+
 }
 
 func (s *LobbyChannelEventNotifier) HandleParticipantDeleted(event lobby.ParticipantDeletedEvent) error {

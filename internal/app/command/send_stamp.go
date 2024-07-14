@@ -18,7 +18,7 @@ func NewSendStampCommand(id uuid.UUID) *SendStampCommand {
 }
 
 func (c SendStampCommand) CommandName() string {
-	return "send.stamp"
+	return "stamp.send"
 }
 
 type SendStampCommandHandler struct {

@@ -52,6 +52,9 @@ var (
 	ErrMinLevelInvalid = func(level int) error {
 		return fmt.Errorf("min player level is invalid: %d", level)
 	}
+	ErrNonHostPlayerCannotStartLobby = func(id uuid.UUID) error {
+		return fmt.Errorf("non-host player %s cannot start lobby", id)
+	}
 )
 
 func (x *Instance) SetQuestID(id uuid.UUID) error {
@@ -67,6 +70,14 @@ func (x *Instance) SetMinPlayerLevel(level int) error {
 		return ErrMinLevelInvalid(level)
 	}
 	x.MinimumPlayerLevel = level
+	return nil
+}
+
+func (x *Instance) StartLobby(player uuid.UUID) error {
+	if uuid.Equal(x.HostID, player) == false {
+		return ErrNonHostPlayerCannotStartLobby(player)
+	}
+	x.Started = true
 	return nil
 }
 

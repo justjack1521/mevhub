@@ -33,6 +33,7 @@ type LobbyApplicationCommands struct {
 	CancelLobby   CancelLobbyCommandHandler
 	ReadyLobby    ReadyLobbyCommandHandler
 	UnreadyLobby  UnreadyLobbyCommandHandler
+	StartLobby    StartLobbyCommandHandler
 	SendStamp     SendStampCommandHandler
 }
 
@@ -59,6 +60,7 @@ func NewLobbyApplication(core *CoreApplication) *LobbyApplication {
 		JoinLobby:     application.NewJoinLobbyCommandHandler(core),
 		ReadyLobby:    application.NewReadyLobbyCommandHandler(core),
 		UnreadyLobby:  application.NewUnreadyLobbyCommandHandler(core),
+		StartLobby:    application.NewStartLobbyCommandHandler(core),
 		SendStamp:     application.NewSendStampCommandHandler(core),
 	}
 	application.Translators = &LobbyApplicationTranslators{
@@ -87,6 +89,7 @@ type JoinLobbyCommandHandler decorator.CommandHandler[command.Context, *command.
 type LeaveLobbyCommandHandler decorator.CommandHandler[command.Context, *command.LeaveLobbyCommand]
 type ReadyLobbyCommandHandler decorator.CommandHandler[command.Context, *command.ReadyLobbyCommand]
 type UnreadyLobbyCommandHandler decorator.CommandHandler[command.Context, *command.UnreadyLobbyCommand]
+type StartLobbyCommandHandler decorator.CommandHandler[command.Context, *command.StartLobbyCommand]
 type SendStampCommandHandler decorator.CommandHandler[command.Context, *command.SendStampCommand]
 
 type SearchLobbyQueryHandler decorator.QueryHandler[query.Context, query.SearchLobbyQuery, []lobby.Summary]
@@ -120,6 +123,11 @@ func (a *LobbyApplication) NewCreateLobbyCommandHandler(core *CoreApplication) C
 func (a *LobbyApplication) NewCancelLobbyCommandHandler(core *CoreApplication) CancelLobbyCommandHandler {
 	var actual = command.NewCancelLobbyCommandHandler(core.Services.EventPublisher, core.data.SessionInstance, core.data.LobbyInstance, core.data.LobbyParticipant)
 	return decorator.NewStandardCommandDecorator[command.Context, *command.CancelLobbyCommand](core.Services.EventPublisher, actual)
+}
+
+func (a *LobbyApplication) NewStartLobbyCommandHandler(core *CoreApplication) StartLobbyCommandHandler {
+	var actual = command.NewStartLobbyCommandHandler(core.data.SessionInstance, core.data.LobbyInstance)
+	return decorator.NewStandardCommandDecorator[command.Context, *command.StartLobbyCommand](core.Services.EventPublisher, actual)
 }
 
 func (a *LobbyApplication) NewWatchLobbyCommandHandler(core *CoreApplication) WatchLobbyCommandHandler {

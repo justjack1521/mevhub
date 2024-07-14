@@ -25,7 +25,7 @@ type CreateLobbyOptions struct {
 }
 
 func (c CreateLobbyCommand) CommandName() string {
-	return "create.lobby"
+	return "lobby.create"
 }
 
 func NewCreateLobbyCommand(quest uuid.UUID, deck int, comment string, options CreateLobbyOptions) *CreateLobbyCommand {

@@ -13,7 +13,7 @@ type UnreadyLobbyCommand struct {
 }
 
 func (c UnreadyLobbyCommand) CommandName() string {
-	return "unready.lobby"
+	return "lobby.unready"
 }
 
 func NewUnreadyLobbyCommand(id uuid.UUID) *UnreadyLobbyCommand {

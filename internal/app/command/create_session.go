@@ -14,7 +14,7 @@ func NewCreateSessionCommand() *CreateSessionCommand {
 }
 
 func (c CreateSessionCommand) CommandName() string {
-	return "create.session"
+	return "session.create"
 }
 
 type CreateSessionCommandHandler struct {

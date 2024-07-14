@@ -145,8 +145,8 @@ type ParticipantCreatedEvent struct {
 	slot   int
 }
 
-func NewParticipantCreatedEvent(ctx context.Context, client, player, lobby uuid.UUID, deck int, slot int) ParticipantCreatedEvent {
-	return ParticipantCreatedEvent{ctx: ctx, user: client, player: player, lobby: lobby, deck: deck, slot: slot}
+func NewParticipantCreatedEvent(ctx context.Context, user, player, lobby uuid.UUID, deck int, slot int) ParticipantCreatedEvent {
+	return ParticipantCreatedEvent{ctx: ctx, user: user, player: player, lobby: lobby, deck: deck, slot: slot}
 }
 
 func (e ParticipantCreatedEvent) Name() string {

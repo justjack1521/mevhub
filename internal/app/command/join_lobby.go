@@ -52,13 +52,15 @@ func (h *JoinLobbyCommandHandler) Handle(ctx Context, cmd *JoinLobbyCommand) err
 		return err
 	}
 
-	if err := participant.SetPlayer(ctx.UserID(), ctx.PlayerID(), lobby.ParticipantJoinOptions{
+	var options = lobby.ParticipantJoinOptions{
 		RoleID:     uuid.UUID{},
 		SlotIndex:  cmd.SlotIndex,
 		DeckIndex:  cmd.DeckIndex,
 		UseStamina: cmd.UseStamina,
 		FromInvite: cmd.FromInvite,
-	}); err != nil {
+	}
+
+	if err := participant.SetPlayer(ctx.UserID(), ctx.PlayerID(), options); err != nil {
 		return err
 	}
 
