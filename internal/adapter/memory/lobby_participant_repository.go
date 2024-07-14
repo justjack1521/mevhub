@@ -2,7 +2,6 @@ package memory
 
 import (
 	"context"
-	"errors"
 	"github.com/go-redis/redis/v8"
 	uuid "github.com/satori/go.uuid"
 	"mevhub/internal/adapter/dto"
@@ -97,15 +96,6 @@ func (r *LobbyParticipantRedisRepository) Create(ctx context.Context, participan
 	}
 
 	var key = r.GenerateParticipantKey(participant.LobbyID, participant.PlayerSlot)
-
-	current, err := r.client.HGet(ctx, key, "UserID").Result()
-	if err != nil && errors.Is(err, redis.Nil) == false {
-		return err
-	}
-
-	if current != "" {
-		return lobby.ErrFailedCreateNewParticipant(errors.New("player slot is taken"))
-	}
 
 	if err := r.client.HSet(ctx, key, result.ToMapStringInterface()).Err(); err != nil {
 		return lobby.ErrFailedCreateParticipantForLobby(participant.LobbyID, lobby.ErrFailedCreateParticipant(participant.PlayerSlot, err))
