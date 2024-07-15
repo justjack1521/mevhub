@@ -42,12 +42,12 @@ func (r *GameParticipantRepository) Create(ctx context.Context, id uuid.UUID, sl
 	if err != nil {
 		return err
 	}
-	if err := r.client.Set(ctx, r.Key(id, slot), result, gameInstanceTTL).Err(); err != nil {
+	if err := r.client.Set(ctx, r.Key(id, slot), result, gameParticipantTTL).Err(); err != nil {
 		return err
 	}
 	return nil
 }
 
 func (r *GameParticipantRepository) Key(id uuid.UUID, slot int) string {
-	return strings.Join([]string{serviceKey, gameInstanceKey, id.String(), strconv.Itoa(slot)}, ":")
+	return strings.Join([]string{serviceKey, gameParticipantKey, id.String(), strconv.Itoa(slot)}, ":")
 }
