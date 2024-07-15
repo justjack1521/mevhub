@@ -62,7 +62,7 @@ func (s *LobbyChannelEventNotifier) HandleLobbyStartEvent(event lobby.InstanceSt
 		LobbyId: event.LobbyID().String(),
 	}
 
-	return s.publish(event.Context(), protomulti.MultiNotificationType_LOBBY_START, event.LobbyID(), notification)
+	return s.publish(event.Context(), protomulti.MultiLobbyNotificationType_LOBBY_START, event.LobbyID(), notification)
 
 }
 
@@ -74,7 +74,7 @@ func (s *LobbyChannelEventNotifier) HandleParticipantDeleted(event lobby.Partici
 		PlayerSlot: int32(event.SlotIndex()),
 	}
 
-	return s.publish(event.Context(), protomulti.MultiNotificationType_PARTICIPANT_LEAVE, event.LobbyID(), notification)
+	return s.publish(event.Context(), protomulti.MultiLobbyNotificationType_PARTICIPANT_LEAVE, event.LobbyID(), notification)
 
 }
 
@@ -102,7 +102,7 @@ func (s *LobbyChannelEventNotifier) HandleParticipantAdded(event lobby.Participa
 		Player:     player,
 	}
 
-	return s.publish(event.Context(), protomulti.MultiNotificationType_PARTICIPANT_JOIN, event.LobbyID(), notification)
+	return s.publish(event.Context(), protomulti.MultiLobbyNotificationType_PARTICIPANT_JOIN, event.LobbyID(), notification)
 
 }
 
@@ -124,7 +124,7 @@ func (s *LobbyChannelEventNotifier) HandleParticipantDeckChange(event lobby.Part
 		Player:     player,
 	}
 
-	return s.publish(event.Context(), protomulti.MultiNotificationType_PARTICIPANT_DECK_CHANGE, event.LobbyID(), notification)
+	return s.publish(event.Context(), protomulti.MultiLobbyNotificationType_PARTICIPANT_DECK_CHANGE, event.LobbyID(), notification)
 
 }
 
@@ -135,7 +135,7 @@ func (s *LobbyChannelEventNotifier) HandleParticipantReady(event lobby.Participa
 		PlayerSlot: int32(event.SlotIndex()),
 	}
 
-	return s.publish(event.Context(), protomulti.MultiNotificationType_PARTICIPANT_READY, event.LobbyID(), notification)
+	return s.publish(event.Context(), protomulti.MultiLobbyNotificationType_PARTICIPANT_READY, event.LobbyID(), notification)
 
 }
 
@@ -146,11 +146,11 @@ func (s *LobbyChannelEventNotifier) HandleParticipantUnready(event lobby.Partici
 		PartySlot: int32(event.SlotIndex()),
 	}
 
-	return s.publish(event.Context(), protomulti.MultiNotificationType_PARTICIPANT_UNREADY, event.LobbyID(), notification)
+	return s.publish(event.Context(), protomulti.MultiLobbyNotificationType_PARTICIPANT_UNREADY, event.LobbyID(), notification)
 
 }
 
-func (s *LobbyChannelEventNotifier) publish(ctx context.Context, t protomulti.MultiNotificationType, id uuid.UUID, n ClientNotification) error {
+func (s *LobbyChannelEventNotifier) publish(ctx context.Context, t protomulti.MultiLobbyNotificationType, id uuid.UUID, n ClientNotification) error {
 	bytes, err := n.MarshallBinary()
 	if err != nil {
 		return err

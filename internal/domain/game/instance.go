@@ -11,8 +11,9 @@ type Instance struct {
 	SysID        uuid.UUID
 	PartyID      string
 	Seed         int64
-	Options      InstanceOptions
+	Options      *InstanceOptions
 	State        InstanceState
+	StartedAt    time.Time
 	RegisteredAt time.Time
 }
 
@@ -29,5 +30,6 @@ func NewGameInstance() *Instance {
 type InstanceState int
 
 const (
-	InstanceGamePendingState InstanceState = 200
+	InstanceGamePendingState InstanceState = 100
+	InstanceGameStartedState InstanceState = 200
 )

@@ -14,7 +14,7 @@ func NewGameInstanceMemoryRepository() *GameInstanceMemoryRepository {
 	return &GameInstanceMemoryRepository{data: make(map[uuid.UUID]*game.Instance)}
 }
 
-func (r *GameInstanceMemoryRepository) QueryByID(ctx context.Context, id uuid.UUID) (*game.Instance, error) {
+func (r *GameInstanceMemoryRepository) Get(ctx context.Context, id uuid.UUID) (*game.Instance, error) {
 	result, exists := r.data[id]
 	if exists == false {
 		return nil, game.ErrGameInstanceNotFound(game.ErrGameInstanceNotFoundByID(id))

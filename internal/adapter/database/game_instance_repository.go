@@ -16,7 +16,7 @@ func NewGameInstanceDatabaseRepository(db *gorm.DB) *GameInstanceDatabaseReposit
 	return &GameInstanceDatabaseRepository{db: db}
 }
 
-func (r *GameInstanceDatabaseRepository) QueryByID(ctx context.Context, id uuid.UUID) (*game.Instance, error) {
+func (r *GameInstanceDatabaseRepository) Get(ctx context.Context, id uuid.UUID) (*game.Instance, error) {
 	var cond = &dto.GameInstanceGorm{SysID: id}
 	var res = &dto.GameInstanceGorm{}
 	if err := r.db.Model(cond).First(res, cond).Error; err != nil {

@@ -1,16 +1,36 @@
 package game
 
 import (
-	uuid "github.com/satori/go.uuid"
+	"math/rand"
+	"mevhub/internal/domain/lobby"
+	"time"
 )
 
 type InstanceFactory struct {
+	QuestRepository QuestRepository
 }
 
-func (f InstanceFactory) Create(id uuid.UUID, party string, options InstanceOptions) (*Instance, error) {
-	var instance = NewGameInstance()
-	instance.SysID = id
-	instance.PartyID = party
-	instance.Options = options
-	return instance, nil
+func NewInstanceFactory(quests QuestRepository) *InstanceFactory {
+	return &InstanceFactory{QuestRepository: quests}
+}
+
+func (f *InstanceFactory) Create(source *lobby.Instance) (*Instance, error) {
+
+	quest, err := f.QuestRepository.QueryByID(source.QuestID)
+	if err != nil {
+		return nil, err
+	}
+
+	return &Instance{
+		SysID:   source.SysID,
+		PartyID: source.PartyID,
+		Seed:    rand.Int63(),
+		Options: &InstanceOptions{
+			MinimumPlayerLevel: source.MinimumPlayerLevel,
+			MaxRunTime:         quest.Tier.TimeLimit,
+			Restrictions:       nil,
+		},
+		State:        InstanceGamePendingState,
+		RegisteredAt: time.Now(),
+	}, nil
 }

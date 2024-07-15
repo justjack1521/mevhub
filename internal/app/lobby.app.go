@@ -7,6 +7,7 @@ import (
 	"mevhub/internal/app/query"
 	"mevhub/internal/app/subscriber"
 	"mevhub/internal/decorator"
+	"mevhub/internal/domain/game"
 	"mevhub/internal/domain/lobby"
 )
 
@@ -70,7 +71,6 @@ func NewLobbyApplication(core *CoreApplication) *LobbyApplication {
 	}
 	application.subscribers = []ApplicationSubscriber{
 		subscriber.NewLobbyNotificationChanneler(core.Services.EventPublisher, core.Services.Redis, core.Services.RabbitMQConnection, memory.NewLobbyChannelRepository(core.Services.Redis)),
-		subscriber.NewLobbyPlayerSummaryWriter(core.Services.EventPublisher, core.data.LobbyPlayerSummary),
 		subscriber.NewLobbySummaryWriter(core.Services.EventPublisher, core.repositories.Quests, core.data.LobbySummary),
 		subscriber.NewLobbySearchWriter(core.Services.EventPublisher, core.data.LobbySearch),
 		subscriber.NewLobbyChannelEventNotifier(core.Services.EventPublisher, core.data.LobbyPlayerSummary, application.Translators.LobbyPlayer),
@@ -126,7 +126,7 @@ func (a *LobbyApplication) NewCancelLobbyCommandHandler(core *CoreApplication) C
 }
 
 func (a *LobbyApplication) NewStartLobbyCommandHandler(core *CoreApplication) StartLobbyCommandHandler {
-	var actual = command.NewStartLobbyCommandHandler(core.data.SessionInstance, core.data.LobbyInstance)
+	var actual = command.NewStartLobbyCommandHandler(core.data.SessionInstance, core.data.LobbyInstance, game.NewInstanceFactory(core.repositories.Quests), core.data.GameInstance)
 	return decorator.NewStandardCommandDecorator[command.Context, *command.StartLobbyCommand](core.Services.EventPublisher, actual)
 }
 

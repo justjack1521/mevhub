@@ -11,18 +11,18 @@ import (
 type LobbyNotification interface {
 	mevent.ContextEvent
 	LobbyID() uuid.UUID
-	Operation() protomulti.MultiNotificationType
+	Operation() protomulti.MultiLobbyNotificationType
 	Data() []byte
 }
 
 type LobbyClientNotificationEvent struct {
 	ctx       context.Context
-	operation protomulti.MultiNotificationType
+	operation protomulti.MultiLobbyNotificationType
 	lobby     uuid.UUID
 	data      []byte
 }
 
-func NewLobbyClientNotificationEvent(ctx context.Context, op protomulti.MultiNotificationType, id uuid.UUID, data []byte) LobbyClientNotificationEvent {
+func NewLobbyClientNotificationEvent(ctx context.Context, op protomulti.MultiLobbyNotificationType, id uuid.UUID, data []byte) LobbyClientNotificationEvent {
 	return LobbyClientNotificationEvent{ctx: ctx, operation: op, lobby: id, data: data}
 }
 
@@ -47,7 +47,7 @@ func (e LobbyClientNotificationEvent) LobbyID() uuid.UUID {
 	return e.lobby
 }
 
-func (e LobbyClientNotificationEvent) Operation() protomulti.MultiNotificationType {
+func (e LobbyClientNotificationEvent) Operation() protomulti.MultiLobbyNotificationType {
 	return e.operation
 }
 

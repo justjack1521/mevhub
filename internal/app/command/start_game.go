@@ -1,6 +1,7 @@
 package command
 
 import (
+	"mevhub/internal/domain/game"
 	"mevhub/internal/domain/lobby"
 	"mevhub/internal/domain/session"
 )
@@ -18,12 +19,14 @@ func NewStartLobbyCommand() *StartLobbyCommand {
 }
 
 type StartLobbyCommandHandler struct {
-	SessionRepository  session.InstanceReadRepository
-	InstanceRepository lobby.InstanceRepository
+	SessionRepository       session.InstanceReadRepository
+	LobbyInstanceRepository lobby.InstanceRepository
+	GameInstanceFactory     *game.InstanceFactory
+	GameInstanceRepository  game.InstanceRepository
 }
 
-func NewStartLobbyCommandHandler(sessions session.InstanceReadRepository, lobbies lobby.InstanceRepository) *StartLobbyCommandHandler {
-	return &StartLobbyCommandHandler{SessionRepository: sessions, InstanceRepository: lobbies}
+func NewStartLobbyCommandHandler(session session.InstanceReadRepository, lobbies lobby.InstanceRepository, factory *game.InstanceFactory, games game.InstanceRepository) *StartLobbyCommandHandler {
+	return &StartLobbyCommandHandler{SessionRepository: session, LobbyInstanceRepository: lobbies, GameInstanceFactory: factory, GameInstanceRepository: games}
 }
 
 func (h *StartLobbyCommandHandler) Handle(ctx Context, cmd *StartLobbyCommand) error {
@@ -33,7 +36,7 @@ func (h *StartLobbyCommandHandler) Handle(ctx Context, cmd *StartLobbyCommand) e
 		return err
 	}
 
-	instance, err := h.InstanceRepository.QueryByID(ctx, current.LobbyID)
+	instance, err := h.LobbyInstanceRepository.QueryByID(ctx, current.LobbyID)
 	if err != nil {
 		return err
 	}
@@ -44,7 +47,16 @@ func (h *StartLobbyCommandHandler) Handle(ctx Context, cmd *StartLobbyCommand) e
 
 	cmd.QueueEvent(lobby.NewInstanceStartedEvent(ctx, instance.SysID))
 
-	if err := h.InstanceRepository.Create(ctx, instance); err != nil {
+	if err := h.LobbyInstanceRepository.Create(ctx, instance); err != nil {
+		return err
+	}
+
+	inst, err := h.GameInstanceFactory.Create(instance)
+	if err != nil {
+		return err
+	}
+
+	if err := h.GameInstanceRepository.Create(ctx, inst); err != nil {
 		return err
 	}
 

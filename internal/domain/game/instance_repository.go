@@ -17,7 +17,7 @@ var (
 )
 
 type InstanceReadRepository interface {
-	QueryByID(ctx context.Context, id uuid.UUID) (*Instance, error)
+	Get(ctx context.Context, id uuid.UUID) (*Instance, error)
 }
 
 var (
