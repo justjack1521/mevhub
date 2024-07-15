@@ -1,11 +1,5 @@
 package app
 
-import (
-	"mevhub/internal/app/query"
-	"mevhub/internal/decorator"
-	"mevhub/internal/domain/game"
-)
-
 type GameApplication struct {
 	Queries     *GameApplicationQueries
 	Commands    *GameApplicationCommands
@@ -14,7 +8,6 @@ type GameApplication struct {
 }
 
 type GameApplicationQueries struct {
-	GameSummary GameSummaryQueryHandler
 }
 
 type GameApplicationCommands struct {
@@ -28,16 +21,7 @@ func NewGameApplication(core *CoreApplication) *GameApplication {
 		consumers:   []ApplicationConsumer{},
 		subscribers: []ApplicationSubscriber{},
 	}
-	application.Queries = &GameApplicationQueries{
-		GameSummary: application.NewGameSummaryQueryHandler(core),
-	}
+	application.Queries = &GameApplicationQueries{}
 	application.Commands = &GameApplicationCommands{}
 	return application
-}
-
-type GameSummaryQueryHandler decorator.QueryHandler[query.Context, query.GameSummaryQuery, game.Summary]
-
-func (a *GameApplication) NewGameSummaryQueryHandler(core *CoreApplication) GameSummaryQueryHandler {
-	var actual = query.NewGameSummaryQueryHandler(core.data.GameSummary)
-	return actual
 }

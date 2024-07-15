@@ -26,7 +26,7 @@ func (r *LobbyPlayerSummaryRepository) Query(ctx context.Context, id uuid.UUID) 
 		return lobby.PlayerSummary{}, err
 	}
 
-	r.cache.Create(ctx, miss)
+	_ = r.cache.Create(ctx, miss)
 
 	return miss, nil
 }

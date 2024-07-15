@@ -15,16 +15,16 @@ const (
 	playerSummaryTTL = time.Minute * 180
 )
 
-type PlayerSummaryRepository struct {
+type LobbyPlayerSummaryRepository struct {
 	client     *redis.Client
 	serialiser serial.LobbyPlayerSummarySerialiser
 }
 
-func NewPlayerSummaryRepository(client *redis.Client, serialiser serial.LobbyPlayerSummarySerialiser) *PlayerSummaryRepository {
-	return &PlayerSummaryRepository{client: client, serialiser: serialiser}
+func NewLobbyPlayerSummaryRepository(client *redis.Client, serialiser serial.LobbyPlayerSummarySerialiser) *LobbyPlayerSummaryRepository {
+	return &LobbyPlayerSummaryRepository{client: client, serialiser: serialiser}
 }
 
-func (r *PlayerSummaryRepository) Query(ctx context.Context, id uuid.UUID) (lobby.PlayerSummary, error) {
+func (r *LobbyPlayerSummaryRepository) Query(ctx context.Context, id uuid.UUID) (lobby.PlayerSummary, error) {
 	value, err := r.client.Get(ctx, r.Key(id)).Result()
 	if err != nil {
 		return lobby.PlayerSummary{}, err
@@ -36,7 +36,7 @@ func (r *PlayerSummaryRepository) Query(ctx context.Context, id uuid.UUID) (lobb
 	return result, nil
 }
 
-func (r *PlayerSummaryRepository) Create(ctx context.Context, player lobby.PlayerSummary) error {
+func (r *LobbyPlayerSummaryRepository) Create(ctx context.Context, player lobby.PlayerSummary) error {
 	result, err := r.serialiser.Marshall(player)
 	if err != nil {
 		return err
@@ -47,6 +47,6 @@ func (r *PlayerSummaryRepository) Create(ctx context.Context, player lobby.Playe
 	return nil
 }
 
-func (r *PlayerSummaryRepository) Key(player uuid.UUID) string {
+func (r *LobbyPlayerSummaryRepository) Key(player uuid.UUID) string {
 	return strings.Join([]string{serviceKey, playerSummaryKey, player.String()}, ":")
 }

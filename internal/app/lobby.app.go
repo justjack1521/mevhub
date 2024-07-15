@@ -126,7 +126,7 @@ func (a *LobbyApplication) NewCancelLobbyCommandHandler(core *CoreApplication) C
 }
 
 func (a *LobbyApplication) NewStartLobbyCommandHandler(core *CoreApplication) StartLobbyCommandHandler {
-	var actual = command.NewStartLobbyCommandHandler(core.data.SessionInstance, core.data.LobbyInstance, game.NewInstanceFactory(core.repositories.Quests), core.data.GameInstance)
+	var actual = command.NewStartLobbyCommandHandler(core.data.SessionInstance, core.data.LobbyInstance, core.data.LobbyParticipant, game.NewInstanceFactory(core.repositories.Quests), core.data.GameInstance, game.NewPlayerParticipantFactory(core.data.GamePlayerLoadout), core.data.GamePlayerParticipant)
 	return decorator.NewStandardCommandDecorator[command.Context, *command.StartLobbyCommand](core.Services.EventPublisher, actual)
 }
 

@@ -2,29 +2,24 @@ package game
 
 import (
 	uuid "github.com/satori/go.uuid"
-	"time"
 )
 
-type Summary struct {
-	InstanceID   uuid.UUID
-	QuestID      uuid.UUID
-	Seed         int64
-	State        InstanceState
-	RegisteredAt time.Time
+type PlayerParticipant struct {
+	PlayerSlot int
+	BotControl bool
+	Loadout    PlayerLoadout
 }
 
-type PlayerSummary struct {
-	PlayerID      uuid.UUID
-	PlayerName    string
-	PlayerComment string
-	PlayerLevel   int
-	DeckIndex     int
-	JobCard       PlayerJobCardSummary
-	Weapon        PlayerWeaponSummary
-	AbilityCards  []PlayerAbilityCardSummary
+type PlayerLoadout struct {
+	PlayerID     uuid.UUID
+	PlayerName   string
+	DeckIndex    int
+	JobCard      PlayerJobCardLoadout
+	Weapon       PlayerWeaponLoadout
+	AbilityCards []PlayerAbilityCardLoadout
 }
 
-type PlayerJobCardSummary struct {
+type PlayerJobCardLoadout struct {
 	JobCardID         uuid.UUID
 	SubJobIndex       int
 	HPStatMod         int
@@ -40,7 +35,7 @@ type PlayerJobCardSummary struct {
 	AutoAbilities     map[uuid.UUID]int
 }
 
-type PlayerWeaponSummary struct {
+type PlayerWeaponLoadout struct {
 	WeaponID          uuid.UUID
 	SubWeaponUnlock   int
 	HPStatMod         int
@@ -54,7 +49,7 @@ type PlayerWeaponSummary struct {
 	AutoAbilities     map[uuid.UUID]int
 }
 
-type PlayerAbilityCardSummary struct {
+type PlayerAbilityCardLoadout struct {
 	AbilityCardID    uuid.UUID
 	SlotIndex        int
 	AbilityCardLevel int

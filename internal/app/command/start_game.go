@@ -1,6 +1,7 @@
 package command
 
 import (
+	uuid "github.com/satori/go.uuid"
 	"mevhub/internal/domain/game"
 	"mevhub/internal/domain/lobby"
 	"mevhub/internal/domain/session"
@@ -19,14 +20,17 @@ func NewStartLobbyCommand() *StartLobbyCommand {
 }
 
 type StartLobbyCommandHandler struct {
-	SessionRepository       session.InstanceReadRepository
-	LobbyInstanceRepository lobby.InstanceRepository
-	GameInstanceFactory     *game.InstanceFactory
-	GameInstanceRepository  game.InstanceRepository
+	SessionRepository          session.InstanceReadRepository
+	LobbyInstanceRepository    lobby.InstanceRepository
+	LobbyParticipantRepository lobby.ParticipantReadRepository
+	GameInstanceFactory        *game.InstanceFactory
+	GameInstanceRepository     game.InstanceWriteRepository
+	GameParticipantFactory     *game.PlayerParticipantFactory
+	GameParticipantRepository  game.PlayerParticipantWriteRepository
 }
 
-func NewStartLobbyCommandHandler(session session.InstanceReadRepository, lobbies lobby.InstanceRepository, factory *game.InstanceFactory, games game.InstanceRepository) *StartLobbyCommandHandler {
-	return &StartLobbyCommandHandler{SessionRepository: session, LobbyInstanceRepository: lobbies, GameInstanceFactory: factory, GameInstanceRepository: games}
+func NewStartLobbyCommandHandler(sessions session.InstanceReadRepository, lobbies lobby.InstanceRepository, participants lobby.ParticipantReadRepository, factory *game.InstanceFactory, games game.InstanceWriteRepository, gameParticipantFactory *game.PlayerParticipantFactory, gameParticipantRepository game.PlayerParticipantWriteRepository) *StartLobbyCommandHandler {
+	return &StartLobbyCommandHandler{SessionRepository: sessions, LobbyInstanceRepository: lobbies, LobbyParticipantRepository: participants, GameInstanceFactory: factory, GameInstanceRepository: games, GameParticipantFactory: gameParticipantFactory, GameParticipantRepository: gameParticipantRepository}
 }
 
 func (h *StartLobbyCommandHandler) Handle(ctx Context, cmd *StartLobbyCommand) error {
@@ -58,6 +62,25 @@ func (h *StartLobbyCommandHandler) Handle(ctx Context, cmd *StartLobbyCommand) e
 
 	if err := h.GameInstanceRepository.Create(ctx, inst); err != nil {
 		return err
+	}
+
+	participants, err := h.LobbyParticipantRepository.QueryAllForLobby(ctx, instance.SysID)
+	if err != nil {
+		return err
+	}
+
+	for _, participant := range participants {
+		if uuid.Equal(participant.PlayerID, uuid.Nil) {
+			continue
+		}
+		part, err := h.GameParticipantFactory.Create(ctx, participant)
+		if err != nil {
+			return err
+		}
+		if err := h.GameParticipantRepository.Create(ctx, inst.SysID, participant.PlayerSlot, part); err != nil {
+			return err
+		}
+
 	}
 
 	return nil

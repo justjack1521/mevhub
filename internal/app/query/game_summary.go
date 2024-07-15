@@ -2,7 +2,6 @@ package query
 
 import (
 	uuid "github.com/satori/go.uuid"
-	"mevhub/internal/domain/game"
 )
 
 type GameSummaryQuery struct {
@@ -18,13 +17,4 @@ func NewGameSummaryQuery(id uuid.UUID) GameSummaryQuery {
 }
 
 type GameSummaryQueryHandler struct {
-	SummaryRepository game.SummaryReadRepository
-}
-
-func NewGameSummaryQueryHandler(summary game.SummaryReadRepository) *GameSummaryQueryHandler {
-	return &GameSummaryQueryHandler{SummaryRepository: summary}
-}
-
-func (h *GameSummaryQueryHandler) Handle(ctx Context, qry GameSummaryQuery) (game.Summary, error) {
-	panic(nil)
 }
