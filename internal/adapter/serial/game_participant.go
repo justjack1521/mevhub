@@ -37,7 +37,7 @@ func (s gamePlayerParticipantJSONSerialiser) Unmarshall(data []byte) (game.Playe
 	if len(data) == 0 {
 		return game.PlayerParticipant{}, ErrGamePlayerParticipantIsNil
 	}
-	result := &protomulti.ProtoLobbyPlayer{}
+	result := &protomulti.ProtoGameParticipant{}
 	if err := json.Unmarshal(data, result); err != nil {
 		return game.PlayerParticipant{}, err
 	}
