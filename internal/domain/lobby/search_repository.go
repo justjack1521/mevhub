@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-const KeepAliveTime = time.Minute * 20
+const KeepAliveTime = time.Hour * 3
 
 var (
 	ErrFailedSearchForLobbies = func(err error) error {

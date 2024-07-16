@@ -9,20 +9,44 @@ import (
 
 type InstanceEvent interface {
 	mevent.ContextEvent
-	LobbyID() uuid.UUID
+	InstanceID() uuid.UUID
+}
+
+type InstanceReadyEvent struct {
+	ctx context.Context
+	id  uuid.UUID
+}
+
+func NewInstanceReadyEvent(ctx context.Context, id uuid.UUID) InstanceReadyEvent {
+	return InstanceReadyEvent{ctx: ctx, id: id}
+}
+
+func (e InstanceReadyEvent) Name() string {
+	return "game.instance.ready"
+}
+
+func (e InstanceReadyEvent) ToLogFields() logrus.Fields {
+	return logrus.Fields{
+		"event.name":  e.Name(),
+		"instance.id": e.id,
+	}
+}
+
+func (e InstanceReadyEvent) Context() context.Context {
+	return e.ctx
+}
+
+func (e InstanceReadyEvent) InstanceID() uuid.UUID {
+	return e.id
 }
 
 type InstanceCreatedEvent struct {
-	ctx     context.Context
-	id      uuid.UUID
-	quest   uuid.UUID
-	party   string
-	host    uuid.UUID
-	comment string
+	ctx context.Context
+	id  uuid.UUID
 }
 
-func NewInstanceCreatedEvent(ctx context.Context, id, quest uuid.UUID, party, comment string) InstanceCreatedEvent {
-	return InstanceCreatedEvent{ctx: ctx, id: id, quest: quest, party: party, comment: comment}
+func NewInstanceCreatedEvent(ctx context.Context, id uuid.UUID) InstanceCreatedEvent {
+	return InstanceCreatedEvent{ctx: ctx, id: id}
 }
 
 func (e InstanceCreatedEvent) Name() string {
@@ -33,8 +57,6 @@ func (e InstanceCreatedEvent) ToLogFields() logrus.Fields {
 	return logrus.Fields{
 		"event.name":  e.Name(),
 		"instance.id": e.id,
-		"quest.id":    e.quest,
-		"party.id":    e.party,
 	}
 }
 
@@ -42,20 +64,8 @@ func (e InstanceCreatedEvent) Context() context.Context {
 	return e.ctx
 }
 
-func (e InstanceCreatedEvent) LobbyID() uuid.UUID {
+func (e InstanceCreatedEvent) InstanceID() uuid.UUID {
 	return e.id
-}
-
-func (e InstanceCreatedEvent) QuestID() uuid.UUID {
-	return e.quest
-}
-
-func (e InstanceCreatedEvent) PartyID() string {
-	return e.party
-}
-
-func (e InstanceCreatedEvent) Comment() string {
-	return e.comment
 }
 
 type InstanceDeletedEvent struct {
@@ -82,6 +92,6 @@ func (e InstanceDeletedEvent) Context() context.Context {
 	return e.ctx
 }
 
-func (e InstanceDeletedEvent) LobbyID() uuid.UUID {
+func (e InstanceDeletedEvent) InstanceID() uuid.UUID {
 	return e.id
 }

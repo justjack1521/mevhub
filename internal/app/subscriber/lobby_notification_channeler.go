@@ -2,7 +2,6 @@ package subscriber
 
 import (
 	"context"
-	"fmt"
 	"github.com/go-redis/redis/v8"
 	"github.com/justjack1521/mevium/pkg/genproto/protocommon"
 	"github.com/justjack1521/mevium/pkg/genproto/protomulti"
@@ -67,7 +66,9 @@ func (s *LobbyNotificationChanneler) Notify(event mevent.Event) {
 }
 
 func (s *LobbyNotificationChanneler) Start(event mevent.ApplicationStartEvent) {
-
+	for _, channel := range s.channels {
+		channel.close(context.Background())
+	}
 }
 
 func (s *LobbyNotificationChanneler) CloseAll(event mevent.ApplicationShutdownEvent) {
@@ -162,48 +163,11 @@ func (s *LobbyNotificationChanneler) NewLobbyInstanceNotificationChannel(ctx con
 	var channel = &LobbyInstanceNotificationChannel{
 		LobbyID: instance,
 		manager: manager,
-		channel: s.client.Subscribe(ctx, strings.Join([]string{LobbyChannelPrefix, instance.String()}, LobbyChannelSeparator)),
+		channel: s.client.Subscribe(ctx, s.Key(instance)),
 	}
 	return channel
 }
 
-type LobbyInstanceNotificationChannel struct {
-	LobbyID uuid.UUID
-	channel *redis.PubSub
-	manager *LobbyNotificationChanneler
-}
-
-func (c *LobbyInstanceNotificationChannel) Publish(ctx context.Context, message []byte) error {
-
-	listeners, err := c.manager.repository.QueryAllForLobby(ctx, c.LobbyID)
-
-	if err != nil {
-		return err
-	}
-
-	if len(listeners) == 0 {
-		c.close(ctx)
-	}
-
-	for _, listener := range listeners {
-		if err := c.manager.publisher.Publish(ctx, message, listener.UserID, listener.PlayerID, rabbitmv.ClientNotification); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func (c *LobbyInstanceNotificationChannel) run() {
-	channel := c.channel.Channel()
-	for message := range channel {
-		if err := c.Publish(context.Background(), []byte(message.Payload)); err != nil {
-			fmt.Println("Error Publishing Message To Listener: ", err)
-		}
-	}
-}
-
-func (c *LobbyInstanceNotificationChannel) close(ctx context.Context) {
-	if err := c.channel.Unsubscribe(ctx, c.LobbyID.String()); err != nil {
-		fmt.Println(err)
-	}
+func (s *LobbyNotificationChanneler) Key(id uuid.UUID) string {
+	return strings.Join([]string{LobbyChannelPrefix, id.String()}, LobbyChannelSeparator)
 }

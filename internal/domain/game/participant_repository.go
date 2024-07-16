@@ -7,6 +7,7 @@ import (
 
 type PlayerParticipantReadRepository interface {
 	Query(ctx context.Context, id uuid.UUID, slot int) (PlayerParticipant, error)
+	QueryAll(ctx context.Context, id uuid.UUID) ([]PlayerParticipant, error)
 }
 
 type PlayerParticipantWriteRepository interface {
