@@ -33,7 +33,7 @@ func NewGameApplication(core *CoreApplication) *GameApplication {
 	}
 
 	application.Queries = &GameApplicationQueries{
-		GameSummary: query.NewGameSummaryQueryHandler(core.data.GameInstance, core.data.GamePlayerParticipant),
+		GameSummary: query.NewGameSummaryQueryHandler(core.data.Sessions, core.data.Games, core.data.GameParticipants),
 	}
 	application.Commands = &GameApplicationCommands{}
 	application.Translators = &GameApplicationTranslators{
@@ -42,8 +42,8 @@ func NewGameApplication(core *CoreApplication) *GameApplication {
 
 	application.subscribers = []ApplicationSubscriber{
 		subscriber.NewGameChannelEventNotifier(core.Services.EventPublisher),
-		subscriber.NewGameInstanceWriter(core.Services.EventPublisher, core.data.LobbyInstance, game.NewInstanceFactory(core.repositories.Quests), core.data.GameInstance),
-		subscriber.NewGameParticipantWriter(core.Services.EventPublisher, core.data.LobbyParticipant, game.NewPlayerParticipantFactory(core.data.GamePlayerLoadout), core.data.GamePlayerParticipant),
+		subscriber.NewGameInstanceWriter(core.Services.EventPublisher, core.data.Lobbies, game.NewInstanceFactory(core.repositories.Quests), core.data.Games),
+		subscriber.NewGameParticipantWriter(core.Services.EventPublisher, core.data.LobbyParticipants, game.NewPlayerParticipantFactory(core.data.GamePlayerLoadouts), core.data.GameParticipants),
 	}
 
 	return application

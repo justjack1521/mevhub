@@ -45,15 +45,15 @@ type Repositories struct {
 }
 
 type DataRepositories struct {
-	SessionInstance       session.InstanceRepository
-	LobbyInstance         lobby.InstanceRepository
-	LobbyParticipant      lobby.ParticipantRepository
-	LobbySummary          lobby.SummaryRepository
-	LobbyPlayerSummary    lobby.PlayerSummaryRepository
-	LobbySearch           lobby.SearchRepository
-	GameInstance          game.InstanceRepository
-	GamePlayerParticipant game.PlayerParticipantRepository
-	GamePlayerLoadout     game.PlayerLoadoutReadRepository
+	Sessions             session.InstanceRepository
+	Lobbies              lobby.InstanceRepository
+	LobbyParticipants    lobby.ParticipantRepository
+	LobbySummaries       lobby.SummaryRepository
+	LobbyPlayerSummaries lobby.PlayerSummaryRepository
+	LobbySearch          lobby.SearchRepository
+	Games                game.InstanceRepository
+	GameParticipants     game.PlayerParticipantRepository
+	GamePlayerLoadouts   game.PlayerLoadoutReadRepository
 }
 
 type ApplicationServices struct {
@@ -98,15 +98,15 @@ func (a *CoreApplication) BuildRepos(db *gorm.DB, client *redis.Client) *CoreApp
 
 func (a *CoreApplication) BuildDataRepos(db *gorm.DB, client *redis.Client, identity services.MeviusIdentityServiceClient) *CoreApplication {
 	a.data = &DataRepositories{
-		SessionInstance:       memory.NewLobbySessionRedisRepository(client),
-		LobbyInstance:         memory.NewLobbyInstanceRedisRepository(client),
-		LobbyParticipant:      memory.NewLobbyParticipantRedisRepository(client),
-		LobbySearch:           memory.NewLobbySearchRepository(client),
-		LobbySummary:          database.NewLobbySummaryDatabaseRepository(db),
-		LobbyPlayerSummary:    cache.NewLobbyPlayerSummaryRepository(external.NewLobbyPlayerSummaryRepository(identity), memory.NewLobbyPlayerSummaryRepository(client, serial.NewLobbyPlayerSummaryJSONSerialiser())),
-		GameInstance:          memory.NewGameInstanceRepository(client, serial.NewGameInstanceJSONSerialiser()),
-		GamePlayerParticipant: memory.NewGameParticipantRepository(client, serial.NewGamePlayerParticipantJSONSerialiser()),
-		GamePlayerLoadout:     external.NewGamePlayerLoadoutRepository(identity),
+		Sessions:             memory.NewLobbySessionRedisRepository(client),
+		Lobbies:              memory.NewLobbyInstanceRedisRepository(client),
+		LobbyParticipants:    memory.NewLobbyParticipantRedisRepository(client),
+		LobbySearch:          memory.NewLobbySearchRepository(client),
+		LobbySummaries:       database.NewLobbySummaryDatabaseRepository(db),
+		LobbyPlayerSummaries: cache.NewLobbyPlayerSummaryRepository(external.NewLobbyPlayerSummaryRepository(identity), memory.NewLobbyPlayerSummaryRepository(client, serial.NewLobbyPlayerSummaryJSONSerialiser())),
+		Games:                memory.NewGameInstanceRepository(client, serial.NewGameInstanceJSONSerialiser()),
+		GameParticipants:     memory.NewGameParticipantRepository(client, serial.NewGamePlayerParticipantJSONSerialiser()),
+		GamePlayerLoadouts:   external.NewGamePlayerLoadoutRepository(identity),
 	}
 	return a
 }
