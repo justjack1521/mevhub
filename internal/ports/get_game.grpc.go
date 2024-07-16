@@ -3,18 +3,12 @@ package ports
 import (
 	"context"
 	"github.com/justjack1521/mevium/pkg/genproto/protomulti"
-	uuid "github.com/satori/go.uuid"
 	"mevhub/internal/app/query"
 )
 
 func (g MultiGrpcServer) GetGame(ctx context.Context, request *protomulti.GetGameRequest) (*protomulti.GetGameResponse, error) {
 
-	id, err := uuid.FromString(request.GameId)
-	if err != nil {
-		return nil, err
-	}
-
-	var qry = query.NewGameSummaryQuery(id)
+	var qry = query.NewGameSummaryQuery()
 
 	result, err := g.app.SubApplications.Game.Queries.GameSummary.Handle(g.NewCommandContext(ctx), qry)
 	if err != nil {

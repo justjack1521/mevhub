@@ -1,39 +1,44 @@
 package query
 
 import (
-	uuid "github.com/satori/go.uuid"
 	"mevhub/internal/domain/game"
+	"mevhub/internal/domain/session"
 )
 
 type GameSummaryQuery struct {
-	InstanceID uuid.UUID
 }
 
 func (g GameSummaryQuery) CommandName() string {
 	return "query.game.summary"
 }
 
-func NewGameSummaryQuery(id uuid.UUID) GameSummaryQuery {
-	return GameSummaryQuery{InstanceID: id}
+func NewGameSummaryQuery() GameSummaryQuery {
+	return GameSummaryQuery{}
 }
 
 type GameSummaryQueryHandler struct {
+	SessionRepository           session.InstanceReadRepository
 	InstanceRepository          game.InstanceReadRepository
 	PlayerParticipantRepository game.PlayerParticipantReadRepository
 }
 
-func NewGameSummaryQueryHandler(instances game.InstanceReadRepository, players game.PlayerParticipantReadRepository) *GameSummaryQueryHandler {
-	return &GameSummaryQueryHandler{InstanceRepository: instances, PlayerParticipantRepository: players}
+func NewGameSummaryQueryHandler(sessions session.InstanceReadRepository, instances game.InstanceReadRepository, players game.PlayerParticipantReadRepository) *GameSummaryQueryHandler {
+	return &GameSummaryQueryHandler{SessionRepository: sessions, InstanceRepository: instances, PlayerParticipantRepository: players}
 }
 
 func (h *GameSummaryQueryHandler) Handle(ctx Context, cmd GameSummaryQuery) (game.Summary, error) {
 
-	instance, err := h.InstanceRepository.Get(ctx, cmd.InstanceID)
+	current, err := h.SessionRepository.QueryByID(ctx, ctx.UserID())
 	if err != nil {
 		return game.Summary{}, err
 	}
 
-	participants, err := h.PlayerParticipantRepository.QueryAll(ctx, cmd.InstanceID)
+	instance, err := h.InstanceRepository.Get(ctx, current.LobbyID)
+	if err != nil {
+		return game.Summary{}, err
+	}
+
+	participants, err := h.PlayerParticipantRepository.QueryAll(ctx, current.LobbyID)
 	if err != nil {
 		return game.Summary{}, err
 	}
