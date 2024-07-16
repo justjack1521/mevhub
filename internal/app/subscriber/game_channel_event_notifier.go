@@ -2,7 +2,6 @@ package subscriber
 
 import (
 	"context"
-	"fmt"
 	"github.com/justjack1521/mevium/pkg/genproto/protomulti"
 	"github.com/justjack1521/mevium/pkg/mevent"
 	uuid "github.com/satori/go.uuid"
@@ -21,21 +20,6 @@ func NewGameChannelEventNotifier(publisher *mevent.Publisher) *GameChannelEventN
 }
 
 func (s *GameChannelEventNotifier) Notify(event mevent.Event) {
-	switch actual := event.(type) {
-	case game.InstanceReadyEvent:
-		if err := s.HandleReady(actual); err != nil {
-			fmt.Println(err)
-		}
-	}
-}
-
-func (s *GameChannelEventNotifier) HandleReady(event game.InstanceReadyEvent) error {
-
-	var notification = &protomulti.GameReadyNotification{
-		GameId: event.InstanceID().String(),
-	}
-
-	return s.publish(event.Context(), protomulti.MultiGameNotificationType_GAME_READY, event.InstanceID(), notification)
 
 }
 

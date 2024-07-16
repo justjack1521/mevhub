@@ -5,7 +5,7 @@ go 1.18
 require (
 	github.com/go-redis/redis/v8 v8.11.5
 	github.com/jinzhu/configor v1.2.1
-	github.com/justjack1521/mevium v0.0.0-20240716005830-b6512a979eeb
+	github.com/justjack1521/mevium v0.0.0-20240716012234-d200d9622de4
 	github.com/satori/go.uuid v1.2.0
 	github.com/stretchr/testify v1.9.0
 	github.com/wagslane/go-rabbitmq v0.12.3

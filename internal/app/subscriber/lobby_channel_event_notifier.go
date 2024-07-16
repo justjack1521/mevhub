@@ -8,6 +8,7 @@ import (
 	uuid "github.com/satori/go.uuid"
 	"mevhub/internal/adapter/translate"
 	"mevhub/internal/app/consumer"
+	"mevhub/internal/domain/game"
 	"mevhub/internal/domain/lobby"
 )
 
@@ -23,7 +24,7 @@ type ClientNotification interface {
 
 func NewLobbyChannelEventNotifier(publisher *mevent.Publisher, summary lobby.PlayerSummaryReadRepository, translator translate.LobbyPlayerSummaryTranslator) *LobbyChannelEventNotifier {
 	var subscriber = &LobbyChannelEventNotifier{EventPublisher: publisher, PlayerSummaryRepository: summary, PlayerSummaryTranslator: translator}
-	publisher.Subscribe(subscriber, lobby.ParticipantCreatedEvent{}, lobby.ParticipantDeletedEvent{}, lobby.ParticipantReadyEvent{}, lobby.ParticipantUnreadyEvent{}, lobby.InstanceStartedEvent{})
+	publisher.Subscribe(subscriber, lobby.ParticipantCreatedEvent{}, lobby.ParticipantDeletedEvent{}, lobby.ParticipantReadyEvent{}, lobby.ParticipantUnreadyEvent{}, lobby.InstanceStartedEvent{}, game.InstanceReadyEvent{})
 	return subscriber
 }
 
@@ -53,7 +54,21 @@ func (s *LobbyChannelEventNotifier) Notify(event mevent.Event) {
 		if err := s.HandleLobbyStartEvent(actual); err != nil {
 			fmt.Println(err)
 		}
+	case game.InstanceReadyEvent:
+		if err := s.HandleGameReadyEvent(actual); err != nil {
+			fmt.Println(err)
+		}
 	}
+}
+
+func (s *LobbyChannelEventNotifier) HandleGameReadyEvent(event game.InstanceReadyEvent) error {
+
+	var notification = &protomulti.LobbyReadyNotification{
+		LobbyId: event.InstanceID().String(),
+	}
+
+	return s.publish(event.Context(), protomulti.MultiLobbyNotificationType_LOBBY_READY, event.InstanceID(), notification)
+
 }
 
 func (s *LobbyChannelEventNotifier) HandleLobbyStartEvent(event lobby.InstanceStartedEvent) error {
