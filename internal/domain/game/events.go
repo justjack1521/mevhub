@@ -95,3 +95,37 @@ func (e InstanceDeletedEvent) Context() context.Context {
 func (e InstanceDeletedEvent) InstanceID() uuid.UUID {
 	return e.id
 }
+
+type ParticipantCreatedEvent struct {
+	ctx  context.Context
+	id   uuid.UUID
+	slot int
+}
+
+func NewParticipantCreatedEvent(ctx context.Context, id uuid.UUID, slot int) ParticipantCreatedEvent {
+	return ParticipantCreatedEvent{ctx: ctx, id: id, slot: slot}
+}
+
+func (e ParticipantCreatedEvent) Name() string {
+	return "game.participant.created"
+}
+
+func (e ParticipantCreatedEvent) ToLogFields() logrus.Fields {
+	return logrus.Fields{
+		"event.name":  e.Name(),
+		"instance.id": e.id,
+		"player.slot": e.slot,
+	}
+}
+
+func (e ParticipantCreatedEvent) Context() context.Context {
+	return e.ctx
+}
+
+func (e ParticipantCreatedEvent) InstanceID() uuid.UUID {
+	return e.id
+}
+
+func (e ParticipantCreatedEvent) PlayerSlot() int {
+	return e.slot
+}

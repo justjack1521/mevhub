@@ -55,6 +55,9 @@ func (s *GameParticipantWriter) HandleCreate(event game.InstanceCreatedEvent) er
 		if err := s.GameParticipantRepository.Create(event.Context(), event.InstanceID(), participant.PlayerSlot, player); err != nil {
 			return err
 		}
+
+		s.EventPublisher.Notify(game.NewParticipantCreatedEvent(event.Context(), event.InstanceID(), participant.PlayerSlot))
+
 	}
 
 	s.EventPublisher.Notify(game.NewInstanceReadyEvent(event.Context(), event.InstanceID()))

@@ -7,7 +7,7 @@ import (
 	"mevhub/internal/domain/game"
 )
 
-type GamePlayerParticipantTranslator Translator[game.PlayerParticipant, *protomulti.ProtoGameParticipant]
+type GamePlayerParticipantTranslator Translator[*game.PlayerParticipant, *protomulti.ProtoGameParticipant]
 type GamePlayerLoadoutTranslator Translator[game.PlayerLoadout, *protoidentity.ProtoPlayerLoadout]
 type GameJobCardLoadoutTranslator Translator[game.PlayerJobCardLoadout, *protoidentity.ProtoPlayerJobLoadout]
 type GameWeaponLoadoutTranslator Translator[game.PlayerWeaponLoadout, *protoidentity.ProtoPlayerWeaponLoadout]
@@ -23,7 +23,7 @@ func NewGameParticipantTranslator() GamePlayerParticipantTranslator {
 	}
 }
 
-func (f gamePlayerParticipantTranslator) Marshall(data game.PlayerParticipant) (out *protomulti.ProtoGameParticipant, err error) {
+func (f gamePlayerParticipantTranslator) Marshall(data *game.PlayerParticipant) (out *protomulti.ProtoGameParticipant, err error) {
 	loadout, err := f.loadout.Marshall(data.Loadout)
 	return &protomulti.ProtoGameParticipant{
 		PartySlot:  int32(data.PlayerSlot),
@@ -32,12 +32,12 @@ func (f gamePlayerParticipantTranslator) Marshall(data game.PlayerParticipant) (
 	}, nil
 }
 
-func (f gamePlayerParticipantTranslator) Unmarshall(data *protomulti.ProtoGameParticipant) (out game.PlayerParticipant, err error) {
+func (f gamePlayerParticipantTranslator) Unmarshall(data *protomulti.ProtoGameParticipant) (out *game.PlayerParticipant, err error) {
 	loadout, err := f.loadout.Unmarshall(data.Loadout)
 	if err != nil {
-		return game.PlayerParticipant{}, err
+		return nil, err
 	}
-	return game.PlayerParticipant{
+	return &game.PlayerParticipant{
 		PlayerSlot: int(data.PartySlot),
 		BotControl: data.BotControl,
 		Loadout:    loadout,

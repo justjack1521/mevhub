@@ -13,8 +13,8 @@ var (
 )
 
 type GamePlayerParticipantSerialiser interface {
-	Marshall(data game.PlayerParticipant) ([]byte, error)
-	Unmarshall(data []byte) (game.PlayerParticipant, error)
+	Marshall(data *game.PlayerParticipant) ([]byte, error)
+	Unmarshall(data []byte) (*game.PlayerParticipant, error)
 }
 
 type gamePlayerParticipantJSONSerialiser struct {
@@ -25,7 +25,7 @@ func NewGamePlayerParticipantJSONSerialiser() GamePlayerParticipantSerialiser {
 	return &gamePlayerParticipantJSONSerialiser{translator: translate.NewGameParticipantTranslator()}
 }
 
-func (s gamePlayerParticipantJSONSerialiser) Marshall(data game.PlayerParticipant) ([]byte, error) {
+func (s gamePlayerParticipantJSONSerialiser) Marshall(data *game.PlayerParticipant) ([]byte, error) {
 	p, err := s.translator.Marshall(data)
 	if err != nil {
 		return nil, err
@@ -33,13 +33,13 @@ func (s gamePlayerParticipantJSONSerialiser) Marshall(data game.PlayerParticipan
 	return json.Marshal(p)
 }
 
-func (s gamePlayerParticipantJSONSerialiser) Unmarshall(data []byte) (game.PlayerParticipant, error) {
+func (s gamePlayerParticipantJSONSerialiser) Unmarshall(data []byte) (*game.PlayerParticipant, error) {
 	if len(data) == 0 {
-		return game.PlayerParticipant{}, ErrGamePlayerParticipantIsNil
+		return nil, ErrGamePlayerParticipantIsNil
 	}
 	result := &protomulti.ProtoGameParticipant{}
 	if err := json.Unmarshal(data, result); err != nil {
-		return game.PlayerParticipant{}, err
+		return nil, err
 	}
 	return s.translator.Unmarshall(result)
 }

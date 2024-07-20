@@ -25,16 +25,16 @@ func NewGameParticipantRepository(client *redis.Client, serialiser serial.GamePl
 	return &GameParticipantRepository{client: client, serialiser: serialiser}
 }
 
-func (r *GameParticipantRepository) Query(ctx context.Context, id uuid.UUID, slot int) (game.PlayerParticipant, error) {
+func (r *GameParticipantRepository) Query(ctx context.Context, id uuid.UUID, slot int) (*game.PlayerParticipant, error) {
 	return r.query(ctx, r.Key(id, slot))
 }
 
-func (r *GameParticipantRepository) QueryAll(ctx context.Context, id uuid.UUID) ([]game.PlayerParticipant, error) {
+func (r *GameParticipantRepository) QueryAll(ctx context.Context, id uuid.UUID) ([]*game.PlayerParticipant, error) {
 	keys, err := r.client.Keys(ctx, r.GameKey(id)).Result()
 	if err != nil {
 		return nil, err
 	}
-	var participants = make([]game.PlayerParticipant, len(keys))
+	var participants = make([]*game.PlayerParticipant, len(keys))
 	for index, key := range keys {
 		participant, err := r.query(ctx, key)
 		if err != nil {
@@ -45,7 +45,7 @@ func (r *GameParticipantRepository) QueryAll(ctx context.Context, id uuid.UUID) 
 	return participants, nil
 }
 
-func (r *GameParticipantRepository) Create(ctx context.Context, id uuid.UUID, slot int, participant game.PlayerParticipant) error {
+func (r *GameParticipantRepository) Create(ctx context.Context, id uuid.UUID, slot int, participant *game.PlayerParticipant) error {
 	result, err := r.serialiser.Marshall(participant)
 	if err != nil {
 		return err
@@ -56,14 +56,14 @@ func (r *GameParticipantRepository) Create(ctx context.Context, id uuid.UUID, sl
 	return nil
 }
 
-func (r *GameParticipantRepository) query(ctx context.Context, key string) (game.PlayerParticipant, error) {
+func (r *GameParticipantRepository) query(ctx context.Context, key string) (*game.PlayerParticipant, error) {
 	value, err := r.client.Get(ctx, key).Result()
 	if err != nil {
-		return game.PlayerParticipant{}, err
+		return nil, err
 	}
 	result, err := r.serialiser.Unmarshall([]byte(value))
 	if err != nil {
-		return game.PlayerParticipant{}, err
+		return nil, err
 	}
 	return result, nil
 }

@@ -3,6 +3,7 @@ package app
 import (
 	"mevhub/internal/adapter/translate"
 	"mevhub/internal/app/query"
+	"mevhub/internal/app/server"
 	"mevhub/internal/app/subscriber"
 	"mevhub/internal/decorator"
 	"mevhub/internal/domain/game"
@@ -40,10 +41,13 @@ func NewGameApplication(core *CoreApplication) *GameApplication {
 		PlayerParticipant: translate.NewGameParticipantTranslator(),
 	}
 
+	var svr = server.NewGameChannelServer(core.Services.RabbitMQConnection, core.Services.Logger)
+
 	application.subscribers = []ApplicationSubscriber{
 		subscriber.NewGameChannelEventNotifier(core.Services.EventPublisher),
 		subscriber.NewGameInstanceWriter(core.Services.EventPublisher, core.data.Lobbies, game.NewInstanceFactory(core.repositories.Quests), core.data.Games),
 		subscriber.NewGameParticipantWriter(core.Services.EventPublisher, core.data.LobbyParticipants, game.NewPlayerParticipantFactory(core.data.GamePlayerLoadouts), core.data.GameParticipants),
+		subscriber.NewGameChannelServerWriter(svr, core.Services.EventPublisher, core.data.Games, core.data.GameParticipants),
 	}
 
 	return application

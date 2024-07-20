@@ -5,6 +5,8 @@ import (
 )
 
 type PlayerParticipant struct {
+	UserID     uuid.UUID
+	PlayerID   uuid.UUID
 	PlayerSlot int
 	BotControl bool
 	Loadout    PlayerLoadout

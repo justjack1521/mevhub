@@ -13,14 +13,16 @@ func NewPlayerParticipantFactory(loadout PlayerLoadoutReadRepository) *PlayerPar
 	return &PlayerParticipantFactory{loadout: loadout}
 }
 
-func (f *PlayerParticipantFactory) Create(ctx context.Context, source *lobby.Participant) (PlayerParticipant, error) {
+func (f *PlayerParticipantFactory) Create(ctx context.Context, source *lobby.Participant) (*PlayerParticipant, error) {
 
 	loadout, err := f.loadout.Query(ctx, source.PlayerID, source.DeckIndex)
 	if err != nil {
-		return PlayerParticipant{}, err
+		return nil, err
 	}
 
-	return PlayerParticipant{
+	return &PlayerParticipant{
+		UserID:     source.UserID,
+		PlayerID:   source.PlayerID,
 		PlayerSlot: source.PlayerSlot,
 		BotControl: source.BotControl,
 		Loadout:    loadout,
