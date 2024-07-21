@@ -36,6 +36,7 @@ func (s *GameParticipantWriter) Notify(event mevent.Event) {
 }
 
 func (s *GameParticipantWriter) HandleCreate(event game.InstanceCreatedEvent) error {
+
 	participants, err := s.LobbyParticipantRepository.QueryAllForLobby(event.Context(), event.InstanceID())
 	if err != nil {
 		return err
