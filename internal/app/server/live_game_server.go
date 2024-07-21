@@ -64,7 +64,7 @@ func (s *GameServer) HandlePlayerReadyChange(change game.PlayerReadyChange) {
 		GameId:      change.InstanceID.String(),
 		PlayerIndex: int32(change.PartySlot),
 	}
-	s.Publish(protomulti.MultiGameNotificationType_GAME_PLAYER_READY, message)
+	s.Publish(protomulti.MultiGameNotificationType_GAME_NOTIFY_PLAYER_READY, message)
 }
 
 func (s *GameServer) Publish(operation protomulti.MultiGameNotificationType, message Notification) {
