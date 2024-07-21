@@ -35,7 +35,7 @@ func (w *GameChannelServerWriter) HandleInstanceCreated(event game.InstanceCreat
 	if err != nil {
 		return
 	}
-	w.Server.Register <- w.Server.NewGameChannel(instance)
+	w.Server.Register <- w.Server.NewLiveGameChannel(instance)
 }
 
 func (w *GameChannelServerWriter) HandleInstanceDelete(event game.InstanceDeletedEvent) {
@@ -49,11 +49,12 @@ func (w *GameChannelServerWriter) HandleParticipantCreated(event game.Participan
 		return
 	}
 
-	var channel = server.NewPlayerChannel(participant.UserID, participant.PlayerID, participant)
-
-	w.Server.RegisterPlayer <- &server.PlayerRegisterNotification{
+	w.Server.ActionChannel <- &server.GameActionRequest{
 		InstanceID: event.InstanceID(),
-		Player:     channel,
+		Action: &game.PlayerAddAction{
+			UserID:    participant.UserID,
+			PlayerID:  participant.PlayerID,
+			PartySlot: participant.PlayerSlot,
+		},
 	}
-
 }
