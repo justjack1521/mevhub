@@ -42,6 +42,7 @@ func NewGameApplication(core *CoreApplication) *GameApplication {
 	}
 
 	var svr = server.NewGameChannelServer(core.Services.RabbitMQConnection, core.Services.Logger)
+	go svr.Run()
 
 	application.subscribers = []ApplicationSubscriber{
 		subscriber.NewGameChannelEventNotifier(core.Services.EventPublisher),
