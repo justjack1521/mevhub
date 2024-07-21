@@ -7,7 +7,6 @@ import (
 	"mevhub/internal/app/query"
 	"mevhub/internal/app/subscriber"
 	"mevhub/internal/decorator"
-	"mevhub/internal/domain/game"
 	"mevhub/internal/domain/lobby"
 )
 
@@ -126,7 +125,7 @@ func (a *LobbyApplication) NewCancelLobbyCommandHandler(core *CoreApplication) C
 }
 
 func (a *LobbyApplication) NewStartLobbyCommandHandler(core *CoreApplication) StartLobbyCommandHandler {
-	var actual = command.NewStartLobbyCommandHandler(core.data.Sessions, core.data.Lobbies, core.data.LobbyParticipants, game.NewInstanceFactory(core.repositories.Quests), core.data.Games, game.NewPlayerParticipantFactory(core.data.GamePlayerLoadouts), core.data.GameParticipants)
+	var actual = command.NewStartLobbyCommandHandler(core.data.Sessions, core.data.Lobbies, core.data.LobbyParticipants)
 	return decorator.NewStandardCommandDecorator[command.Context, *command.StartLobbyCommand](core.Services.EventPublisher, actual)
 }
 
