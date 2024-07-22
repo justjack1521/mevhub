@@ -8,7 +8,7 @@ import (
 	"sync"
 )
 
-type GameChannelServer struct {
+type GameServerHost struct {
 	mu         sync.Mutex
 	games      map[uuid.UUID]*GameServer
 	Register   chan *GameServer
@@ -20,8 +20,8 @@ type GameChannelServer struct {
 	ActionChannel chan *GameActionRequest
 }
 
-func NewGameChannelServer(conn *rabbitmq.Conn, logger *logrus.Logger) *GameChannelServer {
-	var server = &GameChannelServer{
+func NewGameServerHost(conn *rabbitmq.Conn, logger *logrus.Logger) *GameServerHost {
+	var server = &GameServerHost{
 		connection:    conn,
 		logger:        logger,
 		games:         make(map[uuid.UUID]*GameServer),
@@ -32,7 +32,7 @@ func NewGameChannelServer(conn *rabbitmq.Conn, logger *logrus.Logger) *GameChann
 	return server
 }
 
-func (c *GameChannelServer) Run() {
+func (c *GameServerHost) Run() {
 	for {
 		select {
 		case instance := <-c.Register:
@@ -45,21 +45,17 @@ func (c *GameChannelServer) Run() {
 	}
 }
 
-func (c *GameChannelServer) NewLiveGameChannel(instance *game.Instance) *GameServer {
+func (c *GameServerHost) NewLiveGameChannel(instance *game.Instance) *GameServer {
 	return NewGameServer(instance, c.connection, c.logger)
 }
 
-func (c *GameChannelServer) register(channel *GameServer) {
-	c.mu.Lock()
-	defer c.mu.Unlock()
+func (c *GameServerHost) register(channel *GameServer) {
 	c.games[channel.InstanceID] = channel
 	channel.Start()
 	c.logger.WithFields(logrus.Fields{"count": len(c.games)}).Info("game server registered")
 }
 
-func (c *GameChannelServer) unregister(id uuid.UUID) {
-	c.mu.Lock()
-	defer c.mu.Unlock()
+func (c *GameServerHost) unregister(id uuid.UUID) {
 	if channel, ok := c.games[id]; ok {
 		close(channel.game.ActionChannel)
 		close(channel.game.ChangeChannel)
@@ -68,11 +64,9 @@ func (c *GameChannelServer) unregister(id uuid.UUID) {
 	c.logger.WithFields(logrus.Fields{"count": len(c.games)}).Info("game server unregistered")
 }
 
-func (c *GameChannelServer) action(request *GameActionRequest) {
-	c.mu.Lock()
-	defer c.mu.Unlock()
+func (c *GameServerHost) action(request *GameActionRequest) {
 	if instance, exists := c.games[request.InstanceID]; exists {
-		request.Action.Perform(instance.game)
+		instance.game.ActionChannel <- request.Action
 	}
 	c.logger.WithFields(logrus.Fields{"instance.id": request.InstanceID}).Info("game action received")
 }

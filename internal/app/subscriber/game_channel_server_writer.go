@@ -7,13 +7,13 @@ import (
 )
 
 type GameChannelServerWriter struct {
-	Server                *server.GameChannelServer
+	Server                *server.GameServerHost
 	EventPublisher        *mevent.Publisher
 	InstanceRepository    game.InstanceReadRepository
 	ParticipantRepository game.PlayerParticipantReadRepository
 }
 
-func NewGameChannelServerWriter(server *server.GameChannelServer, publisher *mevent.Publisher, instances game.InstanceRepository, participants game.PlayerParticipantReadRepository) *GameChannelServerWriter {
+func NewGameChannelServerWriter(server *server.GameServerHost, publisher *mevent.Publisher, instances game.InstanceRepository, participants game.PlayerParticipantReadRepository) *GameChannelServerWriter {
 	var writer = &GameChannelServerWriter{Server: server, EventPublisher: publisher, InstanceRepository: instances, ParticipantRepository: participants}
 	publisher.Subscribe(writer, game.InstanceCreatedEvent{}, game.InstanceDeletedEvent{}, game.ParticipantCreatedEvent{})
 	return writer

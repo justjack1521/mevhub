@@ -2,6 +2,7 @@ package app
 
 import (
 	"mevhub/internal/adapter/translate"
+	"mevhub/internal/app/command"
 	"mevhub/internal/app/query"
 	"mevhub/internal/app/server"
 	"mevhub/internal/app/subscriber"
@@ -22,6 +23,9 @@ type GameApplicationQueries struct {
 }
 
 type GameApplicationCommands struct {
+	EnqueueAction EnqueueActionCommandHandler
+	DequeueAction DequeueActionCommandHandler
+	LockAction    LockActionCommandHandler
 }
 
 type GameApplicationTranslators struct {
@@ -29,6 +33,10 @@ type GameApplicationTranslators struct {
 }
 
 func NewGameApplication(core *CoreApplication) *GameApplication {
+
+	var svr = server.NewGameServerHost(core.Services.RabbitMQConnection, core.Services.Logger)
+	go svr.Run()
+
 	var application = &GameApplication{
 		consumers: []ApplicationConsumer{},
 	}
@@ -36,13 +44,16 @@ func NewGameApplication(core *CoreApplication) *GameApplication {
 	application.Queries = &GameApplicationQueries{
 		GameSummary: query.NewGameSummaryQueryHandler(core.data.Sessions, core.data.Games, core.data.GameParticipants),
 	}
-	application.Commands = &GameApplicationCommands{}
+
+	application.Commands = &GameApplicationCommands{
+		EnqueueAction: command.NewEnqueueActionCommandHandler(core.data.Sessions, svr),
+		DequeueAction: command.NewDequeueActionCommandHandler(core.data.Sessions, svr),
+		LockAction:    command.NewLockActionCommandHandler(core.data.Sessions, svr),
+	}
+
 	application.Translators = &GameApplicationTranslators{
 		PlayerParticipant: translate.NewGameParticipantTranslator(),
 	}
-
-	var svr = server.NewGameChannelServer(core.Services.RabbitMQConnection, core.Services.Logger)
-	go svr.Run()
 
 	application.subscribers = []ApplicationSubscriber{
 		subscriber.NewGameChannelEventNotifier(core.Services.EventPublisher),
@@ -53,5 +64,9 @@ func NewGameApplication(core *CoreApplication) *GameApplication {
 
 	return application
 }
+
+type EnqueueActionCommandHandler decorator.CommandHandler[command.Context, *command.EnqueueActionCommand]
+type DequeueActionCommandHandler decorator.CommandHandler[command.Context, *command.DequeueActionCommand]
+type LockActionCommandHandler decorator.CommandHandler[command.Context, *command.LockActionCommand]
 
 type GameSummaryQueryHandler decorator.QueryHandler[query.Context, query.GameSummaryQuery, game.Summary]
