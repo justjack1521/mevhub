@@ -20,7 +20,7 @@ func (f gameInstanceTranslator) Marshall(data *game.Instance) (out *protomulti.P
 	return &protomulti.ProtoGameInstance{
 		SysId:        data.SysID.String(),
 		PartyId:      data.PartyID,
-		Seed:         data.Seed,
+		Seed:         int32(data.Seed),
 		State:        int32(data.State),
 		StartedAt:    data.StartedAt.Unix(),
 		RegisteredAt: data.RegisteredAt.Unix(),
@@ -31,7 +31,7 @@ func (f gameInstanceTranslator) Unmarshall(data *protomulti.ProtoGameInstance) (
 	return &game.Instance{
 		SysID:        uuid.FromStringOrNil(data.SysId),
 		PartyID:      data.PartyId,
-		Seed:         data.Seed,
+		Seed:         int(data.Seed),
 		State:        game.InstanceState(data.State),
 		StartedAt:    time.Unix(data.StartedAt, 0),
 		RegisteredAt: time.Unix(data.RegisteredAt, 0),

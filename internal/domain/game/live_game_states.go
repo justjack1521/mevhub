@@ -43,11 +43,16 @@ func (s *PlayerTurnState) Update(game *LiveGameInstance, t time.Time) {
 	if ready || expired {
 
 		for _, player := range game.Players {
+
 			player.ActionsLocked = true
+			player.ActionLockIndex = game.GetActionLockedPlayerCount()
+
 			var change = PlayerLockActionChange{
-				InstanceID: game.InstanceID,
-				PartySlot:  player.PartySlot,
+				InstanceID:      game.InstanceID,
+				PartySlot:       player.PartySlot,
+				ActionLockIndex: player.ActionLockIndex,
 			}
+
 			game.SendChange(change)
 		}
 

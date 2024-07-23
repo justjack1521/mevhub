@@ -6,14 +6,15 @@ import (
 )
 
 type LivePlayer struct {
-	UserID         uuid.UUID
-	PlayerID       uuid.UUID
-	PartySlot      int
-	Ready          bool
-	ActionsLocked  bool
-	MaxActionCount int
-	Actions        []*PlayerAction
-	LastAction     time.Time
+	UserID          uuid.UUID
+	PlayerID        uuid.UUID
+	PartySlot       int
+	Ready           bool
+	ActionsLocked   bool
+	ActionLockIndex int
+	MaxActionCount  int
+	Actions         []*PlayerAction
+	LastAction      time.Time
 }
 
 func (p *LivePlayer) CanEnqueueAction() bool {

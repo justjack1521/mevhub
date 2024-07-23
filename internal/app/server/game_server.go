@@ -79,8 +79,9 @@ func (s *GameServer) HandlePlayerDequeueActionChange(change game.PlayerDequeueAc
 
 func (s *GameServer) HandlePlayerLockActionChange(change game.PlayerLockActionChange) {
 	var message = &protomulti.GameLockActionNotification{
-		GameId:      change.InstanceID.String(),
-		PlayerIndex: int32(change.PartySlot),
+		GameId:          change.InstanceID.String(),
+		PlayerIndex:     int32(change.PartySlot),
+		ActionLockIndex: int32(change.ActionLockIndex),
 	}
 	s.Publish(protomulti.MultiGameNotificationType_GAME_NOTIFY_LOCK_ACTION, message)
 }

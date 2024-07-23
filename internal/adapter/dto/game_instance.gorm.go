@@ -8,7 +8,7 @@ import (
 
 type GameInstanceGorm struct {
 	SysID        uuid.UUID `gorm:"primaryKey;column:sys_id"`
-	Seed         int64     `gorm:"column:seed"`
+	Seed         int       `gorm:"column:seed"`
 	State        int       `gorm:"column:state"`
 	RegisteredAt time.Time `gorm:"column:registered_at"`
 }

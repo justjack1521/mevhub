@@ -158,6 +158,7 @@ type PlayerLockAction struct {
 }
 
 func (a *PlayerLockAction) Perform(game *LiveGameInstance) {
+
 	player, exists := game.Players[a.PlayerID]
 	if exists == false {
 		return
@@ -168,10 +169,12 @@ func (a *PlayerLockAction) Perform(game *LiveGameInstance) {
 	}
 
 	player.ActionsLocked = true
+	player.ActionLockIndex = game.GetActionLockedPlayerCount()
 
 	var change = PlayerLockActionChange{
-		InstanceID: a.InstanceID,
-		PartySlot:  player.PartySlot,
+		InstanceID:      a.InstanceID,
+		PartySlot:       player.PartySlot,
+		ActionLockIndex: player.ActionLockIndex,
 	}
 
 	game.SendChange(change)

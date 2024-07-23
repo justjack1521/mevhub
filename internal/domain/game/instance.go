@@ -10,7 +10,7 @@ import (
 type Instance struct {
 	SysID        uuid.UUID
 	PartyID      string
-	Seed         int64
+	Seed         int
 	Options      *InstanceOptions
 	State        InstanceState
 	StartedAt    time.Time
@@ -21,7 +21,7 @@ func NewGameInstance() *Instance {
 	return &Instance{
 		SysID:        uuid.NewV4(),
 		PartyID:      fmt.Sprintf("%08d", rand.Intn(100000000)),
-		Seed:         rand.Int63(),
+		Seed:         rand.Int(),
 		State:        InstanceGamePendingState,
 		RegisteredAt: time.Now().UTC(),
 	}

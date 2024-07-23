@@ -24,7 +24,7 @@ func (f *InstanceFactory) Create(source *lobby.Instance) (*Instance, error) {
 	return &Instance{
 		SysID:   source.SysID,
 		PartyID: source.PartyID,
-		Seed:    rand.Int63(),
+		Seed:    rand.Int(),
 		Options: &InstanceOptions{
 			MinimumPlayerLevel: source.MinimumPlayerLevel,
 			MaxRunTime:         quest.Tier.TimeLimit,

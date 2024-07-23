@@ -29,7 +29,7 @@ func (g MultiGrpcServer) GetGame(ctx context.Context, request *protomulti.GetGam
 		GameData: &protomulti.ProtoGameInstance{
 			SysId:   result.SysID.String(),
 			PartyId: result.PartyID,
-			Seed:    result.Seed,
+			Seed:    int32(result.Seed),
 		},
 		Participants: participants,
 	}, nil

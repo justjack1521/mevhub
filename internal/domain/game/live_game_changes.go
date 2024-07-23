@@ -43,6 +43,7 @@ type PlayerDequeueActionChange struct {
 
 type PlayerLockActionChange struct {
 	Change
-	InstanceID uuid.UUID
-	PartySlot  int
+	InstanceID      uuid.UUID
+	PartySlot       int
+	ActionLockIndex int
 }
