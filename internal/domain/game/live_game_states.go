@@ -1,6 +1,7 @@
 package game
 
 import (
+	"fmt"
 	"time"
 )
 
@@ -34,6 +35,7 @@ type PlayerTurnState struct {
 
 func (s *PlayerTurnState) Expired(t time.Time) bool {
 	var difference = t.Sub(s.StartTime)
+	fmt.Println("Time remaining: ", int(difference.Seconds()))
 	return difference > s.TurnDuration && s.TurnDuration > 0
 }
 
