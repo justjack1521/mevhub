@@ -22,20 +22,20 @@ func NewGameParticipantWriter(publisher *mevent.Publisher, participants lobby.Pa
 		GameParticipantFactory:     factory,
 		GameParticipantRepository:  players,
 	}
-	publisher.Subscribe(subscriber, game.InstanceCreatedEvent{})
+	publisher.Subscribe(subscriber, game.InstanceRegisteredEvent{})
 	return subscriber
 }
 
 func (s *GameParticipantWriter) Notify(event mevent.Event) {
 	switch actual := event.(type) {
-	case game.InstanceCreatedEvent:
+	case game.InstanceRegisteredEvent:
 		if err := s.HandleCreate(actual); err != nil {
 			fmt.Println(err)
 		}
 	}
 }
 
-func (s *GameParticipantWriter) HandleCreate(event game.InstanceCreatedEvent) error {
+func (s *GameParticipantWriter) HandleCreate(event game.InstanceRegisteredEvent) error {
 
 	participants, err := s.LobbyParticipantRepository.QueryAllForLobby(event.Context(), event.InstanceID())
 	if err != nil {

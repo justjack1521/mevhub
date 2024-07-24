@@ -72,9 +72,10 @@ func (c *GameServerHost) action(request *GameActionRequest) {
 			"instance.id": request.InstanceID,
 			"action.type": reflect.TypeOf(request.Action),
 		}).Info("game action received")
+	} else {
+		c.logger.WithFields(logrus.Fields{
+			"instance.id": request.InstanceID,
+			"action.type": reflect.TypeOf(request.Action),
+		}).Info("game action orphaned")
 	}
-	c.logger.WithFields(logrus.Fields{
-		"instance.id": request.InstanceID,
-		"action.type": reflect.TypeOf(request.Action),
-	}).Info("game action orphaned")
 }

@@ -68,6 +68,34 @@ func (e InstanceCreatedEvent) InstanceID() uuid.UUID {
 	return e.id
 }
 
+type InstanceRegisteredEvent struct {
+	ctx context.Context
+	id  uuid.UUID
+}
+
+func NewInstanceRegisteredEvent(ctx context.Context, id uuid.UUID) InstanceRegisteredEvent {
+	return InstanceRegisteredEvent{ctx: ctx, id: id}
+}
+
+func (e InstanceRegisteredEvent) Name() string {
+	return "game.instance.registered"
+}
+
+func (e InstanceRegisteredEvent) ToLogFields() logrus.Fields {
+	return logrus.Fields{
+		"event.name":  e.Name(),
+		"instance.id": e.id,
+	}
+}
+
+func (e InstanceRegisteredEvent) Context() context.Context {
+	return e.ctx
+}
+
+func (e InstanceRegisteredEvent) InstanceID() uuid.UUID {
+	return e.id
+}
+
 type InstanceDeletedEvent struct {
 	ctx context.Context
 	id  uuid.UUID

@@ -36,6 +36,7 @@ func (w *GameChannelServerWriter) HandleInstanceCreated(event game.InstanceCreat
 		return
 	}
 	w.Server.Register <- w.Server.NewLiveGameChannel(instance)
+	w.EventPublisher.Notify(game.NewInstanceRegisteredEvent(event.Context(), event.InstanceID()))
 }
 
 func (w *GameChannelServerWriter) HandleInstanceDelete(event game.InstanceDeletedEvent) {
