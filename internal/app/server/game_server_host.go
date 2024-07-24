@@ -5,6 +5,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/wagslane/go-rabbitmq"
 	"mevhub/internal/domain/game"
+	"reflect"
 	"sync"
 )
 
@@ -68,5 +69,8 @@ func (c *GameServerHost) action(request *GameActionRequest) {
 	if instance, exists := c.games[request.InstanceID]; exists {
 		instance.game.ActionChannel <- request.Action
 	}
-	c.logger.WithFields(logrus.Fields{"instance.id": request.InstanceID}).Info("game action received")
+	c.logger.WithFields(logrus.Fields{
+		"instance.id": request.InstanceID,
+		"action.type": reflect.TypeOf(request.Action),
+	}).Info("game action received")
 }
