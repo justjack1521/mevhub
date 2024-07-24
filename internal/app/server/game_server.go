@@ -66,7 +66,7 @@ func (s *GameServer) HandleGameStateChange(change game.GameStateChange) {
 
 	s.logger.WithFields(logrus.Fields{
 		"instance.id": s.InstanceID.String(),
-		"state.name":  reflect.TypeOf(change),
+		"state.name":  reflect.TypeOf(change.State),
 	}).Info("State change on live game server")
 
 	switch actual := change.State.(type) {
