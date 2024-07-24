@@ -9,6 +9,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/wagslane/go-rabbitmq"
 	"mevhub/internal/domain/game"
+	"reflect"
 	"sync"
 )
 
@@ -62,6 +63,12 @@ func (s *GameServer) WatchChanges() {
 }
 
 func (s *GameServer) HandleGameStateChange(change game.GameStateChange) {
+
+	s.logger.WithFields(logrus.Fields{
+		"instance.id": s.InstanceID.String(),
+		"state.name":  reflect.TypeOf(change),
+	}).Info("State change on live game server")
+
 	switch actual := change.State.(type) {
 	case *game.EnemyTurnState:
 		s.HandleEnemyTurnStateChange(actual)
