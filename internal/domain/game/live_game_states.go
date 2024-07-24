@@ -21,24 +21,26 @@ func (s *PendingState) Update(game *LiveGameInstance, t time.Time) {
 
 		game.ActionChannel <- &StateChangeAction{
 			InstanceID: game.InstanceID,
-			State: &PlayerTurnState{
-				StartTime: time.Now().UTC(),
-			},
+			State:      game.NewPlayerTurnState(),
 		}
 
 	}
 }
 
 type PlayerTurnState struct {
-	StartTime time.Time
+	StartTime    time.Time
+	TurnDuration time.Duration
+}
+
+func (s *PlayerTurnState) Expired(t time.Time) bool {
+	var difference = t.Sub(s.StartTime)
+	return difference > s.TurnDuration && s.TurnDuration > 0
 }
 
 func (s *PlayerTurnState) Update(game *LiveGameInstance, t time.Time) {
 
-	var difference = t.Sub(s.StartTime)
-
 	var ready = game.GetActionLockedPlayerCount() == game.GetPlayerCount()
-	var expired = difference > game.PlayerTurnDuration
+	var expired = s.Expired(t)
 
 	if ready || expired {
 
@@ -58,13 +60,14 @@ func (s *PlayerTurnState) Update(game *LiveGameInstance, t time.Time) {
 
 		game.ActionChannel <- &StateChangeAction{
 			InstanceID: game.InstanceID,
-			State:      &EnemyTurnState{},
+			State:      game.NewEnemyTurnState(),
 		}
 	}
 
 }
 
 type EnemyTurnState struct {
+	QueuedActions []*PlayerActionQueue
 }
 
 func (s *EnemyTurnState) Update(game *LiveGameInstance, t time.Time) {

@@ -23,6 +23,7 @@ type GameApplicationQueries struct {
 }
 
 type GameApplicationCommands struct {
+	ReadyPlayer   ReadyPlayerCommandHandler
 	EnqueueAction EnqueueActionCommandHandler
 	DequeueAction DequeueActionCommandHandler
 	LockAction    LockActionCommandHandler
@@ -46,6 +47,7 @@ func NewGameApplication(core *CoreApplication) *GameApplication {
 	}
 
 	application.Commands = &GameApplicationCommands{
+		ReadyPlayer:   command.NewReadyPlayerCommandHandler(core.data.Sessions, svr),
 		EnqueueAction: command.NewEnqueueActionCommandHandler(core.data.Sessions, svr),
 		DequeueAction: command.NewDequeueActionCommandHandler(core.data.Sessions, svr),
 		LockAction:    command.NewLockActionCommandHandler(core.data.Sessions, svr),
@@ -65,6 +67,7 @@ func NewGameApplication(core *CoreApplication) *GameApplication {
 	return application
 }
 
+type ReadyPlayerCommandHandler decorator.CommandHandler[command.Context, *command.ReadyPlayerCommand]
 type EnqueueActionCommandHandler decorator.CommandHandler[command.Context, *command.EnqueueActionCommand]
 type DequeueActionCommandHandler decorator.CommandHandler[command.Context, *command.DequeueActionCommand]
 type LockActionCommandHandler decorator.CommandHandler[command.Context, *command.LockActionCommand]

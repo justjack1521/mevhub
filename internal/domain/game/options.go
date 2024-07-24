@@ -15,5 +15,6 @@ const (
 type InstanceOptions struct {
 	MinimumPlayerLevel int
 	MaxRunTime         time.Duration
+	PlayerTurnDuration time.Duration
 	Restrictions       []lobby.PartySlotRestriction
 }

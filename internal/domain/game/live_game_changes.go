@@ -23,6 +23,7 @@ type PlayerReadyChange struct {
 type GameStateChange struct {
 	Change
 	InstanceID uuid.UUID
+	State      State
 }
 
 type PlayerEnqueueActionChange struct {

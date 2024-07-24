@@ -6,7 +6,7 @@ import (
 )
 
 const (
-	GameInstanceTickPeriod = time.Millisecond * 20
+	StateTickPeriod = time.Millisecond * 20
 )
 
 type LiveGameInstance struct {
@@ -20,13 +20,17 @@ type LiveGameInstance struct {
 	MaxPlayerCount     int
 }
 
-func NewLiveGameInstance() *LiveGameInstance {
-	return &LiveGameInstance{
-		ActionChannel: make(chan Action),
-		ChangeChannel: make(chan Change),
-		Players:       make(map[uuid.UUID]*LivePlayer),
-		State:         &PendingState{StartTime: time.Now().UTC()},
+func NewLiveGameInstance(source *Instance) *LiveGameInstance {
+	var game = &LiveGameInstance{
+		InstanceID:         source.SysID,
+		ActionChannel:      make(chan Action),
+		ChangeChannel:      make(chan Change),
+		Players:            make(map[uuid.UUID]*LivePlayer),
+		PlayerTurnDuration: source.Options.PlayerTurnDuration,
+		GameDuration:       source.Options.MaxRunTime,
 	}
+	game.State = game.NewPendingState()
+	return game
 }
 
 func (game *LiveGameInstance) GetPlayerCount() int {
@@ -55,7 +59,7 @@ func (game *LiveGameInstance) GetActionLockedPlayerCount() int {
 
 func (game *LiveGameInstance) Tick() {
 
-	ticker := time.NewTicker(GameInstanceTickPeriod)
+	ticker := time.NewTicker(StateTickPeriod)
 	defer ticker.Stop()
 
 	for {
@@ -79,4 +83,26 @@ func (game *LiveGameInstance) SendChange(change Change) {
 	case game.ChangeChannel <- change:
 	default:
 	}
+}
+
+func (game *LiveGameInstance) NewPendingState() *PendingState {
+	return &PendingState{StartTime: time.Now().UTC()}
+}
+
+func (game *LiveGameInstance) NewPlayerTurnState() *PlayerTurnState {
+	return &PlayerTurnState{
+		StartTime:    time.Now().UTC(),
+		TurnDuration: game.PlayerTurnDuration,
+	}
+}
+
+func (game *LiveGameInstance) NewEnemyTurnState() *EnemyTurnState {
+	var state = &EnemyTurnState{QueuedActions: make([]*PlayerActionQueue, len(game.Players))}
+	for _, player := range game.Players {
+		state.QueuedActions[player.ActionLockIndex] = &PlayerActionQueue{
+			PlayerID: player.PlayerID,
+			Actions:  player.Actions,
+		}
+	}
+	return state
 }

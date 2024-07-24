@@ -18,9 +18,21 @@ type MultiGrpcServer struct {
 	app *app.CoreApplication
 }
 
+func (g MultiGrpcServer) ReadyPlayer(ctx context.Context, request *protomulti.GameReadyPlayerRequest) (*protomulti.GameReadyPlayerResponse, error) {
+
+	var cmd = command.NewReadyPlayerCommand()
+
+	if err := g.app.SubApplications.Game.Commands.ReadyPlayer.Handle(g.NewCommandContext(ctx), cmd); err != nil {
+		return nil, err
+	}
+
+	return &protomulti.GameReadyPlayerResponse{}, nil
+
+}
+
 func (g MultiGrpcServer) EnqueueAction(ctx context.Context, request *protomulti.GameEnqueueActionRequest) (*protomulti.GameEnqueueActionResponse, error) {
 
-	var cmd = command.NewEnqueueActionCommand(game.PlayerActionType(request.Action), int(request.Target), int(request.SlotIndex), uuid.FromStringOrNil(request.ElementId))
+	var cmd = command.NewEnqueueActionCommand(game.PlayerActionType(request.Action.Action), int(request.Action.Target), int(request.Action.SlotIndex), uuid.FromStringOrNil(request.Action.ElementId))
 
 	if err := g.app.SubApplications.Game.Commands.EnqueueAction.Handle(g.NewCommandContext(ctx), cmd); err != nil {
 		return nil, err

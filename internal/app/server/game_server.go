@@ -33,7 +33,7 @@ func (s *GameServer) Start() {
 func NewGameServer(instance *game.Instance, conn *rabbitmq.Conn, logger *logrus.Logger) *GameServer {
 	return &GameServer{
 		InstanceID: instance.SysID,
-		game:       game.NewLiveGameInstance(),
+		game:       game.NewLiveGameInstance(instance),
 		clients:    make(map[uuid.UUID]*PlayerChannel),
 		publisher:  rabbitmv.NewClientPublisher(conn, rabbitmq.WithPublisherOptionsLogger(logger)),
 	}
@@ -53,8 +53,40 @@ func (s *GameServer) WatchChanges() {
 			s.HandlePlayerDequeueActionChange(actual)
 		case game.PlayerLockActionChange:
 			s.HandlePlayerLockActionChange(actual)
+		case game.GameStateChange:
+			s.HandleGameStateChange(actual)
 		}
 	}
+}
+
+func (s *GameServer) HandleGameStateChange(change game.GameStateChange) {
+	switch actual := change.State.(type) {
+	case *game.EnemyTurnState:
+		s.HandleEnemyTurnStateChange(actual)
+	}
+}
+
+func (s *GameServer) HandleEnemyTurnStateChange(change *game.EnemyTurnState) {
+	var queues = make([]*protomulti.ProtoGamePlayerActionQueue, len(change.QueuedActions))
+	for i, queued := range change.QueuedActions {
+		var queue = &protomulti.ProtoGamePlayerActionQueue{
+			PlayerId: queued.PlayerID.String(),
+			Actions:  make([]*protomulti.ProtoGameAction, len(queued.Actions)),
+		}
+		for j, action := range queued.Actions {
+			queue.Actions[j] = &protomulti.ProtoGameAction{
+				Action:    protomulti.GamePlayerActionType(action.ActionType),
+				Target:    int32(action.Target),
+				SlotIndex: int32(action.SlotIndex),
+				ElementId: action.ElementID.String(),
+			}
+		}
+		queues[i] = queue
+	}
+	var message = &protomulti.GameActionQueueConfirmNotification{
+		PlayerActionQueue: queues,
+	}
+	s.Publish(protomulti.MultiGameNotificationType_GAME_NOTIFY_QUEUE_CONFIRM, message)
 }
 
 func (s *GameServer) HandlePlayerEnqueueActionChange(change game.PlayerEnqueueActionChange) {

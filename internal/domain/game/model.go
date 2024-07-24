@@ -16,12 +16,13 @@ func (x Mode) Zero() bool {
 }
 
 type Tier struct {
-	SysID          uuid.UUID
-	GameMode       Mode
-	StarLevel      int
-	StaminaCost    int
-	TimeLimit      time.Duration
-	SeedMultiplier int
+	SysID              uuid.UUID
+	GameMode           Mode
+	StarLevel          int
+	StaminaCost        int
+	PlayerTurnDuration time.Duration
+	TimeLimit          time.Duration
+	SeedMultiplier     int
 }
 
 func (x Tier) Zero() bool {

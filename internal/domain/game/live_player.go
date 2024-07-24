@@ -44,6 +44,11 @@ func (p *LivePlayer) EnqueueAction(action *PlayerAction) bool {
 
 }
 
+type PlayerActionQueue struct {
+	PlayerID uuid.UUID
+	Actions  []*PlayerAction
+}
+
 type PlayerAction struct {
 	Target     int
 	ActionType PlayerActionType

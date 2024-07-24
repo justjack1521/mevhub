@@ -5,7 +5,7 @@ go 1.18
 require (
 	github.com/go-redis/redis/v8 v8.11.5
 	github.com/jinzhu/configor v1.2.1
-	github.com/justjack1521/mevium v0.0.0-20240723000428-fe1aa1a84ede
+	github.com/justjack1521/mevium v0.0.0-20240724020247-e5b3b67d42e5
 	github.com/satori/go.uuid v1.2.0
 	github.com/stretchr/testify v1.9.0
 	github.com/wagslane/go-rabbitmq v0.12.3
@@ -23,7 +23,7 @@ require (
 	github.com/jackc/pgx/v5 v5.3.1 // indirect
 	github.com/jinzhu/inflection v1.0.0 // indirect
 	github.com/jinzhu/now v1.1.5 // indirect
-	github.com/justjack1521/mevconn v0.0.0-20240321075700-26b11c53d5cf // indirect
+	github.com/justjack1521/mevconn v0.0.0-20240724034951-1028ae2f3b3a // indirect
 	github.com/justjack1521/mevrelic v0.0.0-20240509231826-42880847997d // indirect
 	github.com/justjack1521/mevrpc v0.0.0-20240508141837-73ab62053f83 // indirect
 	github.com/klauspost/compress v1.17.2 // indirect

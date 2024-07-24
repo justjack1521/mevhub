@@ -80,6 +80,7 @@ func (a *StateChangeAction) Perform(game *LiveGameInstance) {
 
 	var change = GameStateChange{
 		InstanceID: a.InstanceID,
+		State:      game.State,
 	}
 
 	game.SendChange(change)
