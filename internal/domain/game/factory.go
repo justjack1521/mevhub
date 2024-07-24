@@ -29,7 +29,6 @@ func (f *InstanceFactory) Create(source *lobby.Instance) (*Instance, error) {
 			MinimumPlayerLevel: source.MinimumPlayerLevel,
 			MaxRunTime:         quest.Tier.TimeLimit,
 			PlayerTurnDuration: quest.Tier.PlayerTurnDuration,
-			Restrictions:       nil,
 		},
 		State:        InstanceGamePendingState,
 		RegisteredAt: time.Now(),

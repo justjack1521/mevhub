@@ -167,6 +167,8 @@ github.com/justjack1521/mevium v0.0.0-20240724020123-5cc9c6be2ef8 h1:gG/dkUYDsFV
 github.com/justjack1521/mevium v0.0.0-20240724020123-5cc9c6be2ef8/go.mod h1:ktcs69Z5UHrY6vGqJVkxIJugaUrrpCAu+idSOowOh0s=
 github.com/justjack1521/mevium v0.0.0-20240724020247-e5b3b67d42e5 h1:d0Ak9UCqJWo/Jak+WCkmlNFZg58bjK71gjzRlayiUJE=
 github.com/justjack1521/mevium v0.0.0-20240724020247-e5b3b67d42e5/go.mod h1:ktcs69Z5UHrY6vGqJVkxIJugaUrrpCAu+idSOowOh0s=
+github.com/justjack1521/mevium v0.0.0-20240724144515-80c98475ce3f h1:eHbrJij3SNfUB/EVJtJ3D+Vf6NYryFarssSlqKbivA0=
+github.com/justjack1521/mevium v0.0.0-20240724144515-80c98475ce3f/go.mod h1:ktcs69Z5UHrY6vGqJVkxIJugaUrrpCAu+idSOowOh0s=
 github.com/justjack1521/mevrelic v0.0.0-20240509231826-42880847997d h1:zApPOpsMpWfAUElB+MQKTwTNIXQPIulnM7xvnQkJxhE=
 github.com/justjack1521/mevrelic v0.0.0-20240509231826-42880847997d/go.mod h1:l9/BJQk7g7K2JaT/l2s1VEmDmK4MrWYFZeCHaNsff6E=
 github.com/justjack1521/mevrpc v0.0.0-20240508141837-73ab62053f83 h1:0WOayrrSC5AW4MMGiK+UHnSmf9CMwu61mKc3LrDBS7Y=
