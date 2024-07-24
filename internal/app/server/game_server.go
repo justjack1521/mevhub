@@ -22,6 +22,7 @@ type GameServer struct {
 	mu         sync.RWMutex
 	clients    map[uuid.UUID]*PlayerChannel
 	publisher  *rabbitmv.StandardPublisher
+	logger     *logrus.Logger
 }
 
 func (s *GameServer) Start() {
@@ -36,6 +37,7 @@ func NewGameServer(instance *game.Instance, conn *rabbitmq.Conn, logger *logrus.
 		game:       game.NewLiveGameInstance(instance),
 		clients:    make(map[uuid.UUID]*PlayerChannel),
 		publisher:  rabbitmv.NewClientPublisher(conn, rabbitmq.WithPublisherOptionsLogger(logger)),
+		logger:     logger,
 	}
 }
 
@@ -139,6 +141,13 @@ func (s *GameServer) Publish(operation protomulti.MultiGameNotificationType, mes
 	if err != nil {
 		return
 	}
+
+	s.logger.WithFields(logrus.Fields{
+		"operation":    operation,
+		"length":       len(bytes),
+		"instance.id":  s.InstanceID.String(),
+		"player.count": len(s.clients),
+	}).Info("Dispatching notification from live game server")
 
 	var notification = &protocommon.Notification{
 		Service: protocommon.ServiceKey_MULTI,
