@@ -86,9 +86,9 @@ type PlayerReadyAction struct {
 
 func (a *PlayerReadyAction) Perform(game *LiveGameInstance) error {
 
-	player, valid := game.Players[a.PlayerID]
-	if valid == false {
-		return ErrFailedReadyPlayer(a.PlayerID, game.InstanceID, ErrPlayerNotInGame)
+	player, err := game.GetPlayer(a.PlayerID)
+	if err != nil {
+		return ErrFailedReadyPlayer(a.PlayerID, game.InstanceID, err)
 	}
 
 	player.Ready = true
@@ -139,9 +139,9 @@ type PlayerEnqueueAction struct {
 
 func (a *PlayerEnqueueAction) Perform(game *LiveGameInstance) error {
 
-	player, valid := game.Players[a.PlayerID]
-	if valid == false {
-		return ErrFailedEnqueueAction(a.PlayerID, game.InstanceID, ErrPlayerNotInGame)
+	player, err := game.GetPlayer(a.PlayerID)
+	if err != nil {
+		return ErrFailedEnqueueAction(a.PlayerID, game.InstanceID, err)
 	}
 
 	var action = &PlayerAction{
@@ -184,9 +184,9 @@ type PlayerDequeueAction struct {
 
 func (a *PlayerDequeueAction) Perform(game *LiveGameInstance) error {
 
-	player, exists := game.Players[a.PlayerID]
-	if exists == false {
-		return ErrFailedDequeueAction(a.PlayerID, game.InstanceID, ErrPlayerNotInGame)
+	player, err := game.GetPlayer(a.PlayerID)
+	if err != nil {
+		return ErrFailedDequeueAction(a.PlayerID, game.InstanceID, err)
 	}
 
 	if player.DequeueAction() == false {
@@ -218,9 +218,9 @@ type PlayerLockAction struct {
 
 func (a *PlayerLockAction) Perform(game *LiveGameInstance) error {
 
-	player, exists := game.Players[a.PlayerID]
-	if exists == false {
-		return ErrFailedLockAction(a.PlayerID, game.InstanceID, ErrPlayerNotInGame)
+	player, err := game.GetPlayer(a.PlayerID)
+	if err != nil {
+		return ErrFailedLockAction(a.PlayerID, game.InstanceID, err)
 	}
 
 	if player.ActionsLocked {

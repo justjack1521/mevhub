@@ -109,3 +109,11 @@ func (game *LiveGameInstance) NewEnemyTurnState() *EnemyTurnState {
 	}
 	return state
 }
+
+func (game *LiveGameInstance) GetPlayer(id uuid.UUID) (*LivePlayer, error) {
+	player, exists := game.Players[id]
+	if exists == false {
+		return nil, ErrPlayerNotInGame
+	}
+	return player, nil
+}
