@@ -125,7 +125,6 @@ var (
 	ErrFailedEnqueueAction = func(player uuid.UUID, err error) error {
 		return fmt.Errorf("failed to enqueue action for player %s: %w", player, err)
 	}
-	ErrPlayerUnableToEnqueueAction = errors.New("player unable to enqueue action")
 )
 
 type PlayerEnqueueAction struct {
@@ -151,8 +150,8 @@ func (a *PlayerEnqueueAction) Perform(game *LiveGameInstance) error {
 		ElementID:  a.ElementID,
 	}
 
-	if player.EnqueueAction(action) == false {
-		return ErrFailedEnqueueAction(a.PlayerID, ErrPlayerUnableToEnqueueAction)
+	if err := player.EnqueueAction(action); err != nil {
+		return ErrFailedEnqueueAction(a.PlayerID, err)
 	}
 
 	var change = PlayerEnqueueActionChange{
@@ -174,7 +173,6 @@ var (
 	ErrFailedDequeueAction = func(player uuid.UUID, err error) error {
 		return fmt.Errorf("failed to dequeue action for player %s: %w", player, err)
 	}
-	ErrPlayerUnableToDequeueAction = errors.New("player unable to dequeue action")
 )
 
 type PlayerDequeueAction struct {
@@ -189,8 +187,8 @@ func (a *PlayerDequeueAction) Perform(game *LiveGameInstance) error {
 		return ErrFailedDequeueAction(a.PlayerID, err)
 	}
 
-	if player.DequeueAction() == false {
-		return ErrFailedDequeueAction(a.PlayerID, ErrPlayerUnableToDequeueAction)
+	if err := player.DequeueAction(); err != nil {
+		return ErrFailedDequeueAction(a.PlayerID, err)
 	}
 
 	var change = PlayerDequeueActionChange{

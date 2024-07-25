@@ -1,6 +1,7 @@
 package game
 
 import (
+	"errors"
 	uuid "github.com/satori/go.uuid"
 	"time"
 )
@@ -17,30 +18,53 @@ type LivePlayer struct {
 	LastAction      time.Time
 }
 
-func (p *LivePlayer) CanEnqueueAction() bool {
-	return p.ActionsLocked == false && len(p.Actions) < p.MaxActionCount
+var (
+	ErrPlayerActionsLocked = errors.New("player actions locked")
+	ErrPlayerActionsFull   = errors.New("player actions full")
+	ErrPlayerActionsEmpty  = errors.New("player actions empty")
+)
+
+func (p *LivePlayer) CanEnqueueAction() error {
+
+	if p.ActionsLocked {
+		return ErrPlayerActionsLocked
+	}
+
+	if len(p.Actions) >= p.MaxActionCount && p.MaxActionCount > 0 {
+		return ErrPlayerActionsFull
+	}
+
+	return nil
 }
 
-func (p *LivePlayer) CanDequeueAction() bool {
-	return p.ActionsLocked == false && len(p.Actions) > 0
+func (p *LivePlayer) CanDequeueAction() error {
+	if p.ActionsLocked {
+		return ErrPlayerActionsLocked
+	}
+
+	if len(p.Actions) == 0 {
+		return ErrPlayerActionsEmpty
+	}
+
+	return nil
 }
 
-func (p *LivePlayer) DequeueAction() bool {
-	if p.CanDequeueAction() == false {
-		return false
+func (p *LivePlayer) DequeueAction() error {
+	if err := p.CanDequeueAction(); err != nil {
+		return err
 	}
 	p.Actions = p.Actions[:len(p.Actions)-1]
-	return true
+	return nil
 }
 
-func (p *LivePlayer) EnqueueAction(action *PlayerAction) bool {
+func (p *LivePlayer) EnqueueAction(action *PlayerAction) error {
 
-	if p.CanEnqueueAction() == false {
-		return false
+	if err := p.CanEnqueueAction(); err != nil {
+		return err
 	}
 
 	p.Actions = append(p.Actions, action)
-	return true
+	return nil
 
 }
 
