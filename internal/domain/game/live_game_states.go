@@ -1,7 +1,6 @@
 package game
 
 import (
-	"fmt"
 	"time"
 )
 
@@ -14,6 +13,11 @@ type PendingState struct {
 }
 
 func (s *PendingState) Update(game *LiveGameInstance, t time.Time) {
+
+	if game.GetPlayerCount() == 0 {
+		return
+	}
+
 	if game.GetReadyPlayerCount() == game.GetPlayerCount() {
 
 		for _, player := range game.Players {
@@ -34,9 +38,11 @@ type PlayerTurnState struct {
 }
 
 func (s *PlayerTurnState) Expired(t time.Time) bool {
+	if s.TurnDuration == 0 {
+		return false
+	}
 	var difference = t.Sub(s.StartTime)
-	fmt.Println("Time remaining: ", int(difference.Seconds()))
-	return difference > s.TurnDuration && s.TurnDuration > 0
+	return difference > s.TurnDuration
 }
 
 func (s *PlayerTurnState) Update(game *LiveGameInstance, t time.Time) {
