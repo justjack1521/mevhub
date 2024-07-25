@@ -54,8 +54,8 @@ func (s *PlayerTurnState) Update(game *LiveGameInstance, t time.Time) {
 
 		for _, player := range game.Players {
 
-			player.ActionsLocked = true
 			player.ActionLockIndex = game.GetActionLockedPlayerCount()
+			player.ActionsLocked = true
 
 			var change = PlayerLockActionChange{
 				InstanceID:      game.InstanceID,

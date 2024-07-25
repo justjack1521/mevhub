@@ -227,8 +227,8 @@ func (a *PlayerLockAction) Perform(game *LiveGameInstance) error {
 		return ErrFailedLockAction(a.PlayerID, ErrPlayerUnableToLockAction)
 	}
 
-	player.ActionsLocked = true
 	player.ActionLockIndex = game.GetActionLockedPlayerCount()
+	player.ActionsLocked = true
 
 	var change = PlayerLockActionChange{
 		InstanceID:      a.InstanceID,
