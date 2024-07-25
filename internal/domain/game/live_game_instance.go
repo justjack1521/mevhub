@@ -3,7 +3,6 @@ package game
 import (
 	"fmt"
 	uuid "github.com/satori/go.uuid"
-	"reflect"
 	"time"
 )
 
@@ -70,7 +69,6 @@ func (game *LiveGameInstance) Tick() {
 	for {
 		select {
 		case t := <-ticker.C:
-			fmt.Println("Updating state ", reflect.TypeOf(game.State), " at ", t.String())
 			game.State.Update(game, t)
 		}
 	}

@@ -112,7 +112,7 @@ func (a *StateChangeAction) Perform(game *LiveGameInstance) error {
 
 	var change = StateChange{
 		InstanceID: a.InstanceID,
-		State:      game.State,
+		State:      a.State,
 	}
 
 	game.SendChange(change)
