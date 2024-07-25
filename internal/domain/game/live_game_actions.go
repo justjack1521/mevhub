@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	uuid "github.com/satori/go.uuid"
+	"reflect"
 )
 
 var (
@@ -107,6 +108,8 @@ type StateChangeAction struct {
 }
 
 func (a *StateChangeAction) Perform(game *LiveGameInstance) error {
+
+	fmt.Println("Change state to", reflect.TypeOf(a.State))
 
 	game.State = a.State
 
