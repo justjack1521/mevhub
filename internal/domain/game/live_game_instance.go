@@ -77,7 +77,7 @@ func (game *LiveGameInstance) Tick() {
 
 var (
 	ErrFailedPerformAction = func(id uuid.UUID, err error) error {
-		return fmt.Errorf("live game %s failed to perform action: %w", err)
+		return fmt.Errorf("live game %s failed to perform action: %w", id, err)
 	}
 )
 
