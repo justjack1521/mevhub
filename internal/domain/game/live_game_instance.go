@@ -26,7 +26,7 @@ func NewLiveGameInstance(source *Instance) *LiveGameInstance {
 	var game = &LiveGameInstance{
 		InstanceID:         source.SysID,
 		ActionChannel:      make(chan Action),
-		ChangeChannel:      make(chan Change),
+		ChangeChannel:      make(chan Change, 10),
 		ErrorChannel:       make(chan error),
 		Players:            make(map[uuid.UUID]*LivePlayer),
 		PlayerTurnDuration: source.Options.PlayerTurnDuration,
@@ -91,12 +91,14 @@ func (game *LiveGameInstance) WatchActions() {
 }
 
 func (game *LiveGameInstance) SendChange(change Change) {
-	fmt.Printf("Attempting to send change: %+v", change)
-	select {
-	case game.ChangeChannel <- change:
-		fmt.Printf("Successfully sent change: %+v", change)
-	default:
-		fmt.Println("Change channel is full or blocked")
+	for {
+		fmt.Printf("Attempting to send change: %+v", change)
+		select {
+		case game.ChangeChannel <- change:
+			fmt.Printf("Successfully sent change: %+v", change)
+		default:
+			fmt.Println("Change channel is full or blocked")
+		}
 	}
 }
 
