@@ -27,6 +27,7 @@ func (f gameInstanceTranslator) Marshall(data *game.Instance) (out *protomulti.P
 			MinimumPlayerLevel: int32(data.Options.MinimumPlayerLevel),
 			MaxRunTime:         int64(data.Options.MaxRunTime),
 			PlayerTurnDuration: int64(data.Options.PlayerTurnDuration),
+			MaxPlayerCount:     int32(data.Options.MaxPlayerCount),
 		},
 		RegisteredAt: data.RegisteredAt.Unix(),
 	}, nil
@@ -43,6 +44,7 @@ func (f gameInstanceTranslator) Unmarshall(data *protomulti.ProtoGameInstance) (
 			MinimumPlayerLevel: int(data.Options.MinimumPlayerLevel),
 			MaxRunTime:         time.Duration(data.Options.MaxRunTime),
 			PlayerTurnDuration: time.Duration(data.Options.PlayerTurnDuration),
+			MaxPlayerCount:     int(data.Options.MaxPlayerCount),
 		},
 		RegisteredAt: time.Unix(data.RegisteredAt, 0),
 	}, nil

@@ -28,7 +28,8 @@ func (f *InstanceFactory) Create(source *lobby.Instance) (*Instance, error) {
 		Options: &InstanceOptions{
 			MinimumPlayerLevel: source.MinimumPlayerLevel,
 			MaxRunTime:         quest.Tier.TimeLimit,
-			PlayerTurnDuration: time.Second * 30, //quest.Tier.PlayerTurnDuration,
+			PlayerTurnDuration: quest.Tier.PlayerTurnDuration,
+			MaxPlayerCount:     quest.Tier.GameMode.MaxPlayers,
 		},
 		State:        InstanceGamePendingState,
 		RegisteredAt: time.Now(),

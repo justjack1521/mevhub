@@ -31,6 +31,7 @@ func NewLiveGameInstance(source *Instance) *LiveGameInstance {
 		Players:            make(map[uuid.UUID]*LivePlayer),
 		PlayerTurnDuration: source.Options.PlayerTurnDuration,
 		GameDuration:       source.Options.MaxRunTime,
+		MaxPlayerCount:     source.Options.MaxPlayerCount,
 	}
 	game.State = game.NewPendingState()
 	return game
