@@ -111,7 +111,6 @@ type StateChangeAction struct {
 func (a *StateChangeAction) Perform(game *LiveGameInstance) error {
 
 	fmt.Println("Change state to", reflect.TypeOf(a.State), " at ", time.Now().UTC().String())
-
 	game.State = a.State
 
 	var change = StateChange{
