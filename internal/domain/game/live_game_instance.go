@@ -1,6 +1,7 @@
 package game
 
 import (
+	"fmt"
 	uuid "github.com/satori/go.uuid"
 	"time"
 )
@@ -74,7 +75,9 @@ func (game *LiveGameInstance) Tick() {
 func (game *LiveGameInstance) WatchActions() {
 	for {
 		action := <-game.ActionChannel
-		action.Perform(game)
+		if err := action.Perform(game); err != nil {
+			fmt.Println(err)
+		}
 	}
 }
 
