@@ -49,7 +49,7 @@ func (s *GameServer) WatchChanges() {
 		s.logger.WithFields(logrus.Fields{
 			"instance.id":       s.InstanceID.String(),
 			"change.identifier": change.Identifier(),
-		}).Info("Change received on live game server")
+		}).Info("game server change received")
 
 		switch actual := change.(type) {
 		case game.PlayerAddChange:
@@ -73,7 +73,7 @@ func (s *GameServer) HandleGameStateChange(change game.StateChange) {
 	s.logger.WithFields(logrus.Fields{
 		"instance.id": s.InstanceID.String(),
 		"state.name":  reflect.TypeOf(change.State),
-	}).Info("State change on live game server")
+	}).Info("game server state change")
 
 	switch actual := change.State.(type) {
 	case *game.EnemyTurnState:
@@ -160,7 +160,7 @@ func (s *GameServer) Publish(operation protomulti.MultiGameNotificationType, mes
 		"length":       len(bytes),
 		"instance.id":  s.InstanceID.String(),
 		"player.count": len(s.clients),
-	}).Info("Dispatching notification from live game server")
+	}).Info("game server dispatching notification")
 
 	var notification = &protocommon.Notification{
 		Service: protocommon.ServiceKey_MULTI,
