@@ -26,6 +26,8 @@ func NewGameParticipantTranslator() GamePlayerParticipantTranslator {
 func (f gamePlayerParticipantTranslator) Marshall(data *game.PlayerParticipant) (out *protomulti.ProtoGameParticipant, err error) {
 	loadout, err := f.loadout.Marshall(data.Loadout)
 	return &protomulti.ProtoGameParticipant{
+		UserId:     data.UserID.String(),
+		PlayerId:   data.PlayerID.String(),
 		PartySlot:  int32(data.PlayerSlot),
 		BotControl: data.BotControl,
 		Loadout:    loadout,
@@ -38,6 +40,8 @@ func (f gamePlayerParticipantTranslator) Unmarshall(data *protomulti.ProtoGamePa
 		return nil, err
 	}
 	return &game.PlayerParticipant{
+		UserID:     uuid.FromStringOrNil(data.UserId),
+		PlayerID:   uuid.FromStringOrNil(data.PlayerId),
 		PlayerSlot: int(data.PartySlot),
 		BotControl: data.BotControl,
 		Loadout:    loadout,
