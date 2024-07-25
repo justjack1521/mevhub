@@ -14,6 +14,7 @@ type LiveGameInstance struct {
 	InstanceID         uuid.UUID
 	ActionChannel      chan Action
 	ChangeChannel      chan Change
+	ErrorChannel       chan error
 	Players            map[uuid.UUID]*LivePlayer
 	State              State
 	PlayerTurnDuration time.Duration
@@ -26,6 +27,7 @@ func NewLiveGameInstance(source *Instance) *LiveGameInstance {
 		InstanceID:         source.SysID,
 		ActionChannel:      make(chan Action),
 		ChangeChannel:      make(chan Change),
+		ErrorChannel:       make(chan error),
 		Players:            make(map[uuid.UUID]*LivePlayer),
 		PlayerTurnDuration: source.Options.PlayerTurnDuration,
 		GameDuration:       source.Options.MaxRunTime,
@@ -72,11 +74,17 @@ func (game *LiveGameInstance) Tick() {
 
 }
 
+var (
+	ErrFailedPerformAction = func(id uuid.UUID, err error) error {
+		return fmt.Errorf("live game %s failed to perform action: %w", err)
+	}
+)
+
 func (game *LiveGameInstance) WatchActions() {
 	for {
 		action := <-game.ActionChannel
 		if err := action.Perform(game); err != nil {
-			fmt.Println(err)
+			game.ErrorChannel <- ErrFailedPerformAction(game.InstanceID, err)
 		}
 	}
 }

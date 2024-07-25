@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"fmt"
 	"github.com/justjack1521/mevium/pkg/genproto/protocommon"
 	"github.com/justjack1521/mevium/pkg/genproto/protomulti"
 	"github.com/justjack1521/mevium/pkg/rabbitmv"
@@ -28,6 +29,7 @@ type GameServer struct {
 
 func (s *GameServer) Start() {
 	go s.WatchChanges()
+	go s.WatchErrors()
 	go s.game.WatchActions()
 	go s.game.Tick()
 }
@@ -39,6 +41,15 @@ func NewGameServer(instance *game.Instance, conn *rabbitmq.Conn, logger *logrus.
 		clients:    make(map[uuid.UUID]*PlayerChannel),
 		publisher:  rabbitmv.NewClientPublisher(conn, rabbitmq.WithPublisherOptionsLogger(logger)),
 		logger:     logger,
+	}
+}
+
+func (s *GameServer) WatchErrors() {
+	for {
+		err := <-s.game.ErrorChannel
+		s.logger.WithFields(logrus.Fields{
+			"instance.id": s.InstanceID,
+		}).Error(fmt.Errorf("game server error: %w", err))
 	}
 }
 

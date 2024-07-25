@@ -19,8 +19,8 @@ type Action interface {
 }
 
 var (
-	ErrFailedAddPlayerToGame = func(player uuid.UUID, instance uuid.UUID, err error) error {
-		return fmt.Errorf("failed to add player %s to live game %s: %w", player, instance, err)
+	ErrFailedAddPlayerToGame = func(player uuid.UUID, err error) error {
+		return fmt.Errorf("failed to add player %s: %w", player, err)
 	}
 )
 
@@ -52,7 +52,7 @@ func (a *PlayerAddAction) validate(game *LiveGameInstance) error {
 func (a *PlayerAddAction) Perform(game *LiveGameInstance) error {
 
 	if err := a.validate(game); err != nil {
-		return ErrFailedAddPlayerToGame(a.PlayerID, game.InstanceID, err)
+		return ErrFailedAddPlayerToGame(a.PlayerID, err)
 	}
 
 	game.Players[a.PlayerID] = &LivePlayer{
@@ -74,8 +74,8 @@ func (a *PlayerAddAction) Perform(game *LiveGameInstance) error {
 }
 
 var (
-	ErrFailedReadyPlayer = func(player uuid.UUID, instance uuid.UUID, err error) error {
-		return fmt.Errorf("failed to ready player %s in live game %s: %w", player, instance, err)
+	ErrFailedReadyPlayer = func(player uuid.UUID, err error) error {
+		return fmt.Errorf("failed to ready player %s: %w", player, err)
 	}
 )
 
@@ -88,7 +88,7 @@ func (a *PlayerReadyAction) Perform(game *LiveGameInstance) error {
 
 	player, err := game.GetPlayer(a.PlayerID)
 	if err != nil {
-		return ErrFailedReadyPlayer(a.PlayerID, game.InstanceID, err)
+		return ErrFailedReadyPlayer(a.PlayerID, err)
 	}
 
 	player.Ready = true
@@ -122,8 +122,8 @@ func (a *StateChangeAction) Perform(game *LiveGameInstance) error {
 }
 
 var (
-	ErrFailedEnqueueAction = func(player uuid.UUID, instance uuid.UUID, err error) error {
-		return fmt.Errorf("failed to enqueue action for player %s in live game %s: %w", player, instance, err)
+	ErrFailedEnqueueAction = func(player uuid.UUID, err error) error {
+		return fmt.Errorf("failed to enqueue action for player %s: %w", player, err)
 	}
 	ErrPlayerUnableToEnqueueAction = errors.New("player unable to enqueue action")
 )
@@ -141,7 +141,7 @@ func (a *PlayerEnqueueAction) Perform(game *LiveGameInstance) error {
 
 	player, err := game.GetPlayer(a.PlayerID)
 	if err != nil {
-		return ErrFailedEnqueueAction(a.PlayerID, game.InstanceID, err)
+		return ErrFailedEnqueueAction(a.PlayerID, err)
 	}
 
 	var action = &PlayerAction{
@@ -152,7 +152,7 @@ func (a *PlayerEnqueueAction) Perform(game *LiveGameInstance) error {
 	}
 
 	if player.EnqueueAction(action) == false {
-		return ErrFailedEnqueueAction(a.PlayerID, game.InstanceID, ErrPlayerUnableToEnqueueAction)
+		return ErrFailedEnqueueAction(a.PlayerID, ErrPlayerUnableToEnqueueAction)
 	}
 
 	var change = PlayerEnqueueActionChange{
@@ -171,8 +171,8 @@ func (a *PlayerEnqueueAction) Perform(game *LiveGameInstance) error {
 }
 
 var (
-	ErrFailedDequeueAction = func(player uuid.UUID, instance uuid.UUID, err error) error {
-		return fmt.Errorf("failed to dequeue action for player %s in live game %s: %w", player, instance, err)
+	ErrFailedDequeueAction = func(player uuid.UUID, err error) error {
+		return fmt.Errorf("failed to dequeue action for player %s: %w", player, err)
 	}
 	ErrPlayerUnableToDequeueAction = errors.New("player unable to dequeue action")
 )
@@ -186,11 +186,11 @@ func (a *PlayerDequeueAction) Perform(game *LiveGameInstance) error {
 
 	player, err := game.GetPlayer(a.PlayerID)
 	if err != nil {
-		return ErrFailedDequeueAction(a.PlayerID, game.InstanceID, err)
+		return ErrFailedDequeueAction(a.PlayerID, err)
 	}
 
 	if player.DequeueAction() == false {
-		return ErrFailedDequeueAction(a.PlayerID, game.InstanceID, ErrPlayerUnableToDequeueAction)
+		return ErrFailedDequeueAction(a.PlayerID, ErrPlayerUnableToDequeueAction)
 	}
 
 	var change = PlayerDequeueActionChange{
@@ -205,8 +205,8 @@ func (a *PlayerDequeueAction) Perform(game *LiveGameInstance) error {
 }
 
 var (
-	ErrFailedLockAction = func(player uuid.UUID, instance uuid.UUID, err error) error {
-		return fmt.Errorf("failed to dequeue action for player %s in live game %s: %w", player, instance, err)
+	ErrFailedLockAction = func(player uuid.UUID, err error) error {
+		return fmt.Errorf("failed to dequeue action for player %s: %w", player, err)
 	}
 	ErrPlayerUnableToLockAction = errors.New("player unable to dequeue action")
 )
@@ -220,11 +220,11 @@ func (a *PlayerLockAction) Perform(game *LiveGameInstance) error {
 
 	player, err := game.GetPlayer(a.PlayerID)
 	if err != nil {
-		return ErrFailedLockAction(a.PlayerID, game.InstanceID, err)
+		return ErrFailedLockAction(a.PlayerID, err)
 	}
 
 	if player.ActionsLocked {
-		return ErrFailedLockAction(a.PlayerID, game.InstanceID, ErrPlayerUnableToLockAction)
+		return ErrFailedLockAction(a.PlayerID, ErrPlayerUnableToLockAction)
 	}
 
 	player.ActionsLocked = true

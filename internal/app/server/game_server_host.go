@@ -60,6 +60,7 @@ func (c *GameServerHost) unregister(id uuid.UUID) {
 	if channel, ok := c.games[id]; ok {
 		close(channel.game.ActionChannel)
 		close(channel.game.ChangeChannel)
+		close(channel.game.ErrorChannel)
 	}
 	delete(c.games, id)
 	c.logger.WithFields(logrus.Fields{"count": len(c.games)}).Info("game server unregistered")
