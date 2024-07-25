@@ -45,6 +45,12 @@ func NewGameServer(instance *game.Instance, conn *rabbitmq.Conn, logger *logrus.
 func (s *GameServer) WatchChanges() {
 	for {
 		change := <-s.game.ChangeChannel
+
+		s.logger.WithFields(logrus.Fields{
+			"instance.id":       s.InstanceID.String(),
+			"change.identifier": change.Identifier(),
+		}).Info("Change received on live game server")
+
 		switch actual := change.(type) {
 		case game.PlayerAddChange:
 			s.HandlePlayerAddChange(actual)
@@ -56,13 +62,13 @@ func (s *GameServer) WatchChanges() {
 			s.HandlePlayerDequeueActionChange(actual)
 		case game.PlayerLockActionChange:
 			s.HandlePlayerLockActionChange(actual)
-		case game.GameStateChange:
+		case game.StateChange:
 			s.HandleGameStateChange(actual)
 		}
 	}
 }
 
-func (s *GameServer) HandleGameStateChange(change game.GameStateChange) {
+func (s *GameServer) HandleGameStateChange(change game.StateChange) {
 
 	s.logger.WithFields(logrus.Fields{
 		"instance.id": s.InstanceID.String(),

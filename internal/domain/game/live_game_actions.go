@@ -1,6 +1,8 @@
 package game
 
-import uuid "github.com/satori/go.uuid"
+import (
+	uuid "github.com/satori/go.uuid"
+)
 
 type Action interface {
 	Perform(game *LiveGameInstance)
@@ -78,7 +80,7 @@ func (a *StateChangeAction) Perform(game *LiveGameInstance) {
 
 	game.State = a.State
 
-	var change = GameStateChange{
+	var change = StateChange{
 		InstanceID: a.InstanceID,
 		State:      game.State,
 	}
@@ -115,7 +117,6 @@ func (a *PlayerEnqueueAction) Perform(game *LiveGameInstance) {
 	}
 
 	var change = PlayerEnqueueActionChange{
-		Change:     nil,
 		InstanceID: game.InstanceID,
 		PartySlot:  player.PartySlot,
 		ActionType: a.ActionType,
