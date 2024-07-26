@@ -19,7 +19,7 @@ func NewGamePlayerLoadoutRepository(client services.MeviusIdentityServiceClient)
 }
 
 func (r *GamePlayerLoadoutRepository) Query(ctx context.Context, id uuid.UUID, index int) (game.PlayerLoadout, error) {
-	loadout, err := r.client.GetMultiPlayerLoadout(ctx, &protoidentity.GetMultiPlayerLoadoutRequest{
+	loadout, err := r.client.GetSinglePlayerLoadout(ctx, &protoidentity.GetSinglePlayerLoadoutRequest{
 		PlayerId:  id.String(),
 		DeckIndex: int32(index),
 	})

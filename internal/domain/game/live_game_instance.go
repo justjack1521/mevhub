@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	StateTickPeriod = time.Millisecond * 500
+	StateTickPeriod = time.Millisecond * 250
 )
 
 type LiveGameInstance struct {
