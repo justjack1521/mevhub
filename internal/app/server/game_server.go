@@ -5,13 +5,18 @@ import (
 	"fmt"
 	"github.com/justjack1521/mevium/pkg/genproto/protocommon"
 	"github.com/justjack1521/mevium/pkg/genproto/protomulti"
-	"github.com/justjack1521/mevium/pkg/rabbitmv"
+	"github.com/justjack1521/mevrabbit"
 	uuid "github.com/satori/go.uuid"
 	"github.com/sirupsen/logrus"
 	"github.com/wagslane/go-rabbitmq"
 	"mevhub/internal/domain/game"
 	"reflect"
 	"sync"
+	"time"
+)
+
+const (
+	ClientTimeoutPeriod = time.Minute * 3
 )
 
 type Notification interface {
@@ -23,7 +28,7 @@ type GameServer struct {
 	game       *game.LiveGameInstance
 	mu         sync.RWMutex
 	clients    map[uuid.UUID]*PlayerChannel
-	publisher  *rabbitmv.StandardPublisher
+	publisher  *mevrabbit.StandardPublisher
 	logger     *logrus.Logger
 }
 
@@ -39,7 +44,7 @@ func NewGameServer(instance *game.Instance, conn *rabbitmq.Conn, logger *logrus.
 		InstanceID: instance.SysID,
 		game:       game.NewLiveGameInstance(instance),
 		clients:    make(map[uuid.UUID]*PlayerChannel),
-		publisher:  rabbitmv.NewClientPublisher(conn, rabbitmq.WithPublisherOptionsLogger(logger)),
+		publisher:  mevrabbit.NewClientPublisher(conn, rabbitmq.WithPublisherOptionsLogger(logger)),
 		logger:     logger,
 	}
 }
@@ -185,7 +190,7 @@ func (s *GameServer) Publish(operation protomulti.MultiGameNotificationType, mes
 	}
 
 	for _, client := range s.clients {
-		if err := s.publisher.Publish(context.Background(), msg, client.UserID, client.PlayerID, rabbitmv.ClientNotification); err != nil {
+		if err := s.publisher.Publish(context.Background(), msg, client.UserID, client.PlayerID, mevrabbit.ClientNotification); err != nil {
 			return
 		}
 	}

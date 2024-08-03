@@ -10,6 +10,12 @@ const (
 	StateTickPeriod = time.Millisecond * 250
 )
 
+var (
+	ErrFailedPerformAction = func(id uuid.UUID, err error) error {
+		return fmt.Errorf("live game %s failed to perform action: %w", id, err)
+	}
+)
+
 type LiveGameInstance struct {
 	InstanceID         uuid.UUID
 	ActionChannel      chan Action
@@ -39,6 +45,14 @@ func NewLiveGameInstance(source *Instance) *LiveGameInstance {
 
 func (game *LiveGameInstance) GetPlayerCount() int {
 	return len(game.Players)
+}
+
+func (game *LiveGameInstance) GetPlayer(id uuid.UUID) (*LivePlayer, error) {
+	player, exists := game.Players[id]
+	if exists == false {
+		return nil, ErrPlayerNotInGame
+	}
+	return player, nil
 }
 
 func (game *LiveGameInstance) GetReadyPlayerCount() int {
@@ -75,12 +89,6 @@ func (game *LiveGameInstance) Tick() {
 
 }
 
-var (
-	ErrFailedPerformAction = func(id uuid.UUID, err error) error {
-		return fmt.Errorf("live game %s failed to perform action: %w", id, err)
-	}
-)
-
 func (game *LiveGameInstance) WatchActions() {
 	for {
 		action := <-game.ActionChannel
@@ -95,7 +103,9 @@ func (game *LiveGameInstance) SendChange(change Change) {
 }
 
 func (game *LiveGameInstance) NewPendingState() *PendingState {
-	return &PendingState{StartTime: time.Now().UTC()}
+	return &PendingState{
+		StartTime: time.Now().UTC(),
+	}
 }
 
 func (game *LiveGameInstance) NewPlayerTurnState() *PlayerTurnState {
@@ -106,7 +116,9 @@ func (game *LiveGameInstance) NewPlayerTurnState() *PlayerTurnState {
 }
 
 func (game *LiveGameInstance) NewEnemyTurnState() *EnemyTurnState {
-	var state = &EnemyTurnState{QueuedActions: make([]*PlayerActionQueue, len(game.Players))}
+	var state = &EnemyTurnState{
+		QueuedActions: make([]*PlayerActionQueue, len(game.Players)),
+	}
 	for _, player := range game.Players {
 		state.QueuedActions[player.ActionLockIndex] = &PlayerActionQueue{
 			PlayerID: player.PlayerID,
@@ -114,12 +126,4 @@ func (game *LiveGameInstance) NewEnemyTurnState() *EnemyTurnState {
 		}
 	}
 	return state
-}
-
-func (game *LiveGameInstance) GetPlayer(id uuid.UUID) (*LivePlayer, error) {
-	player, exists := game.Players[id]
-	if exists == false {
-		return nil, ErrPlayerNotInGame
-	}
-	return player, nil
 }

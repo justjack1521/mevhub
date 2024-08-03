@@ -6,7 +6,7 @@ import (
 	"github.com/justjack1521/mevium/pkg/genproto/protocommon"
 	"github.com/justjack1521/mevium/pkg/genproto/protomulti"
 	"github.com/justjack1521/mevium/pkg/mevent"
-	"github.com/justjack1521/mevium/pkg/rabbitmv"
+	"github.com/justjack1521/mevrabbit"
 	uuid "github.com/satori/go.uuid"
 	"github.com/sirupsen/logrus"
 	"github.com/wagslane/go-rabbitmq"
@@ -21,7 +21,7 @@ const LobbyChannelSeparator string = ":"
 type LobbyNotificationChanneler struct {
 	client     *redis.Client
 	repository lobby.NotificationListenerRepository
-	publisher  *rabbitmv.StandardPublisher
+	publisher  *mevrabbit.StandardPublisher
 	channels   map[uuid.UUID]*LobbyInstanceNotificationChannel
 }
 
@@ -30,7 +30,7 @@ func NewLobbyNotificationChanneler(publisher *mevent.Publisher, client *redis.Cl
 		client:     client,
 		channels:   make(map[uuid.UUID]*LobbyInstanceNotificationChannel),
 		repository: listeners,
-		publisher:  rabbitmv.NewClientPublisher(conn, rabbitmq.WithPublisherOptionsLogger(logrus.New())),
+		publisher:  mevrabbit.NewClientPublisher(conn, rabbitmq.WithPublisherOptionsLogger(logrus.New())),
 	}
 	var channels = []mevent.Event{
 		mevent.ApplicationStartEvent{},
@@ -122,7 +122,7 @@ func (s *LobbyNotificationChanneler) HandleDelete(event lobby.InstanceDeletedEve
 	}
 
 	for _, listener := range listeners {
-		if err := s.publisher.Publish(event.Context(), bytes, listener.UserID, listener.PlayerID, rabbitmv.ClientNotification); err != nil {
+		if err := s.publisher.Publish(event.Context(), bytes, listener.UserID, listener.PlayerID, mevrabbit.ClientNotification); err != nil {
 			return
 		}
 	}

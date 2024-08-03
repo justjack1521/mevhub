@@ -103,6 +103,27 @@ func (a *PlayerReadyAction) Perform(game *LiveGameInstance) error {
 
 }
 
+var (
+	ErrFailedDisconnectPlayer = func(player uuid.UUID, err error) error {
+		return fmt.Errorf("failed to disconnect player %s: %w", player, err)
+	}
+)
+
+type PlayerDisconnectAction struct {
+	InstanceID     uuid.UUID
+	PlayerID       uuid.UUID
+	DisconnectTime time.Time
+}
+
+func (a *PlayerDisconnectAction) Perform(game *LiveGameInstance) error {
+	player, err := game.GetPlayer(a.PlayerID)
+	if err != nil {
+		return ErrFailedDisconnectPlayer(a.PlayerID, err)
+	}
+	player.DisconnectTime = a.DisconnectTime
+	return nil
+}
+
 type StateChangeAction struct {
 	InstanceID uuid.UUID
 	State      State

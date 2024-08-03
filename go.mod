@@ -1,6 +1,6 @@
 module mevhub
 
-go 1.18
+go 1.22.3
 
 require (
 	github.com/go-redis/redis/v8 v8.11.5
@@ -8,7 +8,7 @@ require (
 	github.com/justjack1521/mevium v0.0.0-20240725060306-f9376b7f3d31
 	github.com/satori/go.uuid v1.2.0
 	github.com/stretchr/testify v1.9.0
-	github.com/wagslane/go-rabbitmq v0.12.3
+	github.com/wagslane/go-rabbitmq v0.14.2
 	gorm.io/gorm v1.25.5
 )
 
@@ -24,6 +24,7 @@ require (
 	github.com/jinzhu/inflection v1.0.0 // indirect
 	github.com/jinzhu/now v1.1.5 // indirect
 	github.com/justjack1521/mevconn v0.0.0-20240724034951-1028ae2f3b3a // indirect
+	github.com/justjack1521/mevrabbit v0.0.0-20240802062551-0f44cbe9de64 // indirect
 	github.com/justjack1521/mevrelic v0.0.0-20240509231826-42880847997d // indirect
 	github.com/justjack1521/mevrpc v0.0.0-20240508141837-73ab62053f83 // indirect
 	github.com/klauspost/compress v1.17.2 // indirect
@@ -37,7 +38,7 @@ require (
 	github.com/newrelic/go-agent/v3/integrations/nrpq v1.1.1 // indirect
 	github.com/newrelic/go-agent/v3/integrations/nrredis-v8 v1.0.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
-	github.com/rabbitmq/amqp091-go v1.7.0 // indirect
+	github.com/rabbitmq/amqp091-go v1.10.0 // indirect
 	github.com/rogpeppe/go-internal v1.11.0 // indirect
 	github.com/sirupsen/logrus v1.9.3 // indirect
 	golang.org/x/crypto v0.18.0 // indirect

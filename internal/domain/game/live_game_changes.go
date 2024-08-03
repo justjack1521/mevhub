@@ -11,12 +11,13 @@ type Change interface {
 type ChangeIdentifier string
 
 const (
-	ChangeIdentifierPlayerAdd     ChangeIdentifier = "player.add"
-	ChangeIdentifierPlayerReady   ChangeIdentifier = "player.ready"
-	ChangeIdentifierStateChange   ChangeIdentifier = "state.change"
-	ChangeIdentifierEnqueueAction ChangeIdentifier = "enqueue.action"
-	ChangeIdentifierDequeueAction ChangeIdentifier = "dequeue.action"
-	ChangeIdentifierLockAction    ChangeIdentifier = "lock.action"
+	ChangeIdentifierPlayerAdd        ChangeIdentifier = "player.add"
+	ChangeIdentifierPlayerReady      ChangeIdentifier = "player.ready"
+	ChangeIdentifierPlayerDisconnect ChangeIdentifier = "player.disconnect"
+	ChangeIdentifierStateChange      ChangeIdentifier = "state.change"
+	ChangeIdentifierEnqueueAction    ChangeIdentifier = "enqueue.action"
+	ChangeIdentifierDequeueAction    ChangeIdentifier = "dequeue.action"
+	ChangeIdentifierLockAction       ChangeIdentifier = "lock.action"
 )
 
 type PlayerAddChange struct {
@@ -36,6 +37,15 @@ type PlayerReadyChange struct {
 
 func (c PlayerReadyChange) Identifier() ChangeIdentifier {
 	return ChangeIdentifierPlayerReady
+}
+
+type PlayerDisconnectChange struct {
+	InstanceID uuid.UUID
+	PlayerID   uuid.UUID
+}
+
+func (c PlayerDisconnectChange) Identifier() ChangeIdentifier {
+	return ChangeIdentifierPlayerDisconnect
 }
 
 type StateChange struct {

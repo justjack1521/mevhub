@@ -16,6 +16,8 @@ type LivePlayer struct {
 	MaxActionCount  int
 	Actions         []*PlayerAction
 	LastAction      time.Time
+	Disconnected    bool
+	DisconnectTime  time.Time
 }
 
 var (

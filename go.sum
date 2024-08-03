@@ -173,6 +173,8 @@ github.com/justjack1521/mevium v0.0.0-20240725055231-1332a717058d h1:1MEBeD7U89q
 github.com/justjack1521/mevium v0.0.0-20240725055231-1332a717058d/go.mod h1:ktcs69Z5UHrY6vGqJVkxIJugaUrrpCAu+idSOowOh0s=
 github.com/justjack1521/mevium v0.0.0-20240725060306-f9376b7f3d31 h1:OiIIg7b4oRdbTfhIaRdXklxwauccG/QTpeTW+SoZMdE=
 github.com/justjack1521/mevium v0.0.0-20240725060306-f9376b7f3d31/go.mod h1:ktcs69Z5UHrY6vGqJVkxIJugaUrrpCAu+idSOowOh0s=
+github.com/justjack1521/mevrabbit v0.0.0-20240802062551-0f44cbe9de64 h1:7/hk+zpcZSbreTyf0q46CqtSpCLgSPhm4hEgI3lWXPw=
+github.com/justjack1521/mevrabbit v0.0.0-20240802062551-0f44cbe9de64/go.mod h1:wVw984U+YuuXE6Ke8SyZXZkIOwWJMh6+TV5y2pK+8lc=
 github.com/justjack1521/mevrelic v0.0.0-20240509231826-42880847997d h1:zApPOpsMpWfAUElB+MQKTwTNIXQPIulnM7xvnQkJxhE=
 github.com/justjack1521/mevrelic v0.0.0-20240509231826-42880847997d/go.mod h1:l9/BJQk7g7K2JaT/l2s1VEmDmK4MrWYFZeCHaNsff6E=
 github.com/justjack1521/mevrpc v0.0.0-20240508141837-73ab62053f83 h1:0WOayrrSC5AW4MMGiK+UHnSmf9CMwu61mKc3LrDBS7Y=
@@ -214,6 +216,8 @@ github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZb
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/rabbitmq/amqp091-go v1.7.0 h1:V5CF5qPem5OGSnEo8BoSbsDGwejg6VUJsKEdneaoTUo=
 github.com/rabbitmq/amqp091-go v1.7.0/go.mod h1:wfClAtY0C7bOHxd3GjmF26jEHn+rR/0B3+YV+Vn9/NI=
+github.com/rabbitmq/amqp091-go v1.10.0 h1:STpn5XsHlHGcecLmMFCtg7mqq0RnD+zFr4uzukfVhBw=
+github.com/rabbitmq/amqp091-go v1.10.0/go.mod h1:Hy4jKW5kQART1u+JkDTF9YYOQUHXqMuhrgxOEeS7G4o=
 github.com/rogpeppe/go-internal v1.11.0 h1:cWPaGQEPrBb5/AsnsZesgZZ9yb1OQ+GOISoDNXVBh4M=
 github.com/rogpeppe/go-internal v1.11.0/go.mod h1:ddIwULY96R17DhadqLgMfk9H9tvdUzkipdSkR5nkCZA=
 github.com/satori/go.uuid v1.2.0 h1:0uYX9dsZ2yD7q2RtLRtPSdGDWzjeM3TbMJP9utgA0ww=
@@ -233,6 +237,8 @@ github.com/stretchr/testify v1.8.4/go.mod h1:sz/lmYIOXD/1dqDmKjjqLyZ2RngseejIcXl
 github.com/stretchr/testify v1.9.0/go.mod h1:r2ic/lqez/lEtzL7wO/rwa5dbSLXVDPFyf8C91i36aY=
 github.com/wagslane/go-rabbitmq v0.12.3 h1:nHoW6SgwaGNTjNyHGhcZwdJGru2228RZTwucxqmgA9M=
 github.com/wagslane/go-rabbitmq v0.12.3/go.mod h1:1sUJ53rrW2AIA7LEp8ymmmebHqqq8ksH/gXIfUP0I0s=
+github.com/wagslane/go-rabbitmq v0.14.2 h1:3l75Unsy0b8sb3ILqJxMTXkQLUPI67BOuubV9YBjGLE=
+github.com/wagslane/go-rabbitmq v0.14.2/go.mod h1:6sCLt2wZoxyC73G7u/yD6/RX/yYf+x5D8SQk8nsa4Lc=
 github.com/yuin/goldmark v1.3.5/go.mod h1:mwnBkeHKe2W/ZEtQ+71ViKU8L12m81fl3OWwC1Zlc8k=
 go.uber.org/goleak v1.2.0 h1:xqgm/S+aQvhWFTtR0XK3Jvg7z8kGV8P4X14IzwN3Eqk=
 go.uber.org/goleak v1.2.0/go.mod h1:XJYK+MuIchqpmGmUSAzotztawfKvYLUIgg7guXrwVUo=

@@ -67,16 +67,21 @@ func (c *GameServerHost) unregister(id uuid.UUID) {
 }
 
 func (c *GameServerHost) action(request *GameActionRequest) {
-	if instance, exists := c.games[request.InstanceID]; exists {
-		instance.game.ActionChannel <- request.Action
-		c.logger.WithFields(logrus.Fields{
-			"instance.id": request.InstanceID,
-			"action.type": reflect.TypeOf(request.Action),
-		}).Info("game server action received")
-	} else {
+
+	instance, exists := c.games[request.InstanceID]
+
+	if exists == false {
 		c.logger.WithFields(logrus.Fields{
 			"instance.id": request.InstanceID,
 			"action.type": reflect.TypeOf(request.Action),
 		}).Info("game server action orphaned")
+		return
 	}
+
+	instance.game.ActionChannel <- request.Action
+	c.logger.WithFields(logrus.Fields{
+		"instance.id": request.InstanceID,
+		"action.type": reflect.TypeOf(request.Action),
+	}).Info("game server action received")
+
 }

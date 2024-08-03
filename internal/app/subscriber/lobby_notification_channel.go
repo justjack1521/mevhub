@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/go-redis/redis/v8"
-	"github.com/justjack1521/mevium/pkg/rabbitmv"
+	"github.com/justjack1521/mevrabbit"
 	uuid "github.com/satori/go.uuid"
 )
 
@@ -27,7 +27,7 @@ func (c *LobbyInstanceNotificationChannel) Publish(ctx context.Context, message 
 	}
 
 	for _, listener := range listeners {
-		if err := c.manager.publisher.Publish(ctx, message, listener.UserID, listener.PlayerID, rabbitmv.ClientNotification); err != nil {
+		if err := c.manager.publisher.Publish(ctx, message, listener.UserID, listener.PlayerID, mevrabbit.ClientNotification); err != nil {
 			return err
 		}
 	}
