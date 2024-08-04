@@ -22,9 +22,6 @@ func NewClientDisconnectConsumer(publisher *mevent.Publisher, conn *rabbitmq.Con
 		panic(err)
 	}
 	service.StandardConsumer = consumer
-	if err := service.Run(); err != nil {
-		panic(err)
-	}
 	return service
 
 }

@@ -12,6 +12,7 @@ type ChangeIdentifier string
 
 const (
 	ChangeIdentifierPlayerAdd        ChangeIdentifier = "player.add"
+	ChangeIdentifierPlayerRemove     ChangeIdentifier = "player.remove"
 	ChangeIdentifierPlayerReady      ChangeIdentifier = "player.ready"
 	ChangeIdentifierPlayerDisconnect ChangeIdentifier = "player.disconnect"
 	ChangeIdentifierStateChange      ChangeIdentifier = "state.change"
@@ -28,6 +29,16 @@ type PlayerAddChange struct {
 
 func (c PlayerAddChange) Identifier() ChangeIdentifier {
 	return ChangeIdentifierPlayerAdd
+}
+
+type PlayerRemoveChange struct {
+	UserID    uuid.UUID
+	PlayerID  uuid.UUID
+	PartySlot int
+}
+
+func (c PlayerRemoveChange) Identifier() ChangeIdentifier {
+	return ChangeIdentifierPlayerRemove
 }
 
 type PlayerReadyChange struct {

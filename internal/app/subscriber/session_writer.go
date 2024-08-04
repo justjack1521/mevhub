@@ -5,6 +5,7 @@ import (
 	"github.com/justjack1521/mevium/pkg/mevent"
 	uuid "github.com/satori/go.uuid"
 	"mevhub/internal/domain/lobby"
+	"mevhub/internal/domain/player"
 	"mevhub/internal/domain/session"
 )
 
@@ -15,7 +16,7 @@ type SessionLobbyWriter struct {
 
 func NewSessionLobbyWriter(publisher *mevent.Publisher, sessions session.InstanceRepository) *SessionLobbyWriter {
 	var subscriber = &SessionLobbyWriter{EventPublisher: publisher, SessionRepository: sessions}
-	publisher.Subscribe(subscriber, lobby.ParticipantCreatedEvent{}, lobby.ParticipantDeletedEvent{})
+	publisher.Subscribe(subscriber, lobby.ParticipantCreatedEvent{}, lobby.ParticipantDeletedEvent{}, player.DisconnectedEvent{})
 	return subscriber
 }
 
@@ -29,7 +30,28 @@ func (s *SessionLobbyWriter) Notify(event mevent.Event) {
 		if err := s.HandleParticipantDelete(actual); err != nil {
 			fmt.Println(err)
 		}
+	case player.DisconnectedEvent:
+		if err := s.HandlePlayerDisconnected(actual); err != nil {
+			fmt.Println(err)
+		}
 	}
+}
+
+func (s *SessionLobbyWriter) HandlePlayerDisconnected(event player.DisconnectedEvent) error {
+
+	instance, err := s.SessionRepository.QueryByID(event.Context(), event.UserID())
+	if err != nil {
+		return err
+	}
+
+	if err := s.SessionRepository.Delete(event.Context(), instance); err != nil {
+		return err
+	}
+
+	s.EventPublisher.Notify(session.NewInstanceDeletedEvent(event.Context(), instance.LobbyID, instance.UserID, instance.PlayerID))
+
+	return nil
+
 }
 
 func (s *SessionLobbyWriter) HandleParticipantCreate(event lobby.ParticipantCreatedEvent) error {

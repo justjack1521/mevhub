@@ -50,13 +50,13 @@ func (e InstanceCreatedEvent) PlayerID() uuid.UUID {
 
 type InstanceDeletedEvent struct {
 	ctx    context.Context
-	id     uuid.UUID
+	lobby  uuid.UUID
 	user   uuid.UUID
 	player uuid.UUID
 }
 
 func NewInstanceDeletedEvent(ctx context.Context, id uuid.UUID, user uuid.UUID, player uuid.UUID) InstanceDeletedEvent {
-	return InstanceDeletedEvent{ctx: ctx, id: id, user: user, player: player}
+	return InstanceDeletedEvent{ctx: ctx, lobby: id, user: user, player: player}
 }
 
 func (e InstanceDeletedEvent) Name() string {
@@ -66,7 +66,7 @@ func (e InstanceDeletedEvent) Name() string {
 func (e InstanceDeletedEvent) ToLogFields() logrus.Fields {
 	return logrus.Fields{
 		"event.name": e.Name(),
-		"session.id": e.id,
+		"lobby.id":   e.lobby,
 		"user.id":    e.user,
 		"player.id":  e.player,
 	}
@@ -76,14 +76,14 @@ func (e InstanceDeletedEvent) Context() context.Context {
 	return e.ctx
 }
 
+func (e InstanceDeletedEvent) LobbyID() uuid.UUID {
+	return e.lobby
+}
+
 func (e InstanceDeletedEvent) UserID() uuid.UUID {
 	return e.user
 }
 
 func (e InstanceDeletedEvent) PlayerID() uuid.UUID {
 	return e.player
-}
-
-func (e InstanceDeletedEvent) LobbyID() uuid.UUID {
-	return e.id
 }

@@ -76,6 +76,41 @@ func (a *PlayerAddAction) Perform(game *LiveGameInstance) error {
 }
 
 var (
+	ErrFailedRemovePlayer = func(id uuid.UUID, err error) error {
+		return fmt.Errorf("failed to remove player %s: %w", id, err)
+	}
+)
+
+type PlayerRemoveAction struct {
+	InstanceID uuid.UUID
+	UserID     uuid.UUID
+	PlayerID   uuid.UUID
+}
+
+func (a *PlayerRemoveAction) Perform(game *LiveGameInstance) error {
+
+	player, err := game.GetPlayer(a.PlayerID)
+	if err != nil {
+		return ErrFailedRemovePlayer(a.PlayerID, err)
+	}
+
+	if err := game.RemovePlayer(a.PlayerID); err != nil {
+		return ErrFailedRemovePlayer(a.PlayerID, err)
+	}
+
+	var change = PlayerRemoveChange{
+		UserID:    player.UserID,
+		PlayerID:  player.PlayerID,
+		PartySlot: player.PartySlot,
+	}
+
+	game.ChangeChannel <- change
+
+	return nil
+
+}
+
+var (
 	ErrFailedReadyPlayer = func(player uuid.UUID, err error) error {
 		return fmt.Errorf("failed to ready player %s: %w", player, err)
 	}

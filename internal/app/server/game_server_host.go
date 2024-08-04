@@ -7,7 +7,10 @@ import (
 	"mevhub/internal/domain/game"
 	"reflect"
 	"sync"
+	"time"
 )
+
+const gameServerHostReapCheckPeriod = time.Minute * 3
 
 type GameServerHost struct {
 	mu         sync.Mutex
@@ -33,45 +36,62 @@ func NewGameServerHost(conn *rabbitmq.Conn, logger *logrus.Logger) *GameServerHo
 	return server
 }
 
-func (c *GameServerHost) Run() {
+func (h *GameServerHost) Run() {
+
+	var ticker = time.NewTicker(gameServerHostReapCheckPeriod)
+
+	defer func() {
+		ticker.Stop()
+	}()
+
 	for {
 		select {
-		case instance := <-c.Register:
-			c.register(instance)
-		case id := <-c.Unregister:
-			c.unregister(id)
-		case action := <-c.ActionChannel:
-			c.action(action)
+		case c := <-ticker.C:
+			h.tick(c)
+		case instance := <-h.Register:
+			h.register(instance)
+		case id := <-h.Unregister:
+			h.unregister(id)
+		case action := <-h.ActionChannel:
+			h.action(action)
 		}
 	}
 }
 
-func (c *GameServerHost) NewLiveGameChannel(instance *game.Instance) *GameServer {
-	return NewGameServer(instance, c.connection, c.logger)
+func (h *GameServerHost) NewLiveGameChannel(instance *game.Instance) *GameServer {
+	return NewGameServer(instance, h.connection, h.logger)
 }
 
-func (c *GameServerHost) register(channel *GameServer) {
-	c.games[channel.InstanceID] = channel
+func (h *GameServerHost) tick(t time.Time) {
+	for id, instance := range h.games {
+		if instance.game.Ended {
+			h.Unregister <- id
+		}
+	}
+}
+
+func (h *GameServerHost) register(channel *GameServer) {
+	h.games[channel.InstanceID] = channel
 	channel.Start()
-	c.logger.WithFields(logrus.Fields{"count": len(c.games)}).Info("game server registered")
+	h.logger.WithFields(logrus.Fields{"count": len(h.games)}).Info("game server registered")
 }
 
-func (c *GameServerHost) unregister(id uuid.UUID) {
-	if channel, ok := c.games[id]; ok {
+func (h *GameServerHost) unregister(id uuid.UUID) {
+	if channel, ok := h.games[id]; ok {
 		close(channel.game.ActionChannel)
 		close(channel.game.ChangeChannel)
 		close(channel.game.ErrorChannel)
 	}
-	delete(c.games, id)
-	c.logger.WithFields(logrus.Fields{"count": len(c.games)}).Info("game server unregistered")
+	delete(h.games, id)
+	h.logger.WithFields(logrus.Fields{"count": len(h.games)}).Info("game server unregistered")
 }
 
-func (c *GameServerHost) action(request *GameActionRequest) {
+func (h *GameServerHost) action(request *GameActionRequest) {
 
-	instance, exists := c.games[request.InstanceID]
+	instance, exists := h.games[request.InstanceID]
 
 	if exists == false {
-		c.logger.WithFields(logrus.Fields{
+		h.logger.WithFields(logrus.Fields{
 			"instance.id": request.InstanceID,
 			"action.type": reflect.TypeOf(request.Action),
 		}).Info("game server action orphaned")
@@ -79,7 +99,7 @@ func (c *GameServerHost) action(request *GameActionRequest) {
 	}
 
 	instance.game.ActionChannel <- request.Action
-	c.logger.WithFields(logrus.Fields{
+	h.logger.WithFields(logrus.Fields{
 		"instance.id": request.InstanceID,
 		"action.type": reflect.TypeOf(request.Action),
 	}).Info("game server action received")

@@ -4,6 +4,7 @@ import (
 	"mevhub/internal/adapter/memory"
 	"mevhub/internal/adapter/translate"
 	"mevhub/internal/app/command"
+	"mevhub/internal/app/consumer"
 	"mevhub/internal/app/query"
 	"mevhub/internal/app/subscriber"
 	"mevhub/internal/decorator"
@@ -45,7 +46,9 @@ type LobbyApplicationTranslators struct {
 
 func NewLobbyApplication(core *CoreApplication) *LobbyApplication {
 	var application = &LobbyApplication{
-		consumers: []ApplicationConsumer{},
+		consumers: []ApplicationConsumer{
+			consumer.NewClientDisconnectConsumer(core.Services.EventPublisher, core.Services.RabbitMQConnection),
+		},
 	}
 	application.Queries = &LobbyApplicationQueries{
 		SearchLobby:  application.NewSearchLobbyQueryHandler(core),

@@ -70,6 +70,8 @@ func (s *GameServer) WatchChanges() {
 		switch actual := change.(type) {
 		case game.PlayerAddChange:
 			s.HandlePlayerAddChange(actual)
+		case game.PlayerRemoveChange:
+			s.HandlePlayerRemoveChange(actual)
 		case game.PlayerReadyChange:
 			s.HandlePlayerReadyChange(actual)
 		case game.PlayerEnqueueActionChange:
@@ -84,6 +86,14 @@ func (s *GameServer) WatchChanges() {
 	}
 }
 
+func (s *GameServer) HandlePlayerRemoveChange(change game.PlayerRemoveChange) {
+	var notification = &protomulti.GamePlayerRemoveNotification{
+		GameId:      s.InstanceID.String(),
+		PlayerIndex: int32(change.PartySlot),
+	}
+	s.Publish(protomulti.MultiGameNotificationType_GAME_NOTIFY_PLAYER_REMOVE, notification)
+}
+
 func (s *GameServer) HandleGameStateChange(change game.StateChange) {
 
 	s.logger.WithFields(logrus.Fields{
@@ -94,7 +104,13 @@ func (s *GameServer) HandleGameStateChange(change game.StateChange) {
 	switch actual := change.State.(type) {
 	case *game.EnemyTurnState:
 		s.HandleEnemyTurnStateChange(actual)
+	case *game.EndGameState:
+		s.HandleEndGameStateChange(actual)
 	}
+}
+
+func (s *GameServer) HandleEndGameStateChange(change *game.EndGameState) {
+
 }
 
 func (s *GameServer) HandleEnemyTurnStateChange(change *game.EnemyTurnState) {

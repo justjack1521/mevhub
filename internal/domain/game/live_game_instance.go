@@ -25,6 +25,8 @@ type LiveGameInstance struct {
 	State              State
 	PlayerTurnDuration time.Duration
 	GameDuration       time.Duration
+	Ended              bool
+	EndedAt            time.Time
 	MaxPlayerCount     int
 }
 
@@ -39,12 +41,17 @@ func NewLiveGameInstance(source *Instance) *LiveGameInstance {
 		GameDuration:       source.Options.MaxRunTime,
 		MaxPlayerCount:     source.Options.MaxPlayerCount,
 	}
-	game.State = game.NewPendingState()
+	game.State = NewPendingState(game)
 	return game
 }
 
 func (game *LiveGameInstance) GetPlayerCount() int {
 	return len(game.Players)
+}
+
+func (game *LiveGameInstance) PlayerExists(id uuid.UUID) bool {
+	_, exists := game.Players[id]
+	return exists
 }
 
 func (game *LiveGameInstance) GetPlayer(id uuid.UUID) (*LivePlayer, error) {
@@ -63,6 +70,14 @@ func (game *LiveGameInstance) GetReadyPlayerCount() int {
 		}
 	}
 	return count
+}
+
+func (game *LiveGameInstance) RemovePlayer(id uuid.UUID) error {
+	if game.PlayerExists(id) == false {
+		return ErrPlayerNotInGame
+	}
+	delete(game.Players, id)
+	return nil
 }
 
 func (game *LiveGameInstance) GetActionLockedPlayerCount() int {
@@ -100,30 +115,4 @@ func (game *LiveGameInstance) WatchActions() {
 
 func (game *LiveGameInstance) SendChange(change Change) {
 	game.ChangeChannel <- change
-}
-
-func (game *LiveGameInstance) NewPendingState() *PendingState {
-	return &PendingState{
-		StartTime: time.Now().UTC(),
-	}
-}
-
-func (game *LiveGameInstance) NewPlayerTurnState() *PlayerTurnState {
-	return &PlayerTurnState{
-		StartTime:    time.Now().UTC(),
-		TurnDuration: game.PlayerTurnDuration,
-	}
-}
-
-func (game *LiveGameInstance) NewEnemyTurnState() *EnemyTurnState {
-	var state = &EnemyTurnState{
-		QueuedActions: make([]*PlayerActionQueue, len(game.Players)),
-	}
-	for _, player := range game.Players {
-		state.QueuedActions[player.ActionLockIndex] = &PlayerActionQueue{
-			PlayerID: player.PlayerID,
-			Actions:  player.Actions,
-		}
-	}
-	return state
 }

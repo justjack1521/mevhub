@@ -4,6 +4,7 @@ import (
 	"github.com/justjack1521/mevium/pkg/mevent"
 	"mevhub/internal/app/server"
 	"mevhub/internal/domain/game"
+	"mevhub/internal/domain/session"
 )
 
 type GameChannelServerWriter struct {
@@ -15,7 +16,7 @@ type GameChannelServerWriter struct {
 
 func NewGameChannelServerWriter(server *server.GameServerHost, publisher *mevent.Publisher, instances game.InstanceRepository, participants game.PlayerParticipantReadRepository) *GameChannelServerWriter {
 	var writer = &GameChannelServerWriter{Server: server, EventPublisher: publisher, InstanceRepository: instances, ParticipantRepository: participants}
-	publisher.Subscribe(writer, game.InstanceCreatedEvent{}, game.InstanceDeletedEvent{}, game.ParticipantCreatedEvent{})
+	publisher.Subscribe(writer, game.InstanceCreatedEvent{}, game.InstanceDeletedEvent{}, game.ParticipantCreatedEvent{}, session.InstanceDeletedEvent{})
 	return writer
 }
 
@@ -27,6 +28,8 @@ func (w *GameChannelServerWriter) Notify(event mevent.Event) {
 		w.HandleInstanceDelete(actual)
 	case game.ParticipantCreatedEvent:
 		w.HandleParticipantCreated(actual)
+	case session.InstanceDeletedEvent:
+		w.HandleSessionDeleted(actual)
 	}
 }
 
@@ -56,6 +59,17 @@ func (w *GameChannelServerWriter) HandleParticipantCreated(event game.Participan
 			UserID:    participant.UserID,
 			PlayerID:  participant.PlayerID,
 			PartySlot: participant.PlayerSlot,
+		},
+	}
+}
+
+func (w *GameChannelServerWriter) HandleSessionDeleted(event session.InstanceDeletedEvent) {
+	w.Server.ActionChannel <- &server.GameActionRequest{
+		InstanceID: event.LobbyID(),
+		Action: &game.PlayerRemoveAction{
+			InstanceID: event.LobbyID(),
+			UserID:     event.UserID(),
+			PlayerID:   event.PlayerID(),
 		},
 	}
 }
