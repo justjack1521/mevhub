@@ -67,7 +67,7 @@ func (r *SessionInstanceRedisRepository) Update(ctx context.Context, instance *s
 }
 
 func (r *SessionInstanceRedisRepository) Delete(ctx context.Context, instance *session.Instance) error {
-	if err := r.client.HDel(ctx, r.GenerateSessionKey(instance.UserID)).Err(); err != nil {
+	if err := r.client.Del(ctx, r.GenerateSessionKey(instance.UserID)).Err(); err != nil {
 		return err
 	}
 	return nil
