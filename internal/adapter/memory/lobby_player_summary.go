@@ -5,7 +5,7 @@ import (
 	"github.com/go-redis/redis/v8"
 	uuid "github.com/satori/go.uuid"
 	"mevhub/internal/adapter/serial"
-	"mevhub/internal/domain/lobby"
+	"mevhub/internal/core/domain/lobby"
 	"strings"
 	"time"
 )

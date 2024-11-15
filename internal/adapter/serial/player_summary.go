@@ -5,7 +5,7 @@ import (
 	"errors"
 	"github.com/justjack1521/mevium/pkg/genproto/protomulti"
 	"mevhub/internal/adapter/translate"
-	"mevhub/internal/domain/lobby"
+	"mevhub/internal/core/domain/lobby"
 )
 
 var (

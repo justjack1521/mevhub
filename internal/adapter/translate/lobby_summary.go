@@ -4,7 +4,7 @@ import (
 	"github.com/justjack1521/mevium/pkg/genproto/protoidentity"
 	"github.com/justjack1521/mevium/pkg/genproto/protomulti"
 	uuid "github.com/satori/go.uuid"
-	"mevhub/internal/domain/lobby"
+	"mevhub/internal/core/domain/lobby"
 )
 
 type LobbySummaryTranslator Translator[lobby.Summary, *protomulti.ProtoLobbySummary]

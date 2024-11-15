@@ -3,8 +3,8 @@ package database
 import (
 	uuid "github.com/satori/go.uuid"
 	"gorm.io/gorm"
-	"mevhub/internal/adapter/dto"
-	"mevhub/internal/domain/lobby"
+	"mevhub/internal/adapter/database/dto"
+	"mevhub/internal/core/domain/lobby"
 )
 
 type LobbyParticipantDatabaseRepository struct {

@@ -12,11 +12,11 @@ import (
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"math/rand"
-	"mevhub/internal/adapter/broker"
 	"mevhub/internal/adapter/database"
+	"mevhub/internal/adapter/handler/rpc"
 	"mevhub/internal/adapter/memory"
-	"mevhub/internal/app"
-	"mevhub/internal/ports"
+	"mevhub/internal/core/application"
+	"mevhub/internal/infrastructure/broker/rmq"
 	"os"
 	"time"
 )
@@ -53,13 +53,13 @@ func main() {
 	application.Start()
 
 	server.RunGRPCServerWithOptions("50555", func(svr *grpc.Server) {
-		svc := ports.NewMultiGrpcServer(application)
+		svc := rpc.NewMultiGrpcServer(application)
 		services.RegisterMeviusMultiServiceServer(svr, svc)
 	}, options...)
 
 }
 
-func NewApplication(ctx context.Context, logger *logrus.Logger) *app.CoreApplication {
+func NewApplication(ctx context.Context, logger *logrus.Logger) *application.CoreApplication {
 
 	db, err := database.NewPostgresConnection()
 	if err != nil {
@@ -71,7 +71,7 @@ func NewApplication(ctx context.Context, logger *logrus.Logger) *app.CoreApplica
 		panic(fmt.Errorf("failed to connect to cache: %w", err))
 	}
 
-	msg, err := broker.NewRabbitMQConnection()
+	msg, err := rmq.NewRabbitMQConnection()
 	if err != nil {
 		panic(fmt.Errorf("failed to connect to message bus: %w", err))
 	}
@@ -86,7 +86,7 @@ func NewApplication(ctx context.Context, logger *logrus.Logger) *app.CoreApplica
 		panic(err)
 	}
 
-	return app.NewApplication(db, rds, logger, msg, identity, app.ApplicationWithNewRelic(nrl))
+	return application.NewApplication(db, rds, logger, msg, identity, application.ApplicationWithNewRelic(nrl))
 
 }
 

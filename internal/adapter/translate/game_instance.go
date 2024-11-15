@@ -3,7 +3,7 @@ package translate
 import (
 	"github.com/justjack1521/mevium/pkg/genproto/protomulti"
 	uuid "github.com/satori/go.uuid"
-	"mevhub/internal/domain/game"
+	"mevhub/internal/core/domain/game"
 	"time"
 )
 

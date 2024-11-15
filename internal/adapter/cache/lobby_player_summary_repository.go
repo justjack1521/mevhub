@@ -3,7 +3,7 @@ package cache
 import (
 	"context"
 	uuid "github.com/satori/go.uuid"
-	"mevhub/internal/domain/lobby"
+	"mevhub/internal/core/domain/lobby"
 )
 
 type LobbyPlayerSummaryRepository struct {
