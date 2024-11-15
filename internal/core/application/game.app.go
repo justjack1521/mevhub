@@ -3,6 +3,7 @@ package application
 import (
 	"mevhub/internal/adapter/translate"
 	"mevhub/internal/core/application/command"
+	"mevhub/internal/core/application/factory"
 	"mevhub/internal/core/application/query"
 	"mevhub/internal/core/application/server"
 	"mevhub/internal/core/application/subscriber"
@@ -62,7 +63,7 @@ func NewGameApplication(core *CoreApplication) *GameApplication {
 	application.subscribers = []ApplicationSubscriber{
 		subscriber.NewGameChannelEventNotifier(core.Services.EventPublisher),
 		subscriber.NewGameInstanceWriter(core.Services.EventPublisher, core.data.Lobbies, game.NewInstanceFactory(core.repositories.Quests), core.data.Games),
-		subscriber.NewGameParticipantWriter(core.Services.EventPublisher, core.data.LobbyParticipants, game.NewPlayerParticipantFactory(core.data.GamePlayerLoadouts), core.data.GameParticipants),
+		subscriber.NewGameParticipantWriter(core.Services.EventPublisher, core.data.LobbyParticipants, factory.NewPlayerParticipantFactory(core.data.GamePlayerLoadouts), core.data.GameParticipants),
 		subscriber.NewGameChannelServerWriter(svr, core.Services.EventPublisher, core.data.Games, core.data.GameParticipants),
 	}
 

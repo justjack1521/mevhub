@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/justjack1521/mevium/pkg/mevent"
 	uuid "github.com/satori/go.uuid"
+	"mevhub/internal/core/application/factory"
 	"mevhub/internal/core/domain/game"
 	"mevhub/internal/core/domain/lobby"
 	"mevhub/internal/core/port"
@@ -12,11 +13,11 @@ import (
 type GameParticipantWriter struct {
 	EventPublisher             *mevent.Publisher
 	LobbyParticipantRepository lobby.ParticipantReadRepository
-	GameParticipantFactory     *game.PlayerParticipantFactory
+	GameParticipantFactory     *factory.PlayerParticipantFactory
 	GameParticipantRepository  port.PlayerParticipantWriteRepository
 }
 
-func NewGameParticipantWriter(publisher *mevent.Publisher, participants lobby.ParticipantReadRepository, factory *game.PlayerParticipantFactory, players port.PlayerParticipantWriteRepository) *GameParticipantWriter {
+func NewGameParticipantWriter(publisher *mevent.Publisher, participants lobby.ParticipantReadRepository, factory *factory.PlayerParticipantFactory, players port.PlayerParticipantWriteRepository) *GameParticipantWriter {
 	var subscriber = &GameParticipantWriter{
 		EventPublisher:             publisher,
 		LobbyParticipantRepository: participants,
