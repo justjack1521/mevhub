@@ -1,37 +1,38 @@
-package game
+package factory
 
 import (
 	"math/rand"
+	"mevhub/internal/core/domain/game"
 	"mevhub/internal/core/domain/lobby"
 	"mevhub/internal/core/port"
 	"time"
 )
 
-type InstanceFactory struct {
+type GameInstanceFactory struct {
 	QuestRepository port.QuestRepository
 }
 
-func NewInstanceFactory(quests port.QuestRepository) *InstanceFactory {
-	return &InstanceFactory{QuestRepository: quests}
+func NewGameInstanceFactory(quests port.QuestRepository) *GameInstanceFactory {
+	return &GameInstanceFactory{QuestRepository: quests}
 }
 
-func (f *InstanceFactory) Create(source *lobby.Instance) (*Instance, error) {
+func (f *GameInstanceFactory) Create(source *lobby.Instance) (*game.Instance, error) {
 
 	quest, err := f.QuestRepository.QueryByID(source.QuestID)
 	if err != nil {
 		return nil, err
 	}
 
-	return &Instance{
+	return &game.Instance{
 		SysID: source.SysID,
 		Seed:  rand.Int(),
-		Options: &InstanceOptions{
+		Options: &game.InstanceOptions{
 			MinimumPlayerLevel: source.MinimumPlayerLevel,
 			MaxRunTime:         quest.Tier.TimeLimit,
 			PlayerTurnDuration: quest.Tier.PlayerTurnDuration,
 			MaxPlayerCount:     quest.Tier.GameMode.MaxPlayers,
 		},
-		State:        InstanceGamePendingState,
+		State:        game.InstanceGamePendingState,
 		RegisteredAt: time.Now(),
 	}, nil
 }
