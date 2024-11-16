@@ -11,23 +11,28 @@ import (
 )
 
 type LobbyQueueWriter struct {
-	EventPublisher        *mevent.Publisher
 	LobbyRepository       port.LobbyInstanceReadRepository
 	QueueRepository       port.MatchPlayerQueueWriteRepository
 	QuestRepository       port.QuestRepository
-	ParticipantRepository port.PlayerParticipantReadRepository
+	ParticipantRepository port.LobbyParticipantReadRepository
+}
+
+func NewLobbyQueueWriter(publisher *mevent.Publisher, lobbies port.LobbyInstanceReadRepository, queues port.MatchPlayerQueueWriteRepository, quests port.QuestRepository, participants port.LobbyParticipantReadRepository) *LobbyQueueWriter {
+	var subscriber = &LobbyQueueWriter{LobbyRepository: lobbies, QueueRepository: queues, QuestRepository: quests, ParticipantRepository: participants}
+	publisher.Subscribe(subscriber, lobby.SummaryCreatedEvent{})
+	return subscriber
 }
 
 func (s *LobbyQueueWriter) Notify(event mevent.Event) {
 	switch actual := event.(type) {
-	case lobby.InstanceReadyEvent:
+	case lobby.SummaryCreatedEvent:
 		if err := s.Handle(actual); err != nil {
 			fmt.Println(err)
 		}
 	}
 }
 
-func (s *LobbyQueueWriter) Handle(evt lobby.InstanceReadyEvent) error {
+func (s *LobbyQueueWriter) Handle(evt lobby.SummaryCreatedEvent) error {
 
 	instance, err := s.LobbyRepository.QueryByID(evt.Context(), evt.LobbyID())
 	if err != nil {
@@ -43,14 +48,18 @@ func (s *LobbyQueueWriter) Handle(evt lobby.InstanceReadyEvent) error {
 		return nil
 	}
 
-	participants, err := s.ParticipantRepository.QueryAll(evt.Context(), instance.SysID)
+	participants, err := s.ParticipantRepository.QueryAllForLobby(evt.Context(), instance.SysID)
 	if err != nil {
 		return err
 	}
 
+	if len(participants) == quest.Tier.GameMode.MaxPlayers {
+		return nil
+	}
+
 	var sum int
 	for _, participant := range participants {
-		sum += participant.Loadout.CalculateDeckLevel()
+		sum += participant.PlayerSlot * 10
 	}
 	var average = sum / len(participants)
 

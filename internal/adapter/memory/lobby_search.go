@@ -6,6 +6,7 @@ import (
 	uuid "github.com/satori/go.uuid"
 	"mevhub/internal/core/domain/game"
 	"mevhub/internal/core/domain/lobby"
+	"mevhub/internal/core/port"
 	"strconv"
 	"strings"
 )
@@ -44,7 +45,7 @@ func (r *LobbySearchRedisRepository) Query(ctx context.Context, qry lobby.Search
 		}).Result()
 
 		if err != nil {
-			return nil, lobby.ErrFailedSearchForLobbies(err)
+			return nil, port.ErrFailedSearchForLobbies(err)
 		}
 
 		for _, value := range result {

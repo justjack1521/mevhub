@@ -19,11 +19,11 @@ func NewSearchLobbyQuery(qry lobby.SearchQuery, party string) SearchLobbyQuery {
 }
 
 type SearchLobbyQueryHandler struct {
-	SearchRepository  lobby.SearchReadRepository
+	SearchRepository  port.LobbySearchReadRepository
 	SummaryRepository port.LobbySummaryReadRepository
 }
 
-func NewSearchLobbyQueryHandler(lobbies lobby.SearchReadRepository, summaries port.LobbySummaryReadRepository) *SearchLobbyQueryHandler {
+func NewSearchLobbyQueryHandler(lobbies port.LobbySearchReadRepository, summaries port.LobbySummaryReadRepository) *SearchLobbyQueryHandler {
 	return &SearchLobbyQueryHandler{SearchRepository: lobbies, SummaryRepository: summaries}
 }
 

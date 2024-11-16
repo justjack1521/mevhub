@@ -9,13 +9,12 @@ import (
 )
 
 type LobbySearchWriter struct {
-	EventPublisher   *mevent.Publisher
-	SearchRepository lobby.SearchWriteRepository
+	SearchRepository port.LobbySearchWriteRepository
 	QuestRepository  port.QuestRepository
 }
 
-func NewLobbySearchWriter(publisher *mevent.Publisher, searcher lobby.SearchWriteRepository) *LobbySearchWriter {
-	var subscriber = &LobbySearchWriter{EventPublisher: publisher, SearchRepository: searcher}
+func NewLobbySearchWriter(publisher *mevent.Publisher, quests port.QuestRepository, searcher port.LobbySearchWriteRepository) *LobbySearchWriter {
+	var subscriber = &LobbySearchWriter{QuestRepository: quests, SearchRepository: searcher}
 	publisher.Subscribe(subscriber, lobby.SummaryCreatedEvent{})
 	return subscriber
 }

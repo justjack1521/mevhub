@@ -13,7 +13,6 @@ import (
 	"mevhub/internal/adapter/external"
 	"mevhub/internal/adapter/memory"
 	"mevhub/internal/adapter/serial"
-	"mevhub/internal/core/domain/lobby"
 	"mevhub/internal/core/domain/session"
 	"mevhub/internal/core/port"
 )
@@ -50,7 +49,8 @@ type DataRepositories struct {
 	LobbyParticipants    port.LobbyParticipantRepository
 	LobbySummaries       port.LobbySummaryRepository
 	LobbyPlayerSummaries port.LobbyPlayerSummaryRepository
-	LobbySearch          lobby.SearchRepository
+	LobbySearch          port.LobbySearchRepository
+	MatchPlayerQueue     port.MatchPlayerQueueRepository
 	Games                port.GameInstanceRepository
 	GameParticipants     port.PlayerParticipantRepository
 	GamePlayerLoadouts   port.PlayerLoadoutReadRepository

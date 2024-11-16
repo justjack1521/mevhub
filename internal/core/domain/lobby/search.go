@@ -5,6 +5,8 @@ import (
 	"time"
 )
 
+const KeepAliveTime = time.Hour * 3
+
 type SearchEntry struct {
 	InstanceID         uuid.UUID
 	ModeIdentifier     string

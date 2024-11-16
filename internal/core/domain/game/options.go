@@ -10,7 +10,7 @@ type ModeIdentifier string
 const (
 	ModeIdentifierNone        = "none"
 	ModeIdentifierCoopDefault = "coop_default"
-	ModeIdentifierCompSingle  = "comp_single"
+	ModeIdentifierCompSingle  = "comp_solo"
 )
 
 type FulfillMethod string
