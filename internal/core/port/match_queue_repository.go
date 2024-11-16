@@ -26,7 +26,7 @@ type MatchPlayerQueueReadRepository interface {
 type MatchPlayerQueueWriteRepository interface {
 	AddPlayerToQueue(ctx context.Context, mode game.ModeIdentifier, entry match.PlayerQueueEntry) error
 	AddLobbyToQueue(ctx context.Context, mode game.ModeIdentifier, entry match.LobbyQueueEntry) error
-	UpdateLobbyScore(ctx context.Context, mode game.ModeIdentifier, id uuid.UUID, score int) error
+	UpdateLobbyScore(ctx context.Context, mode game.ModeIdentifier, quest uuid.UUID, id uuid.UUID, score int) error
 	RemovePlayerFromQueue(ctx context.Context, mode game.ModeIdentifier, quest uuid.UUID, id uuid.UUID) error
 	RemoveLobbyFromQueue(ctx context.Context, mode game.ModeIdentifier, quest uuid.UUID, id uuid.UUID) error
 }
