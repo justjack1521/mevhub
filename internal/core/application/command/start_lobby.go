@@ -21,10 +21,10 @@ func NewStartLobbyCommand() *StartLobbyCommand {
 type StartLobbyCommandHandler struct {
 	SessionRepository          session.InstanceReadRepository
 	LobbyInstanceRepository    port.LobbyInstanceRepository
-	LobbyParticipantRepository lobby.ParticipantReadRepository
+	LobbyParticipantRepository port.LobbyParticipantReadRepository
 }
 
-func NewStartLobbyCommandHandler(sessions session.InstanceReadRepository, lobbies port.LobbyInstanceRepository, participants lobby.ParticipantReadRepository) *StartLobbyCommandHandler {
+func NewStartLobbyCommandHandler(sessions session.InstanceReadRepository, lobbies port.LobbyInstanceRepository, participants port.LobbyParticipantReadRepository) *StartLobbyCommandHandler {
 	return &StartLobbyCommandHandler{
 		SessionRepository:          sessions,
 		LobbyInstanceRepository:    lobbies,

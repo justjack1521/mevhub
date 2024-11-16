@@ -11,10 +11,10 @@ import (
 type LobbySummaryWriter struct {
 	EventPublisher    *mevent.Publisher
 	QuestRepository   port.QuestRepository
-	SummaryRepository lobby.SummaryWriteRepository
+	SummaryRepository port.LobbySummaryWriteRepository
 }
 
-func NewLobbySummaryWriter(publisher *mevent.Publisher, quests port.QuestRepository, summaries lobby.SummaryWriteRepository) *LobbySummaryWriter {
+func NewLobbySummaryWriter(publisher *mevent.Publisher, quests port.QuestRepository, summaries port.LobbySummaryWriteRepository) *LobbySummaryWriter {
 	var subscriber = &LobbySummaryWriter{EventPublisher: publisher, QuestRepository: quests, SummaryRepository: summaries}
 	publisher.Subscribe(subscriber, lobby.InstanceCreatedEvent{}, lobby.InstanceDeletedEvent{})
 	return subscriber

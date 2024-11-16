@@ -10,11 +10,12 @@ import (
 	"mevhub/internal/core/application/consumer"
 	"mevhub/internal/core/domain/game"
 	"mevhub/internal/core/domain/lobby"
+	"mevhub/internal/core/port"
 )
 
 type LobbyChannelEventNotifier struct {
 	EventPublisher          *mevent.Publisher
-	PlayerSummaryRepository lobby.PlayerSummaryReadRepository
+	PlayerSummaryRepository port.LobbyPlayerSummaryReadRepository
 	PlayerSummaryTranslator translate.LobbyPlayerSummaryTranslator
 }
 
@@ -22,7 +23,7 @@ type ClientNotification interface {
 	MarshallBinary() ([]byte, error)
 }
 
-func NewLobbyChannelEventNotifier(publisher *mevent.Publisher, summary lobby.PlayerSummaryReadRepository, translator translate.LobbyPlayerSummaryTranslator) *LobbyChannelEventNotifier {
+func NewLobbyChannelEventNotifier(publisher *mevent.Publisher, summary port.LobbyPlayerSummaryReadRepository, translator translate.LobbyPlayerSummaryTranslator) *LobbyChannelEventNotifier {
 	var subscriber = &LobbyChannelEventNotifier{EventPublisher: publisher, PlayerSummaryRepository: summary, PlayerSummaryTranslator: translator}
 	publisher.Subscribe(subscriber, lobby.ParticipantCreatedEvent{}, lobby.ParticipantDeletedEvent{}, lobby.ParticipantReadyEvent{}, lobby.ParticipantUnreadyEvent{}, lobby.InstanceStartedEvent{}, game.InstanceReadyEvent{})
 	return subscriber

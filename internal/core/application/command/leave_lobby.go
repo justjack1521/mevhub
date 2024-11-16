@@ -4,6 +4,7 @@ import (
 	"github.com/justjack1521/mevium/pkg/mevent"
 	"mevhub/internal/core/domain/lobby"
 	"mevhub/internal/core/domain/session"
+	"mevhub/internal/core/port"
 )
 
 type LeaveLobbyCommand struct {
@@ -21,10 +22,10 @@ func NewLeaveLobbyCommand() *LeaveLobbyCommand {
 type LeaveLobbyCommandHandler struct {
 	EventPublisher        *mevent.Publisher
 	SessionRepository     session.InstanceRepository
-	ParticipantRepository lobby.ParticipantRepository
+	ParticipantRepository port.LobbyParticipantRepository
 }
 
-func NewLeaveLobbyCommandHandler(publisher *mevent.Publisher, sessions session.InstanceRepository, participants lobby.ParticipantRepository) *LeaveLobbyCommandHandler {
+func NewLeaveLobbyCommandHandler(publisher *mevent.Publisher, sessions session.InstanceRepository, participants port.LobbyParticipantRepository) *LeaveLobbyCommandHandler {
 	return &LeaveLobbyCommandHandler{EventPublisher: publisher, SessionRepository: sessions, ParticipantRepository: participants}
 }
 

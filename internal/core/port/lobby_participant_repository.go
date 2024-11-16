@@ -1,10 +1,11 @@
-package lobby
+package port
 
 import (
 	"context"
 	"errors"
 	"fmt"
 	uuid "github.com/satori/go.uuid"
+	"mevhub/internal/core/domain/lobby"
 )
 
 var (
@@ -22,11 +23,11 @@ var (
 	}
 )
 
-type ParticipantReadRepository interface {
+type LobbyParticipantReadRepository interface {
 	QueryParticipantExists(ctx context.Context, id uuid.UUID, slot int) (bool, error)
-	QueryAllForLobby(ctx context.Context, id uuid.UUID) ([]*Participant, error)
+	QueryAllForLobby(ctx context.Context, id uuid.UUID) ([]*lobby.Participant, error)
 	QueryCountForLobby(ctx context.Context, id uuid.UUID) (int, error)
-	QueryParticipantForLobby(ctx context.Context, id uuid.UUID, slot int) (*Participant, error)
+	QueryParticipantForLobby(ctx context.Context, id uuid.UUID, slot int) (*lobby.Participant, error)
 }
 
 var (
@@ -45,14 +46,14 @@ var (
 	ErrParticipantNil = errors.New("participant is nil")
 )
 
-type ParticipantWriteRepository interface {
-	Create(ctx context.Context, participant *Participant) error
-	Update(ctx context.Context, participant *Participant) error
-	Delete(ctx context.Context, participant *Participant) error
+type LobbyParticipantWriteRepository interface {
+	Create(ctx context.Context, participant *lobby.Participant) error
+	Update(ctx context.Context, participant *lobby.Participant) error
+	Delete(ctx context.Context, participant *lobby.Participant) error
 	DeleteAllForLobby(ctx context.Context, id uuid.UUID) error
 }
 
-type ParticipantRepository interface {
-	ParticipantReadRepository
-	ParticipantWriteRepository
+type LobbyParticipantRepository interface {
+	LobbyParticipantReadRepository
+	LobbyParticipantWriteRepository
 }

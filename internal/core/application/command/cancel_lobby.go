@@ -30,10 +30,10 @@ type CancelLobbyCommandHandler struct {
 	EventPublisher        *mevent.Publisher
 	SessionRepository     session.InstanceReadRepository
 	InstanceRepository    port.LobbyInstanceRepository
-	ParticipantRepository lobby.ParticipantRepository
+	ParticipantRepository port.LobbyParticipantRepository
 }
 
-func NewCancelLobbyCommandHandler(publisher *mevent.Publisher, sessions session.InstanceReadRepository, instances port.LobbyInstanceRepository, participants lobby.ParticipantRepository) *CancelLobbyCommandHandler {
+func NewCancelLobbyCommandHandler(publisher *mevent.Publisher, sessions session.InstanceReadRepository, instances port.LobbyInstanceRepository, participants port.LobbyParticipantRepository) *CancelLobbyCommandHandler {
 	return &CancelLobbyCommandHandler{EventPublisher: publisher, SessionRepository: sessions, InstanceRepository: instances, ParticipantRepository: participants}
 }
 

@@ -6,6 +6,7 @@ import (
 	uuid "github.com/satori/go.uuid"
 	"mevhub/internal/adapter/memory/dto"
 	"mevhub/internal/core/domain/lobby"
+	"mevhub/internal/core/port"
 	"strconv"
 	"strings"
 )
@@ -43,11 +44,11 @@ func NewLobbyParticipantRedisRepository(client *redis.Client) *LobbyParticipantR
 func (r *LobbyParticipantRedisRepository) QueryParticipantForLobby(ctx context.Context, id uuid.UUID, slot int) (*lobby.Participant, error) {
 	var cmd = r.client.HGetAll(ctx, r.GenerateParticipantKey(id, slot))
 	if cmd.Err() != nil {
-		return nil, lobby.ErrFailedQueryParticipantForLobby(id, lobby.ErrFailedQueryParticipant(slot, cmd.Err()))
+		return nil, port.ErrFailedQueryParticipantForLobby(id, port.ErrFailedQueryParticipant(slot, cmd.Err()))
 	}
 	var result = &dto.LobbyParticipantRedis{}
 	if err := cmd.Scan(result); err != nil {
-		return nil, lobby.ErrFailedQueryParticipantForLobby(id, lobby.ErrFailedQueryParticipant(slot, err))
+		return nil, port.ErrFailedQueryParticipantForLobby(id, port.ErrFailedQueryParticipant(slot, err))
 	}
 	return result.ToEntity(), nil
 }
@@ -56,7 +57,7 @@ func (r *LobbyParticipantRedisRepository) QueryParticipantExists(ctx context.Con
 	var key = r.GenerateParticipantKey(id, slot)
 	result, err := r.client.Exists(ctx, key).Result()
 	if err != nil {
-		return false, lobby.ErrFailedQueryParticipantForLobby(id, lobby.ErrFailedQueryParticipantExists(slot, err))
+		return false, port.ErrFailedQueryParticipantForLobby(id, port.ErrFailedQueryParticipantExists(slot, err))
 	}
 	return result > 0, nil
 }
@@ -90,17 +91,17 @@ func (r *LobbyParticipantRedisRepository) DeleteAllForLobby(ctx context.Context,
 func (r *LobbyParticipantRedisRepository) QueryAllForLobby(ctx context.Context, id uuid.UUID) ([]*lobby.Participant, error) {
 	keys, err := r.client.Keys(ctx, r.GenerateLobbyKey(id)).Result()
 	if err != nil {
-		return nil, lobby.ErrFailedQueryAllParticipantsForLobby(id, err)
+		return nil, port.ErrFailedQueryAllParticipantsForLobby(id, err)
 	}
 	var participants = make([]*lobby.Participant, len(keys))
 	for index, key := range keys {
 		var cmd = r.client.HGetAll(ctx, key)
 		if cmd.Err() != nil {
-			return nil, lobby.ErrFailedQueryAllParticipantsForLobby(id, lobby.ErrFailedQueryParticipant(index, err))
+			return nil, port.ErrFailedQueryAllParticipantsForLobby(id, port.ErrFailedQueryParticipant(index, err))
 		}
 		var result = &dto.LobbyParticipantRedis{}
 		if err := cmd.Scan(result); err != nil {
-			return nil, lobby.ErrFailedQueryAllParticipantsForLobby(id, lobby.ErrFailedQueryParticipant(index, err))
+			return nil, port.ErrFailedQueryAllParticipantsForLobby(id, port.ErrFailedQueryParticipant(index, err))
 		}
 		participants[index] = result.ToEntity()
 	}
@@ -117,7 +118,7 @@ func (r *LobbyParticipantRedisRepository) Create(ctx context.Context, participan
 	var key = r.GenerateParticipantKey(participant.LobbyID, participant.PlayerSlot)
 
 	if err := r.client.HSet(ctx, key, result.ToMapStringInterface()).Err(); err != nil {
-		return lobby.ErrFailedCreateParticipantForLobby(participant.LobbyID, lobby.ErrFailedCreateParticipant(participant.PlayerSlot, err))
+		return port.ErrFailedCreateParticipantForLobby(participant.LobbyID, port.ErrFailedCreateParticipant(participant.PlayerSlot, err))
 	}
 
 	r.client.Expire(ctx, key, lobby.KeepAliveTime)
@@ -135,7 +136,7 @@ func (r *LobbyParticipantRedisRepository) Update(ctx context.Context, participan
 	var key = r.GenerateParticipantKey(participant.LobbyID, participant.PlayerSlot)
 
 	if err := r.client.HSet(ctx, key, result.ToMapStringInterface()).Err(); err != nil {
-		return lobby.ErrFailedUpdateParticipantForLobby(participant.LobbyID, lobby.ErrFailedUpdateParticipant(participant.PlayerSlot, err))
+		return port.ErrFailedUpdateParticipantForLobby(participant.LobbyID, port.ErrFailedUpdateParticipant(participant.PlayerSlot, err))
 	}
 
 	return nil
@@ -144,7 +145,7 @@ func (r *LobbyParticipantRedisRepository) Update(ctx context.Context, participan
 
 func (r *LobbyParticipantRedisRepository) ParticipantToTransfer(participant *lobby.Participant) (dto.LobbyParticipantRedis, error) {
 	if participant == nil {
-		return dto.LobbyParticipantRedis{}, lobby.ErrParticipantNil
+		return dto.LobbyParticipantRedis{}, port.ErrParticipantNil
 	}
 	var result = dto.LobbyParticipantRedis{
 		UserID:          participant.UserID.String(),

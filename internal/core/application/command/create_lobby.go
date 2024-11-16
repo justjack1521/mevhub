@@ -44,10 +44,10 @@ type CreateLobbyCommandHandler struct {
 	InstanceRepository    port.LobbyInstanceWriteRepository
 	QuestRepository       port.QuestRepository
 	ParticipantFactory    lobby.ParticipantFactory
-	ParticipantRepository lobby.ParticipantWriteRepository
+	ParticipantRepository port.LobbyParticipantWriteRepository
 }
 
-func NewCreateLobbyCommandHandler(publisher *mevent.Publisher, instances port.LobbyInstanceWriteRepository, quests port.QuestRepository, participants lobby.ParticipantWriteRepository) *CreateLobbyCommandHandler {
+func NewCreateLobbyCommandHandler(publisher *mevent.Publisher, instances port.LobbyInstanceWriteRepository, quests port.QuestRepository, participants port.LobbyParticipantWriteRepository) *CreateLobbyCommandHandler {
 	return &CreateLobbyCommandHandler{
 		EventPublisher:        publisher,
 		InstanceRepository:    instances,

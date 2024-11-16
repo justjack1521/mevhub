@@ -4,14 +4,15 @@ import (
 	"context"
 	uuid "github.com/satori/go.uuid"
 	"mevhub/internal/core/domain/lobby"
+	"mevhub/internal/core/port"
 )
 
 type LobbyPlayerSummaryRepository struct {
-	source lobby.PlayerSummaryReadRepository
-	cache  lobby.PlayerSummaryRepository
+	source port.LobbyPlayerSummaryReadRepository
+	cache  port.LobbyPlayerSummaryRepository
 }
 
-func NewLobbyPlayerSummaryRepository(source lobby.PlayerSummaryReadRepository, cache lobby.PlayerSummaryRepository) *LobbyPlayerSummaryRepository {
+func NewLobbyPlayerSummaryRepository(source port.LobbyPlayerSummaryReadRepository, cache port.LobbyPlayerSummaryRepository) *LobbyPlayerSummaryRepository {
 	return &LobbyPlayerSummaryRepository{source: source, cache: cache}
 }
 

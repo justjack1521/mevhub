@@ -1,9 +1,10 @@
-package lobby
+package service
 
 import (
 	"context"
 	"fmt"
 	uuid "github.com/satori/go.uuid"
+	"mevhub/internal/core/domain/lobby"
 	"mevhub/internal/core/port"
 )
 
@@ -18,60 +19,60 @@ var (
 
 type SummaryQueryService struct {
 	InstanceRepository    port.LobbyInstanceReadRepository
-	ParticipantRepository ParticipantReadRepository
-	LobbySummary          SummaryReadRepository
-	PlayerSummary         PlayerSummaryReadRepository
+	ParticipantRepository port.LobbyParticipantReadRepository
+	LobbySummary          port.LobbySummaryReadRepository
+	PlayerSummary         port.LobbyPlayerSummaryReadRepository
 }
 
-func NewSummaryQueryService(instances port.LobbyInstanceReadRepository, participants ParticipantReadRepository, lobbies SummaryReadRepository, players PlayerSummaryReadRepository) *SummaryQueryService {
+func NewSummaryQueryService(instances port.LobbyInstanceReadRepository, participants port.LobbyParticipantReadRepository, lobbies port.LobbySummaryReadRepository, players port.LobbyPlayerSummaryReadRepository) *SummaryQueryService {
 	return &SummaryQueryService{InstanceRepository: instances, ParticipantRepository: participants, LobbySummary: lobbies, PlayerSummary: players}
 }
 
-func (s *SummaryQueryService) QueryByPartyID(ctx context.Context, party string) (Summary, error) {
+func (s *SummaryQueryService) QueryByPartyID(ctx context.Context, party string) (lobby.Summary, error) {
 	instance, err := s.InstanceRepository.QueryByPartyID(ctx, party)
 	if err != nil {
-		return Summary{}, ErrFailedQueryLobbyPartySummary(party, err)
+		return lobby.Summary{}, ErrFailedQueryLobbyPartySummary(party, err)
 	}
 	summary, err := s.QueryByID(ctx, instance.SysID)
 	if err != nil {
-		return Summary{}, ErrFailedQueryLobbyPartySummary(party, err)
+		return lobby.Summary{}, ErrFailedQueryLobbyPartySummary(party, err)
 	}
 	return summary, nil
 }
 
-func (s *SummaryQueryService) QueryByID(ctx context.Context, id uuid.UUID) (Summary, error) {
+func (s *SummaryQueryService) QueryByID(ctx context.Context, id uuid.UUID) (lobby.Summary, error) {
 
 	instance, err := s.InstanceRepository.QueryByID(ctx, id)
 	if err != nil {
-		return Summary{}, ErrFailedQueryLobbySummary(id, err)
+		return lobby.Summary{}, ErrFailedQueryLobbySummary(id, err)
 	}
 
 	summary, err := s.LobbySummary.QueryByID(ctx, instance.SysID)
 	if err != nil {
-		return Summary{}, ErrFailedQueryLobbySummary(id, err)
+		return lobby.Summary{}, ErrFailedQueryLobbySummary(id, err)
 	}
 
 	participants, err := s.ParticipantRepository.QueryAllForLobby(ctx, instance.SysID)
 	if err != nil {
-		return Summary{}, ErrFailedQueryLobbySummary(id, err)
+		return lobby.Summary{}, ErrFailedQueryLobbySummary(id, err)
 	}
 
-	var players = make([]PlayerSlotSummary, len(participants))
+	var players = make([]lobby.PlayerSlotSummary, len(participants))
 
 	for index, value := range participants {
 		if uuid.Equal(value.PlayerID, uuid.Nil) {
-			players[index] = PlayerSlotSummary{
+			players[index] = lobby.PlayerSlotSummary{
 				PartySlot:     value.PlayerSlot,
 				Ready:         false,
-				PlayerSummary: PlayerSummary{},
+				PlayerSummary: lobby.PlayerSummary{},
 			}
 			continue
 		}
 		player, err := s.PlayerSummary.Query(ctx, value.PlayerID)
 		if err != nil {
-			return Summary{}, ErrFailedQueryLobbySummary(id, err)
+			return lobby.Summary{}, ErrFailedQueryLobbySummary(id, err)
 		}
-		players[index] = PlayerSlotSummary{
+		players[index] = lobby.PlayerSlotSummary{
 			PartySlot:     value.PlayerSlot,
 			Ready:         value.Ready,
 			PlayerSummary: player,

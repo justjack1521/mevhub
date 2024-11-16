@@ -15,7 +15,7 @@ type PlayerMatchmakingDispatcher struct {
 	EventPublisher            *mevent.Publisher
 	SessionInstanceRepository session.InstanceReadRepository
 	LobbyInstanceRepository   port.LobbyInstanceReadRepository
-	ParticipantRepository     lobby.ParticipantRepository
+	ParticipantRepository     port.LobbyParticipantRepository
 }
 
 func (s PlayerMatchmakingDispatcher) Dispatch(ctx context.Context, mode game.ModeIdentifier, id uuid.UUID, entry match.LobbyQueueEntry, player match.PlayerQueueEntry) error {

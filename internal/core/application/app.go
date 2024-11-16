@@ -47,9 +47,9 @@ type Repositories struct {
 type DataRepositories struct {
 	Sessions             session.InstanceRepository
 	Lobbies              port.LobbyInstanceRepository
-	LobbyParticipants    lobby.ParticipantRepository
-	LobbySummaries       lobby.SummaryRepository
-	LobbyPlayerSummaries lobby.PlayerSummaryRepository
+	LobbyParticipants    port.LobbyParticipantRepository
+	LobbySummaries       port.LobbySummaryRepository
+	LobbyPlayerSummaries port.LobbyPlayerSummaryRepository
 	LobbySearch          lobby.SearchRepository
 	Games                port.GameInstanceRepository
 	GameParticipants     port.PlayerParticipantRepository

@@ -34,10 +34,10 @@ type JoinLobbyCommandHandler struct {
 	EventPublisher        *mevent.Publisher
 	InstanceRepository    port.LobbyInstanceReadRepository
 	ParticipantFactory    lobby.ParticipantFactory
-	ParticipantRepository lobby.ParticipantRepository
+	ParticipantRepository port.LobbyParticipantRepository
 }
 
-func NewJoinLobbyCommandHandler(publishes *mevent.Publisher, instances port.LobbyInstanceReadRepository, participants lobby.ParticipantRepository) *JoinLobbyCommandHandler {
+func NewJoinLobbyCommandHandler(publishes *mevent.Publisher, instances port.LobbyInstanceReadRepository, participants port.LobbyParticipantRepository) *JoinLobbyCommandHandler {
 	return &JoinLobbyCommandHandler{EventPublisher: publishes, InstanceRepository: instances, ParticipantRepository: participants, ParticipantFactory: lobby.ParticipantFactory{}}
 }
 

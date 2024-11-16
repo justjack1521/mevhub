@@ -6,18 +6,17 @@ import (
 	uuid "github.com/satori/go.uuid"
 	"mevhub/internal/core/application/factory"
 	"mevhub/internal/core/domain/game"
-	"mevhub/internal/core/domain/lobby"
 	"mevhub/internal/core/port"
 )
 
 type GameParticipantWriter struct {
 	EventPublisher             *mevent.Publisher
-	LobbyParticipantRepository lobby.ParticipantReadRepository
+	LobbyParticipantRepository port.LobbyParticipantReadRepository
 	GameParticipantFactory     *factory.PlayerParticipantFactory
 	GameParticipantRepository  port.PlayerParticipantWriteRepository
 }
 
-func NewGameParticipantWriter(publisher *mevent.Publisher, participants lobby.ParticipantReadRepository, factory *factory.PlayerParticipantFactory, players port.PlayerParticipantWriteRepository) *GameParticipantWriter {
+func NewGameParticipantWriter(publisher *mevent.Publisher, participants port.LobbyParticipantReadRepository, factory *factory.PlayerParticipantFactory, players port.PlayerParticipantWriteRepository) *GameParticipantWriter {
 	var subscriber = &GameParticipantWriter{
 		EventPublisher:             publisher,
 		LobbyParticipantRepository: participants,

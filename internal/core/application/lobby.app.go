@@ -6,6 +6,7 @@ import (
 	"mevhub/internal/core/application/command"
 	"mevhub/internal/core/application/consumer"
 	"mevhub/internal/core/application/query"
+	"mevhub/internal/core/application/service"
 	"mevhub/internal/core/application/subscriber"
 	"mevhub/internal/core/domain/lobby"
 	"mevhub/internal/decorator"
@@ -98,7 +99,7 @@ type SearchLobbyQueryHandler decorator.QueryHandler[query.Context, query.SearchL
 type SearchPlayerQueryHandler decorator.QueryHandler[query.Context, query.SearchPlayerQuery, lobby.PlayerSummary]
 
 func (a *LobbyApplication) NewSearchLobbyQueryHandler(core *CoreApplication) SearchLobbyQueryHandler {
-	var actual = query.NewSearchLobbyQueryHandler(core.data.LobbySearch, lobby.NewSummaryQueryService(core.data.Lobbies, core.data.LobbyParticipants, core.data.LobbySummaries, core.data.LobbyPlayerSummaries))
+	var actual = query.NewSearchLobbyQueryHandler(core.data.LobbySearch, service.NewSummaryQueryService(core.data.Lobbies, core.data.LobbyParticipants, core.data.LobbySummaries, core.data.LobbyPlayerSummaries))
 	return actual
 }
 

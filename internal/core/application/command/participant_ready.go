@@ -26,10 +26,10 @@ type ReadyLobbyParticipantHandler struct {
 	EventPublisher        *mevent.Publisher
 	SessionRepository     session.InstanceReadRepository
 	InstanceRepository    port.LobbyInstanceRepository
-	ParticipantRepository lobby.ParticipantRepository
+	ParticipantRepository port.LobbyParticipantRepository
 }
 
-func NewReadyParticipantCommandHandler(publisher *mevent.Publisher, sessions session.InstanceReadRepository, instances port.LobbyInstanceRepository, participants lobby.ParticipantRepository) *ReadyLobbyParticipantHandler {
+func NewReadyParticipantCommandHandler(publisher *mevent.Publisher, sessions session.InstanceReadRepository, instances port.LobbyInstanceRepository, participants port.LobbyParticipantRepository) *ReadyLobbyParticipantHandler {
 	return &ReadyLobbyParticipantHandler{EventPublisher: publisher, SessionRepository: sessions, InstanceRepository: instances, ParticipantRepository: participants}
 }
 

@@ -4,6 +4,7 @@ import (
 	uuid "github.com/satori/go.uuid"
 	"mevhub/internal/core/domain/lobby"
 	"mevhub/internal/core/domain/session"
+	"mevhub/internal/core/port"
 )
 
 type SearchPlayerQuery struct {
@@ -20,12 +21,12 @@ func (c SearchPlayerQuery) CommandName() string {
 }
 
 type SearchPlayerQueryHandler struct {
-	ParticipantRepository lobby.ParticipantRepository
+	ParticipantRepository port.LobbyParticipantRepository
 	SessionRepository     session.InstanceReadRepository
-	SummaryRepository     lobby.PlayerSummaryReadRepository
+	SummaryRepository     port.LobbyPlayerSummaryReadRepository
 }
 
-func NewSearchPlayerQueryHandler(participant lobby.ParticipantRepository, session session.InstanceReadRepository, summary lobby.PlayerSummaryReadRepository) *SearchPlayerQueryHandler {
+func NewSearchPlayerQueryHandler(participant port.LobbyParticipantRepository, session session.InstanceReadRepository, summary port.LobbyPlayerSummaryReadRepository) *SearchPlayerQueryHandler {
 	return &SearchPlayerQueryHandler{ParticipantRepository: participant, SessionRepository: session, SummaryRepository: summary}
 }
 

@@ -1,6 +1,9 @@
 package query
 
-import "mevhub/internal/core/domain/lobby"
+import (
+	"mevhub/internal/core/domain/lobby"
+	"mevhub/internal/core/port"
+)
 
 type SearchLobbyQuery struct {
 	party string
@@ -17,10 +20,10 @@ func NewSearchLobbyQuery(qry lobby.SearchQuery, party string) SearchLobbyQuery {
 
 type SearchLobbyQueryHandler struct {
 	SearchRepository  lobby.SearchReadRepository
-	SummaryRepository lobby.SummaryReadRepository
+	SummaryRepository port.LobbySummaryReadRepository
 }
 
-func NewSearchLobbyQueryHandler(lobbies lobby.SearchReadRepository, summaries lobby.SummaryReadRepository) *SearchLobbyQueryHandler {
+func NewSearchLobbyQueryHandler(lobbies lobby.SearchReadRepository, summaries port.LobbySummaryReadRepository) *SearchLobbyQueryHandler {
 	return &SearchLobbyQueryHandler{SearchRepository: lobbies, SummaryRepository: summaries}
 }
 
