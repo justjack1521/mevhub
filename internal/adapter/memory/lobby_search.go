@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/go-redis/redis/v8"
 	uuid "github.com/satori/go.uuid"
+	"mevhub/internal/core/domain/game"
 	"mevhub/internal/core/domain/lobby"
 	"strconv"
 	"strings"
@@ -141,7 +142,7 @@ func (r *LobbySearchRedisRepository) GenerateKeysFromInstance(instance lobby.Sea
 	return result
 }
 
-func (r *LobbySearchRedisRepository) GenerateIdentifierKey(identifier string) string {
-	var key = strings.Join([]string{LobbyKeyPrefix, identifier, LobbyKeySuffix}, LobbyKeyPrimarySeparator)
+func (r *LobbySearchRedisRepository) GenerateIdentifierKey(identifier game.ModeIdentifier) string {
+	var key = strings.Join([]string{LobbyKeyPrefix, string(identifier), LobbyKeySuffix}, LobbyKeyPrimarySeparator)
 	return strings.Join([]string{serviceKey, key}, LobbyKeySecondarySeparator)
 }

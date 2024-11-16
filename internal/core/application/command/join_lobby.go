@@ -4,6 +4,7 @@ import (
 	"github.com/justjack1521/mevium/pkg/mevent"
 	uuid "github.com/satori/go.uuid"
 	"mevhub/internal/core/domain/lobby"
+	"mevhub/internal/core/port"
 )
 
 type JoinLobbyCommand struct {
@@ -31,12 +32,12 @@ func NewJoinLobbyCommand(id uuid.UUID, deck, slot int, stamina, invite bool) *Jo
 
 type JoinLobbyCommandHandler struct {
 	EventPublisher        *mevent.Publisher
-	InstanceRepository    lobby.InstanceRepository
+	InstanceRepository    port.LobbyInstanceReadRepository
 	ParticipantFactory    lobby.ParticipantFactory
 	ParticipantRepository lobby.ParticipantRepository
 }
 
-func NewJoinLobbyCommandHandler(publishes *mevent.Publisher, instances lobby.InstanceRepository, participants lobby.ParticipantRepository) *JoinLobbyCommandHandler {
+func NewJoinLobbyCommandHandler(publishes *mevent.Publisher, instances port.LobbyInstanceReadRepository, participants lobby.ParticipantRepository) *JoinLobbyCommandHandler {
 	return &JoinLobbyCommandHandler{EventPublisher: publishes, InstanceRepository: instances, ParticipantRepository: participants, ParticipantFactory: lobby.ParticipantFactory{}}
 }
 

@@ -2,9 +2,9 @@ package worker
 
 import (
 	"context"
+	"fmt"
 	uuid "github.com/satori/go.uuid"
 	"mevhub/internal/core/domain/game"
-	"mevhub/internal/core/domain/match"
 	"mevhub/internal/core/port"
 	"time"
 )
@@ -13,14 +13,14 @@ const (
 	matchmakingQueueWorkerInterval = time.Second * 10
 )
 
-type MatchmakingQueueWorker struct {
+type LobbyMatchmakingQueueWorker struct {
 	ctx        context.Context
 	mode       game.ModeIdentifier
 	repository port.MatchPlayerQueueRepository
-	dispatcher port.MatchmakingDispatcher
+	dispatcher port.PlayerMatchmakingDispatcher
 }
 
-func (w *MatchmakingQueueWorker) Run() {
+func (w *LobbyMatchmakingQueueWorker) Run() {
 
 	var ticker = time.NewTicker(matchmakingQueueWorkerInterval)
 	defer ticker.Stop()
@@ -35,16 +35,18 @@ func (w *MatchmakingQueueWorker) Run() {
 				continue
 			}
 			for _, active := range actives {
-				w.process(active)
+				if err := w.process(active); err != nil {
+					fmt.Println(err)
+				}
 			}
 
 		}
 	}
 }
 
-func (w *MatchmakingQueueWorker) process(quest uuid.UUID) error {
+func (w *LobbyMatchmakingQueueWorker) process(quest uuid.UUID) error {
 
-	players, err := w.repository.GetQueuedPlayers(w.ctx, w.mode, quest)
+	players, err := w.repository.GetQueuedLobbies(w.ctx, w.mode, quest)
 	if err != nil {
 		return err
 	}
@@ -54,11 +56,13 @@ func (w *MatchmakingQueueWorker) process(quest uuid.UUID) error {
 		if err != nil {
 			continue
 		}
-		if err := w.dispatcher.DispatchMatch(w.ctx, w.mode, quest, []match.PlayerQueueEntry{player, found}); err != nil {
+		if err := w.repository.RemovePlayerFromQueue(w.ctx, w.mode, quest, found.UserID); err != nil {
 			continue
 		}
-		if err := w.repository.RemovePlayerFromQueue(w.ctx, w.mode, quest, player.PlayerID); err != nil {
-			continue
+		if err := w.dispatcher.Dispatch(w.ctx, w.mode, quest, player, found); err != nil {
+			if err := w.repository.AddPlayerToQueue(w.ctx, w.mode, found); err != nil {
+				continue
+			}
 		}
 	}
 

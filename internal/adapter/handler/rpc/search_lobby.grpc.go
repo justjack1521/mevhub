@@ -5,6 +5,7 @@ import (
 	"github.com/justjack1521/mevium/pkg/genproto/protomulti"
 	uuid "github.com/satori/go.uuid"
 	"mevhub/internal/core/application/query"
+	"mevhub/internal/core/domain/game"
 	"mevhub/internal/core/domain/lobby"
 )
 
@@ -20,7 +21,7 @@ func (g MultiGrpcServer) SearchLobby(ctx context.Context, request *protomulti.Se
 	}
 
 	var qry = lobby.SearchQuery{
-		ModeIdentifier:     request.ModeIdentifier,
+		ModeIdentifier:     game.ModeIdentifier(request.ModeIdentifier),
 		MinimumPlayerLevel: 0,
 		Levels:             levels,
 		Categories:         categories,

@@ -10,12 +10,12 @@ import (
 
 type GameInstanceWriter struct {
 	EventPublisher          *mevent.Publisher
-	LobbyInstanceRepository lobby.InstanceReadRepository
+	LobbyInstanceRepository port.LobbyInstanceRepository
 	GameInstanceFactory     *game.InstanceFactory
-	GameInstanceRepository  port.InstanceWriteRepository
+	GameInstanceRepository  port.GameInstanceWriteRepository
 }
 
-func NewGameInstanceWriter(publisher *mevent.Publisher, lobbies lobby.InstanceRepository, factory *game.InstanceFactory, repository port.InstanceWriteRepository) *GameInstanceWriter {
+func NewGameInstanceWriter(publisher *mevent.Publisher, lobbies port.LobbyInstanceRepository, factory *game.InstanceFactory, repository port.GameInstanceWriteRepository) *GameInstanceWriter {
 	var subscriber = &GameInstanceWriter{EventPublisher: publisher, LobbyInstanceRepository: lobbies, GameInstanceFactory: factory, GameInstanceRepository: repository}
 	publisher.Subscribe(subscriber, lobby.InstanceStartedEvent{})
 	return subscriber

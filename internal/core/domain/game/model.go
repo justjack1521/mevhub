@@ -6,9 +6,11 @@ import (
 )
 
 type Mode struct {
-	SysID             uuid.UUID
-	OptionsIdentifier ModeIdentifier
-	MaxPlayers        int
+	SysID          uuid.UUID
+	ModeIdentifier ModeIdentifier
+	MaxPlayers     int
+	MaxLobbies     int
+	FulfillMethod  FulfillMethod
 }
 
 func (x Mode) Zero() bool {
@@ -45,8 +47,4 @@ type Category struct {
 
 func (x Category) Zero() bool {
 	return x == Category{}
-}
-
-type QuestRepository interface {
-	QueryByID(id uuid.UUID) (Quest, error)
 }

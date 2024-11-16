@@ -2,19 +2,20 @@ package lobby
 
 import (
 	uuid "github.com/satori/go.uuid"
+	"mevhub/internal/core/domain/game"
 	"time"
 )
 
 type SearchEntry struct {
 	InstanceID         uuid.UUID
-	ModeIdentifier     string
+	ModeIdentifier     game.ModeIdentifier
 	Level              int
 	MinimumPlayerLevel int
 	Categories         []uuid.UUID
 }
 
 type SearchQuery struct {
-	ModeIdentifier     string
+	ModeIdentifier     game.ModeIdentifier
 	MinimumPlayerLevel int
 	Levels             []int
 	Categories         []uuid.UUID

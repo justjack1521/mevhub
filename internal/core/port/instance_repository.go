@@ -17,7 +17,7 @@ var (
 	}
 )
 
-type InstanceReadRepository interface {
+type GameInstanceReadRepository interface {
 	Get(ctx context.Context, id uuid.UUID) (*game.Instance, error)
 }
 
@@ -28,11 +28,11 @@ var (
 	}
 )
 
-type InstanceWriteRepository interface {
+type GameInstanceWriteRepository interface {
 	Create(ctx context.Context, instance *game.Instance) error
 }
 
-type InstanceRepository interface {
-	InstanceReadRepository
-	InstanceWriteRepository
+type GameInstanceRepository interface {
+	GameInstanceReadRepository
+	GameInstanceWriteRepository
 }

@@ -13,7 +13,6 @@ import (
 	"mevhub/internal/adapter/external"
 	"mevhub/internal/adapter/memory"
 	"mevhub/internal/adapter/serial"
-	"mevhub/internal/core/domain/game"
 	"mevhub/internal/core/domain/lobby"
 	"mevhub/internal/core/domain/session"
 	"mevhub/internal/core/port"
@@ -42,17 +41,17 @@ type SubApplications struct {
 
 type Repositories struct {
 	Options port.InstanceOptionsRepository
-	Quests  game.QuestRepository
+	Quests  port.QuestRepository
 }
 
 type DataRepositories struct {
 	Sessions             session.InstanceRepository
-	Lobbies              lobby.InstanceRepository
+	Lobbies              port.LobbyInstanceRepository
 	LobbyParticipants    lobby.ParticipantRepository
 	LobbySummaries       lobby.SummaryRepository
 	LobbyPlayerSummaries lobby.PlayerSummaryRepository
 	LobbySearch          lobby.SearchRepository
-	Games                port.InstanceRepository
+	Games                port.GameInstanceRepository
 	GameParticipants     port.PlayerParticipantRepository
 	GamePlayerLoadouts   port.PlayerLoadoutReadRepository
 }

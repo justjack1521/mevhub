@@ -5,34 +5,35 @@ import (
 	uuid "github.com/satori/go.uuid"
 	"mevhub/internal/core/domain/lobby"
 	"mevhub/internal/core/domain/session"
+	"mevhub/internal/core/port"
 )
 
-type ReadyLobbyCommand struct {
+type ReadyParticipantCommand struct {
 	BasicCommand
 	LobbyID   uuid.UUID
 	DeckIndex int
 }
 
-func (c ReadyLobbyCommand) CommandName() string {
-	return "lobby.ready"
+func (c ReadyParticipantCommand) CommandName() string {
+	return "participant.ready"
 }
 
-func NewReadyLobbyCommand(id uuid.UUID, deck int) *ReadyLobbyCommand {
-	return &ReadyLobbyCommand{LobbyID: id, DeckIndex: deck}
+func NewReadyParticipantCommand(id uuid.UUID, deck int) *ReadyParticipantCommand {
+	return &ReadyParticipantCommand{LobbyID: id, DeckIndex: deck}
 }
 
-type ReadyLobbyCommandHandler struct {
+type ReadyLobbyParticipantHandler struct {
 	EventPublisher        *mevent.Publisher
 	SessionRepository     session.InstanceReadRepository
-	InstanceRepository    lobby.InstanceRepository
+	InstanceRepository    port.LobbyInstanceRepository
 	ParticipantRepository lobby.ParticipantRepository
 }
 
-func NewReadyLobbyCommandHandler(publisher *mevent.Publisher, sessions session.InstanceReadRepository, instances lobby.InstanceRepository, participants lobby.ParticipantRepository) *ReadyLobbyCommandHandler {
-	return &ReadyLobbyCommandHandler{EventPublisher: publisher, SessionRepository: sessions, InstanceRepository: instances, ParticipantRepository: participants}
+func NewReadyParticipantCommandHandler(publisher *mevent.Publisher, sessions session.InstanceReadRepository, instances port.LobbyInstanceRepository, participants lobby.ParticipantRepository) *ReadyLobbyParticipantHandler {
+	return &ReadyLobbyParticipantHandler{EventPublisher: publisher, SessionRepository: sessions, InstanceRepository: instances, ParticipantRepository: participants}
 }
 
-func (h *ReadyLobbyCommandHandler) Handle(ctx Context, cmd *ReadyLobbyCommand) error {
+func (h *ReadyLobbyParticipantHandler) Handle(ctx Context, cmd *ReadyParticipantCommand) error {
 
 	current, err := h.SessionRepository.QueryByID(ctx, ctx.UserID())
 	if err != nil {

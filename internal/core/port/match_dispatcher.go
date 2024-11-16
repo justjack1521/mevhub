@@ -7,6 +7,10 @@ import (
 	"mevhub/internal/core/domain/match"
 )
 
-type MatchmakingDispatcher interface {
-	DispatchMatch(ctx context.Context, mode game.ModeIdentifier, id uuid.UUID, players []match.PlayerQueueEntry) error
+type LobbyMatchmakingDispatcher interface {
+	Dispatch(ctx context.Context, mode game.ModeIdentifier, id uuid.UUID, lobbies []match.LobbyQueueEntry) error
+}
+
+type PlayerMatchmakingDispatcher interface {
+	Dispatch(ctx context.Context, mode game.ModeIdentifier, id uuid.UUID, lobby match.LobbyQueueEntry, player match.PlayerQueueEntry) error
 }

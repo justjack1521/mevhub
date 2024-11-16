@@ -4,17 +4,17 @@ import (
 	"fmt"
 	"github.com/justjack1521/mevium/pkg/mevent"
 	uuid "github.com/satori/go.uuid"
-	"mevhub/internal/core/domain/game"
 	"mevhub/internal/core/domain/lobby"
+	"mevhub/internal/core/port"
 )
 
 type LobbySummaryWriter struct {
 	EventPublisher    *mevent.Publisher
-	QuestRepository   game.QuestRepository
+	QuestRepository   port.QuestRepository
 	SummaryRepository lobby.SummaryWriteRepository
 }
 
-func NewLobbySummaryWriter(publisher *mevent.Publisher, quests game.QuestRepository, summaries lobby.SummaryWriteRepository) *LobbySummaryWriter {
+func NewLobbySummaryWriter(publisher *mevent.Publisher, quests port.QuestRepository, summaries lobby.SummaryWriteRepository) *LobbySummaryWriter {
 	var subscriber = &LobbySummaryWriter{EventPublisher: publisher, QuestRepository: quests, SummaryRepository: summaries}
 	publisher.Subscribe(subscriber, lobby.InstanceCreatedEvent{}, lobby.InstanceDeletedEvent{})
 	return subscriber
@@ -44,8 +44,7 @@ func (s *LobbySummaryWriter) HandleCreate(event lobby.InstanceCreatedEvent) erro
 		return err
 	}
 
-	var summary = lobby.
-		Summary{
+	var summary = lobby.Summary{
 		InstanceID:         event.LobbyID(),
 		QuestID:            quest.SysID,
 		PartyID:            event.PartyID(),
@@ -62,15 +61,8 @@ func (s *LobbySummaryWriter) HandleCreate(event lobby.InstanceCreatedEvent) erro
 		categories[index] = value.SysID
 	}
 
-	s.EventPublisher.Notify(lobby.
-		NewSummaryCreatedEvent(
-			event.Context(),
-			summary.InstanceID,
-			string(quest.Tier.GameMode.OptionsIdentifier),
-			quest.Tier.StarLevel,
-			summary.MinimumPlayerLevel,
-			categories,
-		))
+	var evt = lobby.NewSummaryCreatedEvent(event.Context(), summary.InstanceID, quest.SysID, quest.Tier.StarLevel, summary.MinimumPlayerLevel, categories)
+	s.EventPublisher.Notify(evt)
 
 	return nil
 

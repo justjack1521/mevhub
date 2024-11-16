@@ -10,7 +10,15 @@ type ModeIdentifier string
 const (
 	ModeIdentifierNone        = "none"
 	ModeIdentifierCoopDefault = "coop_default"
-	ModeIdentifierCoopVersus  = "coop_versus"
+	ModeIdentifierCompSingle  = "comp_single"
+)
+
+type FulfillMethod string
+
+const (
+	FulfillMethodNone   = "none"
+	FulfillMethodSearch = "search"
+	FulfillMethodMatch  = "match"
 )
 
 type InstanceOptions struct {

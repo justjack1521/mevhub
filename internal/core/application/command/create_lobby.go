@@ -5,8 +5,8 @@ import (
 	"github.com/justjack1521/mevium/pkg/mevent"
 	uuid "github.com/satori/go.uuid"
 	"math/rand"
-	"mevhub/internal/core/domain/game"
 	"mevhub/internal/core/domain/lobby"
+	"mevhub/internal/core/port"
 )
 
 type CreateLobbyCommand struct {
@@ -41,13 +41,13 @@ func NewCreateLobbyCommand(quest uuid.UUID, deck int, comment string, options Cr
 
 type CreateLobbyCommandHandler struct {
 	EventPublisher        *mevent.Publisher
-	InstanceRepository    lobby.InstanceWriteRepository
-	QuestRepository       game.QuestRepository
+	InstanceRepository    port.LobbyInstanceWriteRepository
+	QuestRepository       port.QuestRepository
 	ParticipantFactory    lobby.ParticipantFactory
 	ParticipantRepository lobby.ParticipantWriteRepository
 }
 
-func NewCreateLobbyCommandHandler(publisher *mevent.Publisher, instances lobby.InstanceWriteRepository, quests game.QuestRepository, participants lobby.ParticipantWriteRepository) *CreateLobbyCommandHandler {
+func NewCreateLobbyCommandHandler(publisher *mevent.Publisher, instances port.LobbyInstanceWriteRepository, quests port.QuestRepository, participants lobby.ParticipantWriteRepository) *CreateLobbyCommandHandler {
 	return &CreateLobbyCommandHandler{
 		EventPublisher:        publisher,
 		InstanceRepository:    instances,

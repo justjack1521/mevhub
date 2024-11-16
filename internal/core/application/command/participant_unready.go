@@ -5,33 +5,34 @@ import (
 	uuid "github.com/satori/go.uuid"
 	"mevhub/internal/core/domain/lobby"
 	"mevhub/internal/core/domain/session"
+	"mevhub/internal/core/port"
 )
 
-type UnreadyLobbyCommand struct {
+type UnreadyParticipantCommand struct {
 	BasicCommand
 	LobbyID uuid.UUID
 }
 
-func (c UnreadyLobbyCommand) CommandName() string {
-	return "lobby.unready"
+func (c UnreadyParticipantCommand) CommandName() string {
+	return "participant.unready"
 }
 
-func NewUnreadyLobbyCommand(id uuid.UUID) *UnreadyLobbyCommand {
-	return &UnreadyLobbyCommand{LobbyID: id}
+func NewUnreadyParticipantCommand(id uuid.UUID) *UnreadyParticipantCommand {
+	return &UnreadyParticipantCommand{LobbyID: id}
 }
 
-type UnreadyLobbyCommandHandler struct {
+type UnreadyParticipantCommandHandler struct {
 	EventPublisher        *mevent.Publisher
 	SessionRepository     session.InstanceReadRepository
-	InstanceRepository    lobby.InstanceRepository
+	InstanceRepository    port.LobbyInstanceRepository
 	ParticipantRepository lobby.ParticipantRepository
 }
 
-func NewUnreadyLobbyCommandHandler(publisher *mevent.Publisher, sessions session.InstanceReadRepository, instances lobby.InstanceRepository, participants lobby.ParticipantRepository) *UnreadyLobbyCommandHandler {
-	return &UnreadyLobbyCommandHandler{EventPublisher: publisher, SessionRepository: sessions, InstanceRepository: instances, ParticipantRepository: participants}
+func NewUnreadyParticipantCommandHandler(publisher *mevent.Publisher, sessions session.InstanceReadRepository, instances port.LobbyInstanceRepository, participants lobby.ParticipantRepository) *UnreadyParticipantCommandHandler {
+	return &UnreadyParticipantCommandHandler{EventPublisher: publisher, SessionRepository: sessions, InstanceRepository: instances, ParticipantRepository: participants}
 }
 
-func (h *UnreadyLobbyCommandHandler) Handle(ctx Context, cmd *UnreadyLobbyCommand) error {
+func (h *UnreadyParticipantCommandHandler) Handle(ctx Context, cmd *UnreadyParticipantCommand) error {
 
 	current, err := h.SessionRepository.QueryByID(ctx, ctx.UserID())
 	if err != nil {

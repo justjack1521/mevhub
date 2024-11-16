@@ -3,6 +3,7 @@ package command
 import (
 	"mevhub/internal/core/domain/lobby"
 	"mevhub/internal/core/domain/session"
+	"mevhub/internal/core/port"
 )
 
 type StartLobbyCommand struct {
@@ -19,11 +20,11 @@ func NewStartLobbyCommand() *StartLobbyCommand {
 
 type StartLobbyCommandHandler struct {
 	SessionRepository          session.InstanceReadRepository
-	LobbyInstanceRepository    lobby.InstanceRepository
+	LobbyInstanceRepository    port.LobbyInstanceRepository
 	LobbyParticipantRepository lobby.ParticipantReadRepository
 }
 
-func NewStartLobbyCommandHandler(sessions session.InstanceReadRepository, lobbies lobby.InstanceRepository, participants lobby.ParticipantReadRepository) *StartLobbyCommandHandler {
+func NewStartLobbyCommandHandler(sessions session.InstanceReadRepository, lobbies port.LobbyInstanceRepository, participants lobby.ParticipantReadRepository) *StartLobbyCommandHandler {
 	return &StartLobbyCommandHandler{
 		SessionRepository:          sessions,
 		LobbyInstanceRepository:    lobbies,

@@ -6,7 +6,7 @@ import (
 )
 
 type PlayerQueueEntry struct {
-	PlayerID  uuid.UUID
+	UserID    uuid.UUID
 	QuestID   uuid.UUID
 	DeckLevel int
 	JoinedAt  time.Time

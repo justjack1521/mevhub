@@ -3,12 +3,15 @@ package subscriber
 import (
 	"fmt"
 	"github.com/justjack1521/mevium/pkg/mevent"
+	"mevhub/internal/core/domain/game"
 	"mevhub/internal/core/domain/lobby"
+	"mevhub/internal/core/port"
 )
 
 type LobbySearchWriter struct {
 	EventPublisher   *mevent.Publisher
 	SearchRepository lobby.SearchWriteRepository
+	QuestRepository  port.QuestRepository
 }
 
 func NewLobbySearchWriter(publisher *mevent.Publisher, searcher lobby.SearchWriteRepository) *LobbySearchWriter {
@@ -29,9 +32,18 @@ func (s *LobbySearchWriter) Notify(event mevent.Event) {
 
 func (s *LobbySearchWriter) Handle(event lobby.SummaryCreatedEvent) error {
 
+	quest, err := s.QuestRepository.QueryByID(event.QuestID())
+	if err != nil {
+		return err
+	}
+
+	if quest.Tier.GameMode.FulfillMethod != game.FulfillMethodSearch {
+		return nil
+	}
+
 	var search = lobby.SearchEntry{
 		InstanceID:         event.LobbyID(),
-		ModeIdentifier:     event.Mode(),
+		ModeIdentifier:     quest.Tier.GameMode.ModeIdentifier,
 		Level:              event.Level(),
 		MinimumPlayerLevel: event.MinLevel(),
 		Categories:         event.Categories(),

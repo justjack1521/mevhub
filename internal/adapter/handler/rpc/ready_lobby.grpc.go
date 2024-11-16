@@ -14,7 +14,7 @@ func (g MultiGrpcServer) ReadyLobby(ctx context.Context, request *protomulti.Rea
 		return nil, err
 	}
 
-	var cmd = command.NewReadyLobbyCommand(lobby, int(request.DeckIndex))
+	var cmd = command.NewReadyParticipantCommand(lobby, int(request.DeckIndex))
 
 	if err := g.app.SubApplications.Lobby.Commands.ReadyLobby.Handle(g.NewCommandContext(ctx), cmd); err != nil {
 		return nil, err

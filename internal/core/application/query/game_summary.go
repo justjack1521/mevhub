@@ -19,11 +19,11 @@ func NewGameSummaryQuery() GameSummaryQuery {
 
 type GameSummaryQueryHandler struct {
 	SessionRepository           session.InstanceReadRepository
-	InstanceRepository          port.InstanceReadRepository
+	InstanceRepository          port.GameInstanceReadRepository
 	PlayerParticipantRepository port.PlayerParticipantReadRepository
 }
 
-func NewGameSummaryQueryHandler(sessions session.InstanceReadRepository, instances port.InstanceReadRepository, players port.PlayerParticipantReadRepository) *GameSummaryQueryHandler {
+func NewGameSummaryQueryHandler(sessions session.InstanceReadRepository, instances port.GameInstanceReadRepository, players port.PlayerParticipantReadRepository) *GameSummaryQueryHandler {
 	return &GameSummaryQueryHandler{SessionRepository: sessions, InstanceRepository: instances, PlayerParticipantRepository: players}
 }
 
@@ -46,7 +46,6 @@ func (h *GameSummaryQueryHandler) Handle(ctx Context, cmd GameSummaryQuery) (gam
 
 	return game.Summary{
 		SysID:        instance.SysID,
-		PartyID:      instance.PartyID,
 		Seed:         instance.Seed,
 		Participants: participants,
 	}, nil

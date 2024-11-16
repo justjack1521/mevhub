@@ -9,33 +9,33 @@ import (
 type SummaryCreatedEvent struct {
 	ctx        context.Context
 	id         uuid.UUID
-	mode       string
+	quest      uuid.UUID
 	level      int
 	min        int
 	categories []uuid.UUID
 }
 
-func NewSummaryCreatedEvent(ctx context.Context, id uuid.UUID, mode string, level, min int, categories []uuid.UUID) SummaryCreatedEvent {
-	return SummaryCreatedEvent{ctx: ctx, id: id, mode: mode, level: level, min: min, categories: categories}
-}
-
-func (e SummaryCreatedEvent) LobbyID() uuid.UUID {
-	return e.id
+func NewSummaryCreatedEvent(ctx context.Context, id uuid.UUID, quest uuid.UUID, level, min int, categories []uuid.UUID) SummaryCreatedEvent {
+	return SummaryCreatedEvent{ctx: ctx, id: id, quest: quest, level: level, min: min, categories: categories}
 }
 
 func (e SummaryCreatedEvent) Name() string {
 	return "lobby.summary.created"
 }
 
-func (e SummaryCreatedEvent) Mode() string {
-	return e.mode
+func (e SummaryCreatedEvent) LobbyID() uuid.UUID {
+	return e.id
+}
+
+func (e SummaryCreatedEvent) QuestID() uuid.UUID {
+	return e.quest
 }
 
 func (e SummaryCreatedEvent) ToLogFields() logrus.Fields {
 	return logrus.Fields{
 		"event.name": e.Name(),
-		"lobby.id":   e.id,
-		"mode":       e.mode,
+		"lobby.id":   e.id.String(),
+		"quest.id":   e.quest.String(),
 	}
 }
 

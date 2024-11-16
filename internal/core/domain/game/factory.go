@@ -3,14 +3,15 @@ package game
 import (
 	"math/rand"
 	"mevhub/internal/core/domain/lobby"
+	"mevhub/internal/core/port"
 	"time"
 )
 
 type InstanceFactory struct {
-	QuestRepository QuestRepository
+	QuestRepository port.QuestRepository
 }
 
-func NewInstanceFactory(quests QuestRepository) *InstanceFactory {
+func NewInstanceFactory(quests port.QuestRepository) *InstanceFactory {
 	return &InstanceFactory{QuestRepository: quests}
 }
 
@@ -22,9 +23,8 @@ func (f *InstanceFactory) Create(source *lobby.Instance) (*Instance, error) {
 	}
 
 	return &Instance{
-		SysID:   source.SysID,
-		PartyID: source.PartyID,
-		Seed:    rand.Int(),
+		SysID: source.SysID,
+		Seed:  rand.Int(),
 		Options: &InstanceOptions{
 			MinimumPlayerLevel: source.MinimumPlayerLevel,
 			MaxRunTime:         quest.Tier.TimeLimit,

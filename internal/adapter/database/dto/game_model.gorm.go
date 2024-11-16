@@ -72,9 +72,11 @@ func (x *GameModeTierGorm) ToEntity() game.Tier {
 }
 
 type GameModeGorm struct {
-	SysID      uuid.UUID `gorm:"primaryKey;column:sys_id"`
-	Identifier string    `gorm:"column:identifier"`
-	MaxPlayers int       `gorm:"column:max_players"`
+	SysID         uuid.UUID `gorm:"primaryKey;column:sys_id"`
+	Identifier    string    `gorm:"column:identifier"`
+	MaxPlayers    int       `gorm:"column:max_players"`
+	MaxLobbies    int       `gorm:"column:max_lobbies"`
+	FulfillMethod string    `gorm:"column:fulfill_method"`
 }
 
 func (GameModeGorm) TableName() string {
@@ -83,8 +85,10 @@ func (GameModeGorm) TableName() string {
 
 func (x *GameModeGorm) ToEntity() game.Mode {
 	return game.Mode{
-		SysID:             x.SysID,
-		OptionsIdentifier: game.ModeIdentifier(x.Identifier),
-		MaxPlayers:        x.MaxPlayers,
+		SysID:          x.SysID,
+		ModeIdentifier: game.ModeIdentifier(x.Identifier),
+		MaxPlayers:     x.MaxPlayers,
+		MaxLobbies:     x.MaxLobbies,
+		FulfillMethod:  game.FulfillMethod(x.FulfillMethod),
 	}
 }

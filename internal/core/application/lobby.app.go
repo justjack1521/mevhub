@@ -32,8 +32,8 @@ type LobbyApplicationCommands struct {
 	WatchLobby    WatchLobbyCommandHandler
 	JoinLobby     JoinLobbyCommandHandler
 	CancelLobby   CancelLobbyCommandHandler
-	ReadyLobby    ReadyLobbyCommandHandler
-	UnreadyLobby  UnreadyLobbyCommandHandler
+	ReadyLobby    ReadyParticipantCommandHandler
+	UnreadyLobby  UnreadyParticipantCommandHandler
 	StartLobby    StartLobbyCommandHandler
 	SendStamp     SendStampCommandHandler
 }
@@ -61,8 +61,8 @@ func NewLobbyApplication(core *CoreApplication) *LobbyApplication {
 		CancelLobby:   application.NewCancelLobbyCommandHandler(core),
 		WatchLobby:    application.NewWatchLobbyCommandHandler(core),
 		JoinLobby:     application.NewJoinLobbyCommandHandler(core),
-		ReadyLobby:    application.NewReadyLobbyCommandHandler(core),
-		UnreadyLobby:  application.NewUnreadyLobbyCommandHandler(core),
+		ReadyLobby:    application.NewReadyParticipantCommandHandler(core),
+		UnreadyLobby:  application.NewUnreadyParticipantCommandHandler(core),
 		StartLobby:    application.NewStartLobbyCommandHandler(core),
 		SendStamp:     application.NewSendStampCommandHandler(core),
 	}
@@ -89,8 +89,8 @@ type CancelLobbyCommandHandler decorator.CommandHandler[command.Context, *comman
 type WatchLobbyCommandHandler decorator.CommandHandler[command.Context, *command.WatchLobbyCommand]
 type JoinLobbyCommandHandler decorator.CommandHandler[command.Context, *command.JoinLobbyCommand]
 type LeaveLobbyCommandHandler decorator.CommandHandler[command.Context, *command.LeaveLobbyCommand]
-type ReadyLobbyCommandHandler decorator.CommandHandler[command.Context, *command.ReadyLobbyCommand]
-type UnreadyLobbyCommandHandler decorator.CommandHandler[command.Context, *command.UnreadyLobbyCommand]
+type ReadyParticipantCommandHandler decorator.CommandHandler[command.Context, *command.ReadyParticipantCommand]
+type UnreadyParticipantCommandHandler decorator.CommandHandler[command.Context, *command.UnreadyParticipantCommand]
 type StartLobbyCommandHandler decorator.CommandHandler[command.Context, *command.StartLobbyCommand]
 type SendStampCommandHandler decorator.CommandHandler[command.Context, *command.SendStampCommand]
 
@@ -147,14 +147,14 @@ func (a *LobbyApplication) NewLeaveLobbyCommand(core *CoreApplication) LeaveLobb
 	return decorator.NewStandardCommandDecorator[command.Context, *command.LeaveLobbyCommand](core.Services.EventPublisher, actual)
 }
 
-func (a *LobbyApplication) NewReadyLobbyCommandHandler(core *CoreApplication) ReadyLobbyCommandHandler {
-	var actual = command.NewReadyLobbyCommandHandler(core.Services.EventPublisher, core.data.Sessions, core.data.Lobbies, core.data.LobbyParticipants)
-	return decorator.NewStandardCommandDecorator[command.Context, *command.ReadyLobbyCommand](core.Services.EventPublisher, actual)
+func (a *LobbyApplication) NewReadyParticipantCommandHandler(core *CoreApplication) ReadyParticipantCommandHandler {
+	var actual = command.NewReadyParticipantCommandHandler(core.Services.EventPublisher, core.data.Sessions, core.data.Lobbies, core.data.LobbyParticipants)
+	return decorator.NewStandardCommandDecorator[command.Context, *command.ReadyParticipantCommand](core.Services.EventPublisher, actual)
 }
 
-func (a *LobbyApplication) NewUnreadyLobbyCommandHandler(core *CoreApplication) UnreadyLobbyCommandHandler {
-	var actual = command.NewUnreadyLobbyCommandHandler(core.Services.EventPublisher, core.data.Sessions, core.data.Lobbies, core.data.LobbyParticipants)
-	return decorator.NewStandardCommandDecorator[command.Context, *command.UnreadyLobbyCommand](core.Services.EventPublisher, actual)
+func (a *LobbyApplication) NewUnreadyParticipantCommandHandler(core *CoreApplication) UnreadyParticipantCommandHandler {
+	var actual = command.NewUnreadyParticipantCommandHandler(core.Services.EventPublisher, core.data.Sessions, core.data.Lobbies, core.data.LobbyParticipants)
+	return decorator.NewStandardCommandDecorator[command.Context, *command.UnreadyParticipantCommand](core.Services.EventPublisher, actual)
 }
 
 func (a *LobbyApplication) NewSendStampCommandHandler(core *CoreApplication) SendStampCommandHandler {

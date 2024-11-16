@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	uuid "github.com/satori/go.uuid"
+	"mevhub/internal/core/port"
 )
 
 var (
@@ -16,13 +17,13 @@ var (
 )
 
 type SummaryQueryService struct {
-	InstanceRepository    InstanceReadRepository
+	InstanceRepository    port.LobbyInstanceReadRepository
 	ParticipantRepository ParticipantReadRepository
 	LobbySummary          SummaryReadRepository
 	PlayerSummary         PlayerSummaryReadRepository
 }
 
-func NewSummaryQueryService(instances InstanceReadRepository, participants ParticipantReadRepository, lobbies SummaryReadRepository, players PlayerSummaryReadRepository) *SummaryQueryService {
+func NewSummaryQueryService(instances port.LobbyInstanceReadRepository, participants ParticipantReadRepository, lobbies SummaryReadRepository, players PlayerSummaryReadRepository) *SummaryQueryService {
 	return &SummaryQueryService{InstanceRepository: instances, ParticipantRepository: participants, LobbySummary: lobbies, PlayerSummary: players}
 }
 

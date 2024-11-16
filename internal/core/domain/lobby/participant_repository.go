@@ -25,6 +25,7 @@ var (
 type ParticipantReadRepository interface {
 	QueryParticipantExists(ctx context.Context, id uuid.UUID, slot int) (bool, error)
 	QueryAllForLobby(ctx context.Context, id uuid.UUID) ([]*Participant, error)
+	QueryCountForLobby(ctx context.Context, id uuid.UUID) (int, error)
 	QueryParticipantForLobby(ctx context.Context, id uuid.UUID, slot int) (*Participant, error)
 }
 
