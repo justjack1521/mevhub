@@ -92,7 +92,7 @@ func (r *LobbySearchRedisRepository) ZAddArgs(instance lobby.SearchEntry) redis.
 
 func (r *LobbySearchRedisRepository) GenerateKeysFromQuery(qry lobby.SearchQuery) []string {
 
-	var identifier = r.GenerateIdentifierKey(qry.ModeIdentifier)
+	var identifier = r.GenerateIdentifierKey(game.ModeIdentifier(qry.ModeIdentifier))
 
 	if len(qry.Levels) == 0 {
 		return []string{identifier}
@@ -127,7 +127,7 @@ func (r *LobbySearchRedisRepository) GenerateKeysFromQuery(qry lobby.SearchQuery
 
 func (r *LobbySearchRedisRepository) GenerateKeysFromInstance(instance lobby.SearchEntry) []string {
 
-	var identifier = r.GenerateIdentifierKey(instance.ModeIdentifier)
+	var identifier = r.GenerateIdentifierKey(game.ModeIdentifier(instance.ModeIdentifier))
 	var tier = strings.Join([]string{identifier, strconv.Itoa(instance.Level)}, LobbyKeySecondarySeparator)
 
 	if len(instance.Categories) == 0 {

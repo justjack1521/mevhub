@@ -43,7 +43,7 @@ func (s *LobbySearchWriter) Handle(event lobby.SummaryCreatedEvent) error {
 
 	var search = lobby.SearchEntry{
 		InstanceID:         event.LobbyID(),
-		ModeIdentifier:     quest.Tier.GameMode.ModeIdentifier,
+		ModeIdentifier:     string(quest.Tier.GameMode.ModeIdentifier),
 		Level:              event.Level(),
 		MinimumPlayerLevel: event.MinLevel(),
 		Categories:         event.Categories(),
