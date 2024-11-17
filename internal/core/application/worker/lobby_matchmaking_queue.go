@@ -46,21 +46,25 @@ func (w *LobbyMatchmakingQueueWorker) Run() {
 
 func (w *LobbyMatchmakingQueueWorker) process(quest uuid.UUID) error {
 
-	players, err := w.repository.GetQueuedLobbies(w.ctx, w.mode, quest)
+	lobbies, err := w.repository.GetQueuedLobbies(w.ctx, w.mode, quest)
 	if err != nil {
 		return err
 	}
 
-	for _, player := range players {
-		found, err := w.repository.FindMatch(w.ctx, w.mode, player, 5)
+	for _, queued := range lobbies {
+		found, err := w.repository.FindMatch(w.ctx, w.mode, queued, 5)
+		if err != nil {
+			continue
+		}
+		remove, err := w.dispatcher.Dispatch(w.ctx, w.mode, quest, queued, found)
 		if err != nil {
 			continue
 		}
 		if err := w.repository.RemovePlayerFromQueue(w.ctx, w.mode, quest, found.UserID); err != nil {
 			continue
 		}
-		if err := w.dispatcher.Dispatch(w.ctx, w.mode, quest, player, found); err != nil {
-			if err := w.repository.AddPlayerToQueue(w.ctx, w.mode, found); err != nil {
+		if remove {
+			if err := w.repository.RemoveLobbyFromQueue(w.ctx, w.mode, quest, queued.LobbyID); err != nil {
 				continue
 			}
 		}

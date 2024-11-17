@@ -8,7 +8,7 @@ import (
 
 func (g MultiGrpcServer) CancelLobby(ctx context.Context, request *protomulti.CancelLobbyRequest) (*protomulti.CancelLobbyResponse, error) {
 
-	if err := g.app.SubApplications.Lobby.Commands.CancelLobby.Handle(g.NewCommandContext(ctx), command.NewCancelLobbyCommand()); err != nil {
+	if err := g.app.SubApplications.Lobby.Commands.LobbyCancel.Handle(g.NewCommandContext(ctx), command.NewLobbyCancelCommand()); err != nil {
 		return nil, err
 	}
 

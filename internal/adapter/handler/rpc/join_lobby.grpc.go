@@ -13,9 +13,9 @@ func (g MultiGrpcServer) JoinLobby(ctx context.Context, request *protomulti.Join
 		return nil, err
 	}
 
-	var cmd = command.NewJoinLobbyCommand(id, int(request.DeckIndex), int(request.SlotIndex), request.UseStamina, request.FromInvite)
+	var cmd = command.NewParticipantJoinCommand(id, int(request.DeckIndex), int(request.SlotIndex), request.UseStamina, request.FromInvite)
 
-	if err := g.app.SubApplications.Lobby.Commands.JoinLobby.Handle(g.NewCommandContext(ctx), cmd); err != nil {
+	if err := g.app.SubApplications.Lobby.Commands.ParticipantJoin.Handle(g.NewCommandContext(ctx), cmd); err != nil {
 		return nil, err
 	}
 

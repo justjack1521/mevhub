@@ -18,9 +18,9 @@ func (g MultiGrpcServer) CreateLobby(context context.Context, request *protomult
 		Restrictions:       nil,
 	}
 
-	var cmd = command.NewCreateLobbyCommand(quest, int(request.DeckIndex), request.Comment, options)
+	var cmd = command.NewLobbyCreateCommand(quest, int(request.DeckIndex), request.Comment, options)
 
-	if err := g.app.SubApplications.Lobby.Commands.CreateLobby.Handle(g.NewCommandContext(context), cmd); err != nil {
+	if err := g.app.SubApplications.Lobby.Commands.LobbyCreate.Handle(g.NewCommandContext(context), cmd); err != nil {
 		return nil, err
 	}
 

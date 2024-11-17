@@ -8,7 +8,7 @@ import (
 
 func (g MultiGrpcServer) EndSession(ctx context.Context, request *protomulti.EndSessionRequest) (*protomulti.EndSessionResponse, error) {
 
-	if err := g.app.SubApplications.Lobby.Commands.EndSession.Handle(g.NewCommandContext(ctx), command.NewEndSessionCommand()); err != nil {
+	if err := g.app.SubApplications.Lobby.Commands.SessionEnd.Handle(g.NewCommandContext(ctx), command.NewSessionEndCommand()); err != nil {
 		return nil, err
 	}
 

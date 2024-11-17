@@ -6,33 +6,33 @@ import (
 	"mevhub/internal/core/port"
 )
 
-type StartLobbyCommand struct {
+type LobbyStartCommand struct {
 	BasicCommand
 }
 
-func (c StartLobbyCommand) CommandName() string {
+func (c LobbyStartCommand) CommandName() string {
 	return "lobby.start"
 }
 
-func NewStartLobbyCommand() *StartLobbyCommand {
-	return &StartLobbyCommand{}
+func NewLobbyStartCommand() *LobbyStartCommand {
+	return &LobbyStartCommand{}
 }
 
-type StartLobbyCommandHandler struct {
+type LobbyStartCommandHandler struct {
 	SessionRepository          session.InstanceReadRepository
 	LobbyInstanceRepository    port.LobbyInstanceRepository
 	LobbyParticipantRepository port.LobbyParticipantReadRepository
 }
 
-func NewStartLobbyCommandHandler(sessions session.InstanceReadRepository, lobbies port.LobbyInstanceRepository, participants port.LobbyParticipantReadRepository) *StartLobbyCommandHandler {
-	return &StartLobbyCommandHandler{
+func NewLobbyStartCommandHandler(sessions session.InstanceReadRepository, lobbies port.LobbyInstanceRepository, participants port.LobbyParticipantReadRepository) *LobbyStartCommandHandler {
+	return &LobbyStartCommandHandler{
 		SessionRepository:          sessions,
 		LobbyInstanceRepository:    lobbies,
 		LobbyParticipantRepository: participants,
 	}
 }
 
-func (h *StartLobbyCommandHandler) Handle(ctx Context, cmd *StartLobbyCommand) error {
+func (h *LobbyStartCommandHandler) Handle(ctx Context, cmd *LobbyStartCommand) error {
 
 	current, err := h.SessionRepository.QueryByID(ctx, ctx.UserID())
 	if err != nil {

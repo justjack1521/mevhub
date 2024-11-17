@@ -10,20 +10,20 @@ import (
 	"time"
 )
 
-type LobbyQueueWriter struct {
+type LobbyPlayerQueueWriter struct {
 	LobbyRepository       port.LobbyInstanceReadRepository
 	QueueRepository       port.MatchPlayerQueueWriteRepository
 	QuestRepository       port.QuestRepository
 	ParticipantRepository port.LobbyParticipantReadRepository
 }
 
-func NewLobbyQueueWriter(publisher *mevent.Publisher, lobbies port.LobbyInstanceReadRepository, queues port.MatchPlayerQueueWriteRepository, quests port.QuestRepository, participants port.LobbyParticipantReadRepository) *LobbyQueueWriter {
-	var subscriber = &LobbyQueueWriter{LobbyRepository: lobbies, QueueRepository: queues, QuestRepository: quests, ParticipantRepository: participants}
+func NewLobbyPlayerQueueWriter(publisher *mevent.Publisher, lobbies port.LobbyInstanceReadRepository, queues port.MatchPlayerQueueWriteRepository, quests port.QuestRepository, participants port.LobbyParticipantReadRepository) *LobbyPlayerQueueWriter {
+	var subscriber = &LobbyPlayerQueueWriter{LobbyRepository: lobbies, QueueRepository: queues, QuestRepository: quests, ParticipantRepository: participants}
 	publisher.Subscribe(subscriber, lobby.InstanceCreatedEvent{})
 	return subscriber
 }
 
-func (s *LobbyQueueWriter) Notify(event mevent.Event) {
+func (s *LobbyPlayerQueueWriter) Notify(event mevent.Event) {
 	switch actual := event.(type) {
 	case lobby.InstanceCreatedEvent:
 		if err := s.Handle(actual); err != nil {
@@ -32,7 +32,7 @@ func (s *LobbyQueueWriter) Notify(event mevent.Event) {
 	}
 }
 
-func (s *LobbyQueueWriter) Handle(evt lobby.InstanceCreatedEvent) error {
+func (s *LobbyPlayerQueueWriter) Handle(evt lobby.InstanceCreatedEvent) error {
 
 	quest, err := s.QuestRepository.QueryByID(evt.QuestID())
 	if err != nil {

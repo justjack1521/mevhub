@@ -12,5 +12,5 @@ type LobbyMatchmakingDispatcher interface {
 }
 
 type PlayerMatchmakingDispatcher interface {
-	Dispatch(ctx context.Context, mode game.ModeIdentifier, id uuid.UUID, lobby match.LobbyQueueEntry, player match.PlayerQueueEntry) error
+	Dispatch(ctx context.Context, mode game.ModeIdentifier, id uuid.UUID, lobby match.LobbyQueueEntry, player match.PlayerQueueEntry) (bool, error)
 }

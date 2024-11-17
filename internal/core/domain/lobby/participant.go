@@ -35,6 +35,10 @@ func (x *Participant) IsHost() bool {
 	return x.PlayerSlot == 0
 }
 
+func (x *Participant) HasPlayer() bool {
+	return x.UserID != uuid.Nil && x.PlayerID != uuid.Nil
+}
+
 func (x *Participant) SetPlayer(user, player uuid.UUID, options ParticipantJoinOptions) error {
 
 	x.UserID = user

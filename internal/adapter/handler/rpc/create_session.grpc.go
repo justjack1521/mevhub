@@ -8,7 +8,7 @@ import (
 
 func (g MultiGrpcServer) CreateSession(context context.Context, request *protomulti.CreateSessionRequest) (*protomulti.CreateSessionResponse, error) {
 
-	if err := g.app.SubApplications.Lobby.Commands.CreateSession.Handle(g.NewCommandContext(context), command.NewCreateSessionCommand()); err != nil {
+	if err := g.app.SubApplications.Lobby.Commands.SessionCreate.Handle(g.NewCommandContext(context), command.NewSessionCreateCommand()); err != nil {
 		return nil, err
 	}
 

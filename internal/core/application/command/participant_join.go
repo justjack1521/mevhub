@@ -7,7 +7,7 @@ import (
 	"mevhub/internal/core/port"
 )
 
-type JoinLobbyCommand struct {
+type ParticipantJoinCommand struct {
 	BasicCommand
 	LobbyID    uuid.UUID
 	DeckIndex  int
@@ -16,12 +16,12 @@ type JoinLobbyCommand struct {
 	FromInvite bool
 }
 
-func (c JoinLobbyCommand) CommandName() string {
-	return "join.lobby"
+func (c ParticipantJoinCommand) CommandName() string {
+	return "participant.lobby"
 }
 
-func NewJoinLobbyCommand(id uuid.UUID, deck, slot int, stamina, invite bool) *JoinLobbyCommand {
-	return &JoinLobbyCommand{
+func NewParticipantJoinCommand(id uuid.UUID, deck, slot int, stamina, invite bool) *ParticipantJoinCommand {
+	return &ParticipantJoinCommand{
 		LobbyID:    id,
 		DeckIndex:  deck,
 		SlotIndex:  slot,
@@ -30,18 +30,18 @@ func NewJoinLobbyCommand(id uuid.UUID, deck, slot int, stamina, invite bool) *Jo
 	}
 }
 
-type JoinLobbyCommandHandler struct {
+type ParticipantJoinCommandHandler struct {
 	EventPublisher        *mevent.Publisher
 	InstanceRepository    port.LobbyInstanceReadRepository
 	ParticipantFactory    lobby.ParticipantFactory
 	ParticipantRepository port.LobbyParticipantRepository
 }
 
-func NewJoinLobbyCommandHandler(publishes *mevent.Publisher, instances port.LobbyInstanceReadRepository, participants port.LobbyParticipantRepository) *JoinLobbyCommandHandler {
-	return &JoinLobbyCommandHandler{EventPublisher: publishes, InstanceRepository: instances, ParticipantRepository: participants, ParticipantFactory: lobby.ParticipantFactory{}}
+func NewParticipantJoinCommandHandler(publishes *mevent.Publisher, instances port.LobbyInstanceReadRepository, participants port.LobbyParticipantRepository) *ParticipantJoinCommandHandler {
+	return &ParticipantJoinCommandHandler{EventPublisher: publishes, InstanceRepository: instances, ParticipantRepository: participants, ParticipantFactory: lobby.ParticipantFactory{}}
 }
 
-func (h *JoinLobbyCommandHandler) Handle(ctx Context, cmd *JoinLobbyCommand) error {
+func (h *ParticipantJoinCommandHandler) Handle(ctx Context, cmd *ParticipantJoinCommand) error {
 
 	instance, err := h.InstanceRepository.QueryByID(ctx, cmd.LobbyID)
 	if err != nil {

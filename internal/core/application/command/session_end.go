@@ -5,29 +5,29 @@ import (
 	"mevhub/internal/core/domain/session"
 )
 
-type EndSessionCommand struct {
+type SessionEndCommand struct {
 	BasicCommand
 }
 
-func (e EndSessionCommand) CommandName() string {
+func (e SessionEndCommand) CommandName() string {
 	return "session.end"
 }
 
-func NewEndSessionCommand() *EndSessionCommand {
-	return &EndSessionCommand{}
+func NewSessionEndCommand() *SessionEndCommand {
+	return &SessionEndCommand{}
 }
 
-type EndSessionCommandHandler struct {
+type SessionEndCommandHandler struct {
 	EventPublisher         *mevent.Publisher
 	SessionReadRepository  session.InstanceReadRepository
 	SessionWriteRepository session.InstanceWriteRepository
 }
 
-func NewEndSessionCommandHandler(publisher *mevent.Publisher, read session.InstanceReadRepository, write session.InstanceWriteRepository) *EndSessionCommandHandler {
-	return &EndSessionCommandHandler{EventPublisher: publisher, SessionReadRepository: read, SessionWriteRepository: write}
+func NewSessionEndCommandHandler(publisher *mevent.Publisher, read session.InstanceReadRepository, write session.InstanceWriteRepository) *SessionEndCommandHandler {
+	return &SessionEndCommandHandler{EventPublisher: publisher, SessionReadRepository: read, SessionWriteRepository: write}
 }
 
-func (h *EndSessionCommandHandler) Handle(ctx Context, cmd *EndSessionCommand) error {
+func (h *SessionEndCommandHandler) Handle(ctx Context, cmd *SessionEndCommand) error {
 
 	instance, err := h.SessionReadRepository.QueryByID(ctx, ctx.UserID())
 	if err != nil {

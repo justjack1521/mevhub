@@ -18,26 +18,33 @@ type PlayerMatchmakingDispatcher struct {
 	ParticipantRepository     port.LobbyParticipantRepository
 }
 
-func (s PlayerMatchmakingDispatcher) Dispatch(ctx context.Context, mode game.ModeIdentifier, id uuid.UUID, entry match.LobbyQueueEntry, player match.PlayerQueueEntry) error {
+func (s PlayerMatchmakingDispatcher) Dispatch(ctx context.Context, mode game.ModeIdentifier, id uuid.UUID, entry match.LobbyQueueEntry, player match.PlayerQueueEntry) (bool, error) {
 
 	sesh, err := s.SessionInstanceRepository.QueryByID(ctx, player.UserID)
 	if err != nil {
-		return err
+		return false, err
 	}
 
 	instance, err := s.LobbyInstanceRepository.QueryByID(ctx, entry.LobbyID)
 	if err != nil {
-		return err
+		return false, err
 	}
 
-	count, err := s.ParticipantRepository.QueryCountForLobby(ctx, entry.LobbyID)
+	existing, err := s.ParticipantRepository.QueryAllForLobby(ctx, entry.LobbyID)
 	if err != nil {
-		return err
+		return false, err
 	}
 
-	participant, err := s.ParticipantRepository.QueryParticipantForLobby(ctx, instance.SysID, count-1)
+	var filled int
+	for _, exist := range existing {
+		if exist.HasPlayer() {
+			filled++
+		}
+	}
+
+	participant, err := s.ParticipantRepository.QueryParticipantForLobby(ctx, instance.SysID, filled)
 	if err != nil {
-		return err
+		return false, err
 	}
 
 	var options = lobby.ParticipantJoinOptions{
@@ -49,15 +56,15 @@ func (s PlayerMatchmakingDispatcher) Dispatch(ctx context.Context, mode game.Mod
 	}
 
 	if err := participant.SetPlayer(sesh.UserID, sesh.PlayerID, options); err != nil {
-		return err
+		return false, err
 	}
 
 	if err := s.ParticipantRepository.Create(ctx, participant); err != nil {
-		return err
+		return false, err
 	}
 
 	s.EventPublisher.Notify(lobby.NewParticipantCreatedEvent(ctx, participant.UserID, participant.PlayerID, participant.LobbyID, participant.DeckIndex, participant.PlayerSlot))
 
-	return nil
+	return filled == instance.PlayerSlotCount, nil
 
 }

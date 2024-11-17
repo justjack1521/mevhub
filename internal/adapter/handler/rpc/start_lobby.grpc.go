@@ -8,9 +8,9 @@ import (
 
 func (g MultiGrpcServer) StartLobby(ctx context.Context, request *protomulti.StartLobbyRequest) (*protomulti.StartLobbyResponse, error) {
 
-	var cmd = command.NewStartLobbyCommand()
+	var cmd = command.NewLobbyStartCommand()
 
-	if err := g.app.SubApplications.Lobby.Commands.StartLobby.Handle(g.NewCommandContext(ctx), cmd); err != nil {
+	if err := g.app.SubApplications.Lobby.Commands.LobbyStart.Handle(g.NewCommandContext(ctx), cmd); err != nil {
 		return nil, err
 	}
 

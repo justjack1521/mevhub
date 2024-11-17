@@ -7,29 +7,29 @@ import (
 	"mevhub/internal/core/port"
 )
 
-type LeaveLobbyCommand struct {
+type ParticipantLeaveCommand struct {
 	BasicCommand
 }
 
-func (c LeaveLobbyCommand) CommandName() string {
-	return "lobby.leave"
+func (c ParticipantLeaveCommand) CommandName() string {
+	return "participant.leave"
 }
 
-func NewLeaveLobbyCommand() *LeaveLobbyCommand {
-	return &LeaveLobbyCommand{}
+func NewParticipantLeaveCommand() *ParticipantLeaveCommand {
+	return &ParticipantLeaveCommand{}
 }
 
-type LeaveLobbyCommandHandler struct {
+type ParticipantLeaveCommandHandler struct {
 	EventPublisher        *mevent.Publisher
 	SessionRepository     session.InstanceRepository
 	ParticipantRepository port.LobbyParticipantRepository
 }
 
-func NewLeaveLobbyCommandHandler(publisher *mevent.Publisher, sessions session.InstanceRepository, participants port.LobbyParticipantRepository) *LeaveLobbyCommandHandler {
-	return &LeaveLobbyCommandHandler{EventPublisher: publisher, SessionRepository: sessions, ParticipantRepository: participants}
+func NewParticipantLeaveCommandHandler(publisher *mevent.Publisher, sessions session.InstanceRepository, participants port.LobbyParticipantRepository) *ParticipantLeaveCommandHandler {
+	return &ParticipantLeaveCommandHandler{EventPublisher: publisher, SessionRepository: sessions, ParticipantRepository: participants}
 }
 
-func (h *LeaveLobbyCommandHandler) Handle(ctx Context, cmd *LeaveLobbyCommand) error {
+func (h *ParticipantLeaveCommandHandler) Handle(ctx Context, cmd *ParticipantLeaveCommand) error {
 
 	current, err := h.SessionRepository.QueryByID(ctx, ctx.UserID())
 

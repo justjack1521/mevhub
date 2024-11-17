@@ -8,29 +8,29 @@ import (
 	"mevhub/internal/core/domain/session"
 )
 
-type SendStampCommand struct {
+type LobbyStampCommand struct {
 	BasicCommand
 	StampID uuid.UUID
 }
 
-func NewSendStampCommand(id uuid.UUID) *SendStampCommand {
-	return &SendStampCommand{StampID: id}
+func NewLobbyStampCommand(id uuid.UUID) *LobbyStampCommand {
+	return &LobbyStampCommand{StampID: id}
 }
 
-func (c SendStampCommand) CommandName() string {
-	return "stamp.send"
+func (c LobbyStampCommand) CommandName() string {
+	return "lobby.stamp"
 }
 
-type SendStampCommandHandler struct {
+type LobbyStampCommandHandler struct {
 	EventPublisher    *mevent.Publisher
 	SessionRepository session.InstanceReadRepository
 }
 
-func NewSendStampCommandHandler(publisher *mevent.Publisher, sessions session.InstanceReadRepository) *SendStampCommandHandler {
-	return &SendStampCommandHandler{EventPublisher: publisher, SessionRepository: sessions}
+func NewLobbyStampCommandHandler(publisher *mevent.Publisher, sessions session.InstanceReadRepository) *LobbyStampCommandHandler {
+	return &LobbyStampCommandHandler{EventPublisher: publisher, SessionRepository: sessions}
 }
 
-func (h *SendStampCommandHandler) Handle(ctx Context, cmd *SendStampCommand) error {
+func (h *LobbyStampCommandHandler) Handle(ctx Context, cmd *LobbyStampCommand) error {
 
 	current, err := h.SessionRepository.QueryByID(ctx, ctx.UserID())
 	if err != nil {

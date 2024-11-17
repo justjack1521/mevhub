@@ -18,9 +18,13 @@ type LobbyParticipantRedisRepository struct {
 	client *redis.Client
 }
 
+func NewLobbyParticipantRedisRepository(client *redis.Client) *LobbyParticipantRedisRepository {
+	return &LobbyParticipantRedisRepository{client: client}
+}
+
 func (r *LobbyParticipantRedisRepository) QueryCountForLobby(ctx context.Context, id uuid.UUID) (int, error) {
 	var cursor uint64
-	var totalCount int
+	var total int
 	var key = r.GenerateLobbyKey(id)
 	for {
 		keys, next, err := r.client.Scan(ctx, cursor, key, 10).Result()
@@ -28,17 +32,13 @@ func (r *LobbyParticipantRedisRepository) QueryCountForLobby(ctx context.Context
 			return 0, err
 		}
 		cursor = next
-		totalCount += len(keys)
+		total += len(keys)
 		if cursor == 0 {
 			break
 		}
 	}
 
-	return totalCount, nil
-}
-
-func NewLobbyParticipantRedisRepository(client *redis.Client) *LobbyParticipantRedisRepository {
-	return &LobbyParticipantRedisRepository{client: client}
+	return total, nil
 }
 
 func (r *LobbyParticipantRedisRepository) QueryParticipantForLobby(ctx context.Context, id uuid.UUID, slot int) (*lobby.Participant, error) {

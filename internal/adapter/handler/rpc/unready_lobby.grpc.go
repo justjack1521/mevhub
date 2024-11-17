@@ -15,7 +15,7 @@ func (g MultiGrpcServer) UnreadyLobby(ctx context.Context, request *protomulti.U
 
 	var cmd = command.NewUnreadyParticipantCommand(id)
 
-	if err := g.app.SubApplications.Lobby.Commands.UnreadyLobby.Handle(g.NewCommandContext(ctx), cmd); err != nil {
+	if err := g.app.SubApplications.Lobby.Commands.ParticipantUnready.Handle(g.NewCommandContext(ctx), cmd); err != nil {
 		return nil, err
 	}
 

@@ -13,9 +13,9 @@ func (g MultiGrpcServer) SendStamp(ctx context.Context, request *protomulti.Send
 		return nil, err
 	}
 
-	var cmd = command.NewSendStampCommand(id)
+	var cmd = command.NewLobbyStampCommand(id)
 
-	if err := g.app.SubApplications.Lobby.Commands.SendStamp.Handle(g.NewCommandContext(ctx), cmd); err != nil {
+	if err := g.app.SubApplications.Lobby.Commands.LobbyStamp.Handle(g.NewCommandContext(ctx), cmd); err != nil {
 		return nil, err
 	}
 

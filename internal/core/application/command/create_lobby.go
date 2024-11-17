@@ -9,7 +9,7 @@ import (
 	"mevhub/internal/core/port"
 )
 
-type CreateLobbyCommand struct {
+type LobbyCreateCommand struct {
 	BasicCommand
 	LobbyID   uuid.UUID
 	QuestID   uuid.UUID
@@ -24,12 +24,12 @@ type CreateLobbyOptions struct {
 	Restrictions       []lobby.PlayerSlotRestriction
 }
 
-func (c CreateLobbyCommand) CommandName() string {
+func (c LobbyCreateCommand) CommandName() string {
 	return "lobby.create"
 }
 
-func NewCreateLobbyCommand(quest uuid.UUID, deck int, comment string, options CreateLobbyOptions) *CreateLobbyCommand {
-	return &CreateLobbyCommand{
+func NewLobbyCreateCommand(quest uuid.UUID, deck int, comment string, options CreateLobbyOptions) *LobbyCreateCommand {
+	return &LobbyCreateCommand{
 		LobbyID:   uuid.NewV4(),
 		QuestID:   quest,
 		PartyID:   fmt.Sprintf("%08d", rand.Intn(100000000)),
@@ -39,7 +39,7 @@ func NewCreateLobbyCommand(quest uuid.UUID, deck int, comment string, options Cr
 	}
 }
 
-type CreateLobbyCommandHandler struct {
+type LobbyCreateCommandHandler struct {
 	EventPublisher        *mevent.Publisher
 	InstanceRepository    port.LobbyInstanceWriteRepository
 	QuestRepository       port.QuestRepository
@@ -47,8 +47,8 @@ type CreateLobbyCommandHandler struct {
 	ParticipantRepository port.LobbyParticipantWriteRepository
 }
 
-func NewCreateLobbyCommandHandler(publisher *mevent.Publisher, instances port.LobbyInstanceWriteRepository, quests port.QuestRepository, participants port.LobbyParticipantWriteRepository) *CreateLobbyCommandHandler {
-	return &CreateLobbyCommandHandler{
+func NewLobbyCreateCommandHandler(publisher *mevent.Publisher, instances port.LobbyInstanceWriteRepository, quests port.QuestRepository, participants port.LobbyParticipantWriteRepository) *LobbyCreateCommandHandler {
+	return &LobbyCreateCommandHandler{
 		EventPublisher:        publisher,
 		InstanceRepository:    instances,
 		QuestRepository:       quests,
@@ -57,7 +57,7 @@ func NewCreateLobbyCommandHandler(publisher *mevent.Publisher, instances port.Lo
 	}
 }
 
-func (h *CreateLobbyCommandHandler) Handle(ctx Context, cmd *CreateLobbyCommand) error {
+func (h *LobbyCreateCommandHandler) Handle(ctx Context, cmd *LobbyCreateCommand) error {
 
 	quest, err := h.QuestRepository.QueryByID(cmd.QuestID)
 	if err != nil {

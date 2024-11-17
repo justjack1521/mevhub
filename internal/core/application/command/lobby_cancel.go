@@ -8,16 +8,16 @@ import (
 	"mevhub/internal/core/port"
 )
 
-type CancelLobbyCommand struct {
+type LobbyCancelCommand struct {
 	BasicCommand
 }
 
-func (c CancelLobbyCommand) CommandName() string {
+func (c LobbyCancelCommand) CommandName() string {
 	return "lobby.cancel"
 }
 
-func NewCancelLobbyCommand() *CancelLobbyCommand {
-	return &CancelLobbyCommand{}
+func NewLobbyCancelCommand() *LobbyCancelCommand {
+	return &LobbyCancelCommand{}
 }
 
 var (
@@ -26,18 +26,18 @@ var (
 	}
 )
 
-type CancelLobbyCommandHandler struct {
+type LobbyCancelCommandHandler struct {
 	EventPublisher        *mevent.Publisher
 	SessionRepository     session.InstanceReadRepository
 	InstanceRepository    port.LobbyInstanceRepository
 	ParticipantRepository port.LobbyParticipantRepository
 }
 
-func NewCancelLobbyCommandHandler(publisher *mevent.Publisher, sessions session.InstanceReadRepository, instances port.LobbyInstanceRepository, participants port.LobbyParticipantRepository) *CancelLobbyCommandHandler {
-	return &CancelLobbyCommandHandler{EventPublisher: publisher, SessionRepository: sessions, InstanceRepository: instances, ParticipantRepository: participants}
+func NewLobbyCancelCommandHandler(publisher *mevent.Publisher, sessions session.InstanceReadRepository, instances port.LobbyInstanceRepository, participants port.LobbyParticipantRepository) *LobbyCancelCommandHandler {
+	return &LobbyCancelCommandHandler{EventPublisher: publisher, SessionRepository: sessions, InstanceRepository: instances, ParticipantRepository: participants}
 }
 
-func (h *CancelLobbyCommandHandler) Handle(ctx Context, cmd *CancelLobbyCommand) error {
+func (h *LobbyCancelCommandHandler) Handle(ctx Context, cmd *LobbyCancelCommand) error {
 
 	current, err := h.SessionRepository.QueryByID(ctx, ctx.UserID())
 	if err != nil {

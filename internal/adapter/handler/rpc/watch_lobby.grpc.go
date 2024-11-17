@@ -15,7 +15,7 @@ func (g MultiGrpcServer) WatchLobby(ctx context.Context, request *protomulti.Wat
 
 	var cmd = command.NewWatchLobbyCommand(id)
 
-	if err := g.app.SubApplications.Lobby.Commands.WatchLobby.Handle(g.NewCommandContext(ctx), cmd); err != nil {
+	if err := g.app.SubApplications.Lobby.Commands.ParticipantWatch.Handle(g.NewCommandContext(ctx), cmd); err != nil {
 		return nil, err
 	}
 
