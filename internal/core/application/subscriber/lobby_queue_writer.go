@@ -19,33 +19,33 @@ type LobbyQueueWriter struct {
 
 func NewLobbyQueueWriter(publisher *mevent.Publisher, lobbies port.LobbyInstanceReadRepository, queues port.MatchPlayerQueueWriteRepository, quests port.QuestRepository, participants port.LobbyParticipantReadRepository) *LobbyQueueWriter {
 	var subscriber = &LobbyQueueWriter{LobbyRepository: lobbies, QueueRepository: queues, QuestRepository: quests, ParticipantRepository: participants}
-	publisher.Subscribe(subscriber, lobby.SummaryCreatedEvent{})
+	publisher.Subscribe(subscriber, lobby.InstanceCreatedEvent{})
 	return subscriber
 }
 
 func (s *LobbyQueueWriter) Notify(event mevent.Event) {
 	switch actual := event.(type) {
-	case lobby.SummaryCreatedEvent:
+	case lobby.InstanceCreatedEvent:
 		if err := s.Handle(actual); err != nil {
 			fmt.Println(err)
 		}
 	}
 }
 
-func (s *LobbyQueueWriter) Handle(evt lobby.SummaryCreatedEvent) error {
+func (s *LobbyQueueWriter) Handle(evt lobby.InstanceCreatedEvent) error {
 
-	instance, err := s.LobbyRepository.QueryByID(evt.Context(), evt.LobbyID())
-	if err != nil {
-		return err
-	}
-
-	quest, err := s.QuestRepository.QueryByID(instance.QuestID)
+	quest, err := s.QuestRepository.QueryByID(evt.QuestID())
 	if err != nil {
 		return err
 	}
 
 	if quest.Tier.GameMode.FulfillMethod != game.FulfillMethodMatch {
 		return nil
+	}
+
+	instance, err := s.LobbyRepository.QueryByID(evt.Context(), evt.LobbyID())
+	if err != nil {
+		return err
 	}
 
 	participants, err := s.ParticipantRepository.QueryAllForLobby(evt.Context(), instance.SysID)

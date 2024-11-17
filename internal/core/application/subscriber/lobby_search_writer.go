@@ -3,24 +3,26 @@ package subscriber
 import (
 	"fmt"
 	"github.com/justjack1521/mevium/pkg/mevent"
+	uuid "github.com/satori/go.uuid"
 	"mevhub/internal/core/domain/game"
 	"mevhub/internal/core/domain/lobby"
 	"mevhub/internal/core/port"
 )
 
 type LobbySearchWriter struct {
+	LobbyRepository  port.LobbyInstanceReadRepository
 	SearchRepository port.LobbySearchWriteRepository
 	QuestRepository  port.QuestRepository
 }
 
 func NewLobbySearchWriter(publisher *mevent.Publisher, quests port.QuestRepository, searcher port.LobbySearchWriteRepository) *LobbySearchWriter {
 	var subscriber = &LobbySearchWriter{QuestRepository: quests, SearchRepository: searcher}
-	publisher.Subscribe(subscriber, lobby.SummaryCreatedEvent{})
+	publisher.Subscribe(subscriber, lobby.InstanceCreatedEvent{})
 	return subscriber
 }
 
 func (s *LobbySearchWriter) Notify(event mevent.Event) {
-	actual, valid := event.(lobby.SummaryCreatedEvent)
+	actual, valid := event.(lobby.InstanceCreatedEvent)
 	if valid == false {
 		return
 	}
@@ -29,9 +31,9 @@ func (s *LobbySearchWriter) Notify(event mevent.Event) {
 	}
 }
 
-func (s *LobbySearchWriter) Handle(event lobby.SummaryCreatedEvent) error {
+func (s *LobbySearchWriter) Handle(evt lobby.InstanceCreatedEvent) error {
 
-	quest, err := s.QuestRepository.QueryByID(event.QuestID())
+	quest, err := s.QuestRepository.QueryByID(evt.QuestID())
 	if err != nil {
 		return err
 	}
@@ -40,15 +42,28 @@ func (s *LobbySearchWriter) Handle(event lobby.SummaryCreatedEvent) error {
 		return nil
 	}
 
-	var search = lobby.SearchEntry{
-		InstanceID:         event.LobbyID(),
-		ModeIdentifier:     string(quest.Tier.GameMode.ModeIdentifier),
-		Level:              event.Level(),
-		MinimumPlayerLevel: event.MinLevel(),
-		Categories:         event.Categories(),
+	instance, err := s.LobbyRepository.QueryByID(evt.Context(), evt.LobbyID())
+	if err != nil {
+		return err
 	}
 
-	if err := s.SearchRepository.Create(event.Context(), search); err != nil {
+	var categories = make([]uuid.UUID, len(quest.Categories))
+	for index, category := range quest.Categories {
+		if category.Zero() {
+			continue
+		}
+		categories[index] = category.SysID
+	}
+
+	var search = lobby.SearchEntry{
+		InstanceID:         evt.LobbyID(),
+		ModeIdentifier:     string(quest.Tier.GameMode.ModeIdentifier),
+		Level:              quest.Tier.StarLevel,
+		MinimumPlayerLevel: instance.MinimumPlayerLevel,
+		Categories:         categories,
+	}
+
+	if err := s.SearchRepository.Create(evt.Context(), search); err != nil {
 		return err
 	}
 
