@@ -17,13 +17,13 @@ var (
 	}
 )
 
-type MatchPlayerQueueReadRepository interface {
+type MatchLobbyPlayerQueueReadRepository interface {
 	GetActiveQuests(ctx context.Context, mode game.ModeIdentifier) ([]uuid.UUID, error)
 	GetQueuedLobbies(ctx context.Context, mode game.ModeIdentifier, id uuid.UUID) ([]match.LobbyQueueEntry, error)
 	FindMatch(ctx context.Context, mode game.ModeIdentifier, entry match.LobbyQueueEntry, offset int) (match.PlayerQueueEntry, error)
 }
 
-type MatchPlayerQueueWriteRepository interface {
+type MatchLobbyPlayerQueueWriteRepository interface {
 	AddPlayerToQueue(ctx context.Context, mode game.ModeIdentifier, entry match.PlayerQueueEntry) error
 	AddLobbyToQueue(ctx context.Context, mode game.ModeIdentifier, entry match.LobbyQueueEntry) error
 	UpdateLobbyScore(ctx context.Context, mode game.ModeIdentifier, quest uuid.UUID, id uuid.UUID, score int) error
@@ -31,23 +31,23 @@ type MatchPlayerQueueWriteRepository interface {
 	RemoveLobbyFromQueue(ctx context.Context, mode game.ModeIdentifier, quest uuid.UUID, id uuid.UUID) error
 }
 
-type MatchPlayerQueueRepository interface {
-	MatchPlayerQueueReadRepository
-	MatchPlayerQueueWriteRepository
+type MatchLobbyPlayerQueueRepository interface {
+	MatchLobbyPlayerQueueReadRepository
+	MatchLobbyPlayerQueueWriteRepository
 }
 
-//type MatchLobbyQueueReadRepository interface {
-//	GetActiveQuests(ctx context.Context, mode game.ModeIdentifier) ([]uuid.UUID, error)
-//	GetQueuedLobbies(ctx context.Context, mode game.ModeIdentifier, quest uuid.UUID) ([]match.LobbyQueueEntry, error)
-//	FindMatch(ctx context.Context, mode game.ModeIdentifier, entry match.LobbyQueueEntry, offset int) (match.LobbyQueueEntry, error)
-//}
-//
-//type MatchLobbyQueueWriteRepository interface {
-//	AddLobbyToQueue(ctx context.Context, mode game.ModeIdentifier, entry match.LobbyQueueEntry) error
-//	RemoveLobbyFromQueue(ctx context.Context, mode game.ModeIdentifier, quest uuid.UUID, id uuid.UUID) error
-//}
-//
-//type MatchLobbyQueueRepository interface {
-//	MatchLobbyQueueReadRepository
-//	MatchLobbyQueueWriteRepository
-//}
+type MatchLobbyQueueReadRepository interface {
+	GetActiveQuests(ctx context.Context, mode game.ModeIdentifier) ([]uuid.UUID, error)
+	GetQueuedLobbies(ctx context.Context, mode game.ModeIdentifier, quest uuid.UUID) ([]match.LobbyQueueEntry, error)
+	FindMatch(ctx context.Context, mode game.ModeIdentifier, entry match.LobbyQueueEntry, offset int) (match.LobbyQueueEntry, error)
+}
+
+type MatchLobbyQueueWriteRepository interface {
+	AddLobbyToQueue(ctx context.Context, mode game.ModeIdentifier, entry match.LobbyQueueEntry) error
+	RemoveLobbyFromQueue(ctx context.Context, mode game.ModeIdentifier, quest uuid.UUID, id uuid.UUID) error
+}
+
+type MatchLobbyQueueRepository interface {
+	MatchLobbyQueueReadRepository
+	MatchLobbyQueueWriteRepository
+}

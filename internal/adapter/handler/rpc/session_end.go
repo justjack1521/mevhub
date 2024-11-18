@@ -6,11 +6,11 @@ import (
 	"mevhub/internal/core/application/command"
 )
 
-func (g MultiGrpcServer) EndSession(ctx context.Context, request *protomulti.EndSessionRequest) (*protomulti.EndSessionResponse, error) {
+func (g MultiGrpcServer) SessionEnd(ctx context.Context, request *protomulti.SessionEndRequest) (*protomulti.SessionEndResponse, error) {
 
 	if err := g.app.SubApplications.Lobby.Commands.SessionEnd.Handle(g.NewCommandContext(ctx), command.NewSessionEndCommand()); err != nil {
 		return nil, err
 	}
 
-	return &protomulti.EndSessionResponse{}, nil
+	return &protomulti.SessionEndResponse{}, nil
 }

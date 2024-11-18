@@ -30,13 +30,14 @@ type LobbyApplicationCommands struct {
 	SessionCreate      SessionCreateCommandHandler
 	SessionEnd         SessionEndCommandHandler
 	LobbyCreate        LobbyCreateCommandHandler
-	ParticipantWatch   ParticipantWatchCommandHandler
-	ParticipantJoin    ParticipantJoinCommandHandler
 	LobbyCancel        LobbyCancelCommandHandler
-	ParticipantReady   ParticipantReadyCommandHandler
-	ParticipantUnready ParticipantUnreadyCommandHandler
+	LobbyReady         LobbyReadyCommandHandler
 	LobbyStart         LobbyStartCommandHandler
 	LobbyStamp         LobbyStampCommandHandler
+	ParticipantJoin    ParticipantJoinCommandHandler
+	ParticipantReady   ParticipantReadyCommandHandler
+	ParticipantUnready ParticipantUnreadyCommandHandler
+	ParticipantWatch   ParticipantWatchCommandHandler
 }
 
 type LobbyApplicationTranslators struct {
@@ -60,6 +61,7 @@ func NewLobbyApplication(core *CoreApplication) *LobbyApplication {
 		SessionEnd:         application.NewSessionEndCommandHandler(core),
 		LobbyCreate:        application.NewLobbyCreateCommandHandler(core),
 		LobbyCancel:        application.NewLobbyCancelCommandHandler(core),
+		LobbyReady:         application.NewLobbyReadyCommandHandler(core),
 		LobbyStart:         application.NewLobbyStartCommandHandler(core),
 		LobbyStamp:         application.NewLobbyStampCommandHandler(core),
 		ParticipantWatch:   application.NewParticipantWatchCommandHandler(core),
@@ -76,6 +78,7 @@ func NewLobbyApplication(core *CoreApplication) *LobbyApplication {
 		subscriber.NewLobbyNotificationChanneler(core.Services.EventPublisher, core.Services.Redis, core.Services.RabbitMQConnection, memory.NewLobbyChannelRepository(core.Services.Redis)),
 		subscriber.NewLobbySummaryWriter(core.Services.EventPublisher, core.repositories.Quests, core.data.LobbySummaries),
 		subscriber.NewLobbySearchWriter(core.Services.EventPublisher, core.repositories.Quests, core.data.LobbySearch),
+		subscriber.NewLobbyQueueWriter(core.Services.EventPublisher, core.data.Lobbies, core.repositories.Quests, core.data.MatchLobbyQueue, core.data.LobbyParticipants),
 		subscriber.NewLobbyPlayerQueueWriter(core.Services.EventPublisher, core.data.Lobbies, core.data.MatchPlayerQueue, core.repositories.Quests, core.data.LobbyParticipants),
 		subscriber.NewLobbyChannelEventNotifier(core.Services.EventPublisher, core.data.LobbyPlayerSummaries, application.Translators.LobbyPlayer),
 		subscriber.NewLobbyClientNotifier(core.Services.EventPublisher, core.Services.Redis),
@@ -102,11 +105,12 @@ type SessionEndCommandHandler decorator.CommandHandler[command.Context, *command
 type LobbyCreateCommandHandler decorator.CommandHandler[command.Context, *command.LobbyCreateCommand]
 type LobbyCancelCommandHandler decorator.CommandHandler[command.Context, *command.LobbyCancelCommand]
 type LobbyStartCommandHandler decorator.CommandHandler[command.Context, *command.LobbyStartCommand]
+type LobbyReadyCommandHandler decorator.CommandHandler[command.Context, *command.LobbyReadyCommand]
 type LobbyStampCommandHandler decorator.CommandHandler[command.Context, *command.LobbyStampCommand]
 type ParticipantJoinCommandHandler decorator.CommandHandler[command.Context, *command.ParticipantJoinCommand]
 type ParticipantLeaveCommandHandler decorator.CommandHandler[command.Context, *command.ParticipantLeaveCommand]
-type ParticipantReadyCommandHandler decorator.CommandHandler[command.Context, *command.ReadyParticipantCommand]
-type ParticipantUnreadyCommandHandler decorator.CommandHandler[command.Context, *command.UnreadyParticipantCommand]
+type ParticipantReadyCommandHandler decorator.CommandHandler[command.Context, *command.ParticipantReadyCommand]
+type ParticipantUnreadyCommandHandler decorator.CommandHandler[command.Context, *command.ParticipantUnreadyCommand]
 type ParticipantWatchCommandHandler decorator.CommandHandler[command.Context, *command.WatchLobbyCommand]
 
 func (a *LobbyApplication) NewSessionCreateCommandHandler(core *CoreApplication) SessionCreateCommandHandler {
@@ -134,6 +138,11 @@ func (a *LobbyApplication) NewLobbyStartCommandHandler(core *CoreApplication) Lo
 	return decorator.NewStandardCommandDecorator[command.Context, *command.LobbyStartCommand](core.Services.EventPublisher, actual)
 }
 
+func (a *LobbyApplication) NewLobbyReadyCommandHandler(core *CoreApplication) LobbyReadyCommandHandler {
+	var actual = command.NewLobbyReadyCommandHandler(core.Services.EventPublisher, core.data.Sessions, core.data.Lobbies, core.repositories.Quests, core.data.MatchPlayerQueue)
+	return decorator.NewStandardCommandDecorator[command.Context, *command.LobbyReadyCommand](core.Services.EventPublisher, actual)
+}
+
 func (a *LobbyApplication) NewParticipantJoinCommandHandler(core *CoreApplication) ParticipantJoinCommandHandler {
 	var actual = command.NewParticipantJoinCommandHandler(core.Services.EventPublisher, core.data.Lobbies, core.data.LobbyParticipants)
 	return decorator.NewStandardCommandDecorator[command.Context, *command.ParticipantJoinCommand](core.Services.EventPublisher, actual)
@@ -145,13 +154,13 @@ func (a *LobbyApplication) NewParticipantLeaveCommandHandler(core *CoreApplicati
 }
 
 func (a *LobbyApplication) NewParticipantReadyCommandHandler(core *CoreApplication) ParticipantReadyCommandHandler {
-	var actual = command.NewReadyParticipantCommandHandler(core.Services.EventPublisher, core.data.Sessions, core.data.Lobbies, core.data.LobbyParticipants)
-	return decorator.NewStandardCommandDecorator[command.Context, *command.ReadyParticipantCommand](core.Services.EventPublisher, actual)
+	var actual = command.NewParticipantReadyCommandHandler(core.Services.EventPublisher, core.data.Sessions, core.data.Lobbies, core.data.LobbyParticipants)
+	return decorator.NewStandardCommandDecorator[command.Context, *command.ParticipantReadyCommand](core.Services.EventPublisher, actual)
 }
 
 func (a *LobbyApplication) NewParticipantUnreadyCommandHandler(core *CoreApplication) ParticipantUnreadyCommandHandler {
-	var actual = command.NewUnreadyParticipantCommandHandler(core.Services.EventPublisher, core.data.Sessions, core.data.Lobbies, core.data.LobbyParticipants)
-	return decorator.NewStandardCommandDecorator[command.Context, *command.UnreadyParticipantCommand](core.Services.EventPublisher, actual)
+	var actual = command.NewParticipantUnreadyCommandHandler(core.Services.EventPublisher, core.data.Sessions, core.data.Lobbies, core.data.LobbyParticipants)
+	return decorator.NewStandardCommandDecorator[command.Context, *command.ParticipantUnreadyCommand](core.Services.EventPublisher, actual)
 }
 
 func (a *LobbyApplication) NewParticipantWatchCommandHandler(core *CoreApplication) ParticipantWatchCommandHandler {

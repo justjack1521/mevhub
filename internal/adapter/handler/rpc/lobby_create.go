@@ -7,7 +7,7 @@ import (
 	"mevhub/internal/core/application/command"
 )
 
-func (g MultiGrpcServer) CreateLobby(context context.Context, request *protomulti.CreateLobbyRequest) (*protomulti.CreateLobbyResponse, error) {
+func (g MultiGrpcServer) LobbyCreate(context context.Context, request *protomulti.LobbyCreateRequest) (*protomulti.LobbyCreateResponse, error) {
 	quest, err := uuid.FromString(request.QuestId)
 	if err != nil {
 		return nil, err
@@ -24,7 +24,7 @@ func (g MultiGrpcServer) CreateLobby(context context.Context, request *protomult
 		return nil, err
 	}
 
-	return &protomulti.CreateLobbyResponse{
+	return &protomulti.LobbyCreateResponse{
 		LobbyId: cmd.LobbyID.String(),
 		PartyId: cmd.PartyID,
 	}, nil

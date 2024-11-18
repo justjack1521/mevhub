@@ -10,29 +10,29 @@ import (
 	"time"
 )
 
-type LobbyPlayerQueueWriter struct {
+type LobbyQueueWriter struct {
 	LobbyRepository       port.LobbyInstanceReadRepository
-	QueueRepository       port.MatchLobbyPlayerQueueWriteRepository
 	QuestRepository       port.QuestRepository
+	QueueRepository       port.MatchLobbyQueueWriteRepository
 	ParticipantRepository port.LobbyParticipantReadRepository
 }
 
-func NewLobbyPlayerQueueWriter(publisher *mevent.Publisher, lobbies port.LobbyInstanceReadRepository, queues port.MatchLobbyPlayerQueueWriteRepository, quests port.QuestRepository, participants port.LobbyParticipantReadRepository) *LobbyPlayerQueueWriter {
-	var subscriber = &LobbyPlayerQueueWriter{LobbyRepository: lobbies, QueueRepository: queues, QuestRepository: quests, ParticipantRepository: participants}
-	publisher.Subscribe(subscriber, lobby.InstanceCreatedEvent{})
+func NewLobbyQueueWriter(publisher *mevent.Publisher, instance port.LobbyInstanceReadRepository, quests port.QuestRepository, queue port.MatchLobbyQueueWriteRepository, participants port.LobbyParticipantReadRepository) *LobbyQueueWriter {
+	var subscriber = &LobbyQueueWriter{LobbyRepository: instance, QuestRepository: quests, QueueRepository: queue, ParticipantRepository: participants}
+	publisher.Subscribe(subscriber, lobby.InstanceReadyEvent{})
 	return subscriber
 }
 
-func (s *LobbyPlayerQueueWriter) Notify(event mevent.Event) {
+func (s *LobbyQueueWriter) Notify(event mevent.Event) {
 	switch actual := event.(type) {
-	case lobby.InstanceCreatedEvent:
+	case lobby.InstanceReadyEvent:
 		if err := s.Handle(actual); err != nil {
 			fmt.Println(err)
 		}
 	}
 }
 
-func (s *LobbyPlayerQueueWriter) Handle(evt lobby.InstanceCreatedEvent) error {
+func (s *LobbyQueueWriter) Handle(evt lobby.InstanceReadyEvent) error {
 
 	quest, err := s.QuestRepository.QueryByID(evt.QuestID())
 	if err != nil {
@@ -51,10 +51,6 @@ func (s *LobbyPlayerQueueWriter) Handle(evt lobby.InstanceCreatedEvent) error {
 	participants, err := s.ParticipantRepository.QueryAllForLobby(evt.Context(), instance.SysID)
 	if err != nil {
 		return err
-	}
-
-	if len(participants) == quest.Tier.GameMode.MaxPlayers {
-		return nil
 	}
 
 	var sum int

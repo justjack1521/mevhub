@@ -7,7 +7,7 @@ import (
 	"mevhub/internal/core/application/command"
 )
 
-func (g MultiGrpcServer) SendStamp(ctx context.Context, request *protomulti.SendStampRequest) (*protomulti.SendStampResponse, error) {
+func (g MultiGrpcServer) LobbyStamp(ctx context.Context, request *protomulti.LobbyStampRequest) (*protomulti.LobbyStampResponse, error) {
 	id, err := uuid.FromString(request.StampId)
 	if err != nil {
 		return nil, err
@@ -19,5 +19,5 @@ func (g MultiGrpcServer) SendStamp(ctx context.Context, request *protomulti.Send
 		return nil, err
 	}
 
-	return &protomulti.SendStampResponse{}, nil
+	return &protomulti.LobbyStampResponse{}, nil
 }

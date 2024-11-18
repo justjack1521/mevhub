@@ -7,7 +7,7 @@ import (
 	"mevhub/internal/core/application/command"
 )
 
-func (g MultiGrpcServer) JoinLobby(ctx context.Context, request *protomulti.JoinLobbyRequest) (*protomulti.JoinLobbyResponse, error) {
+func (g MultiGrpcServer) ParticipantJoin(ctx context.Context, request *protomulti.ParticipantJoinRequest) (*protomulti.ParticipantJoinResponse, error) {
 	id, err := uuid.FromString(request.LobbyId)
 	if err != nil {
 		return nil, err
@@ -19,5 +19,5 @@ func (g MultiGrpcServer) JoinLobby(ctx context.Context, request *protomulti.Join
 		return nil, err
 	}
 
-	return &protomulti.JoinLobbyResponse{}, nil
+	return &protomulti.ParticipantJoinResponse{}, nil
 }

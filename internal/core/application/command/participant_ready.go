@@ -8,32 +8,32 @@ import (
 	"mevhub/internal/core/port"
 )
 
-type ReadyParticipantCommand struct {
+type ParticipantReadyCommand struct {
 	BasicCommand
 	LobbyID   uuid.UUID
 	DeckIndex int
 }
 
-func (c ReadyParticipantCommand) CommandName() string {
+func (c ParticipantReadyCommand) CommandName() string {
 	return "participant.ready"
 }
 
-func NewReadyParticipantCommand(id uuid.UUID, deck int) *ReadyParticipantCommand {
-	return &ReadyParticipantCommand{LobbyID: id, DeckIndex: deck}
+func NewParticipantReadyCommand(id uuid.UUID, deck int) *ParticipantReadyCommand {
+	return &ParticipantReadyCommand{LobbyID: id, DeckIndex: deck}
 }
 
-type ReadyLobbyParticipantHandler struct {
+type ParticipantReadyCommandHandler struct {
 	EventPublisher        *mevent.Publisher
 	SessionRepository     session.InstanceReadRepository
 	InstanceRepository    port.LobbyInstanceRepository
 	ParticipantRepository port.LobbyParticipantRepository
 }
 
-func NewReadyParticipantCommandHandler(publisher *mevent.Publisher, sessions session.InstanceReadRepository, instances port.LobbyInstanceRepository, participants port.LobbyParticipantRepository) *ReadyLobbyParticipantHandler {
-	return &ReadyLobbyParticipantHandler{EventPublisher: publisher, SessionRepository: sessions, InstanceRepository: instances, ParticipantRepository: participants}
+func NewParticipantReadyCommandHandler(publisher *mevent.Publisher, sessions session.InstanceReadRepository, instances port.LobbyInstanceRepository, participants port.LobbyParticipantRepository) *ParticipantReadyCommandHandler {
+	return &ParticipantReadyCommandHandler{EventPublisher: publisher, SessionRepository: sessions, InstanceRepository: instances, ParticipantRepository: participants}
 }
 
-func (h *ReadyLobbyParticipantHandler) Handle(ctx Context, cmd *ReadyParticipantCommand) error {
+func (h *ParticipantReadyCommandHandler) Handle(ctx Context, cmd *ParticipantReadyCommand) error {
 
 	current, err := h.SessionRepository.QueryByID(ctx, ctx.UserID())
 	if err != nil {

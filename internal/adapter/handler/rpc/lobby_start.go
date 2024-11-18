@@ -6,7 +6,7 @@ import (
 	"mevhub/internal/core/application/command"
 )
 
-func (g MultiGrpcServer) StartLobby(ctx context.Context, request *protomulti.StartLobbyRequest) (*protomulti.StartLobbyResponse, error) {
+func (g MultiGrpcServer) LobbyStart(ctx context.Context, request *protomulti.LobbyStartRequest) (*protomulti.LobbyStartResponse, error) {
 
 	var cmd = command.NewLobbyStartCommand()
 
@@ -14,6 +14,6 @@ func (g MultiGrpcServer) StartLobby(ctx context.Context, request *protomulti.Sta
 		return nil, err
 	}
 
-	return &protomulti.StartLobbyResponse{}, nil
+	return &protomulti.LobbyStartResponse{}, nil
 
 }

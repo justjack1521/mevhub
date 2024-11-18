@@ -7,7 +7,7 @@ import (
 	"mevhub/internal/core/application/command"
 )
 
-func (g MultiGrpcServer) WatchLobby(ctx context.Context, request *protomulti.WatchLobbyRequest) (*protomulti.WatchLobbyResponse, error) {
+func (g MultiGrpcServer) ParticipantWatch(ctx context.Context, request *protomulti.ParticipantWatchRequest) (*protomulti.ParticipantWatchResponse, error) {
 	id, err := uuid.FromString(request.LobbyId)
 	if err != nil {
 		return nil, err
@@ -19,5 +19,5 @@ func (g MultiGrpcServer) WatchLobby(ctx context.Context, request *protomulti.Wat
 		return nil, err
 	}
 
-	return &protomulti.WatchLobbyResponse{}, nil
+	return &protomulti.ParticipantWatchResponse{}, nil
 }

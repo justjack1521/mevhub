@@ -8,7 +8,7 @@ import (
 	"mevhub/internal/core/domain/lobby"
 )
 
-func (g MultiGrpcServer) SearchLobby(ctx context.Context, request *protomulti.SearchLobbyRequest) (*protomulti.SearchLobbyResponse, error) {
+func (g MultiGrpcServer) LobbySearch(ctx context.Context, request *protomulti.LobbySearchRequest) (*protomulti.LobbySearchResponse, error) {
 	var levels = make([]int, len(request.Levels))
 	for index, level := range request.Levels {
 		levels[index] = int(level)
@@ -41,5 +41,5 @@ func (g MultiGrpcServer) SearchLobby(ctx context.Context, request *protomulti.Se
 		lobbies[index] = summary
 	}
 
-	return &protomulti.SearchLobbyResponse{Lobbies: lobbies}, nil
+	return &protomulti.LobbySearchResponse{Lobbies: lobbies}, nil
 }

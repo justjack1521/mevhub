@@ -50,7 +50,8 @@ type DataRepositories struct {
 	LobbySummaries       port.LobbySummaryRepository
 	LobbyPlayerSummaries port.LobbyPlayerSummaryRepository
 	LobbySearch          port.LobbySearchRepository
-	MatchPlayerQueue     port.MatchPlayerQueueRepository
+	MatchPlayerQueue     port.MatchLobbyPlayerQueueRepository
+	MatchLobbyQueue      port.MatchLobbyQueueRepository
 	Games                port.GameInstanceRepository
 	GameParticipants     port.PlayerParticipantRepository
 	GamePlayerLoadouts   port.PlayerLoadoutReadRepository
@@ -102,7 +103,8 @@ func (a *CoreApplication) BuildDataRepos(db *gorm.DB, client *redis.Client, iden
 		Lobbies:              memory.NewLobbyInstanceRedisRepository(client),
 		LobbyParticipants:    memory.NewLobbyParticipantRedisRepository(client),
 		LobbySearch:          memory.NewLobbySearchRepository(client),
-		MatchPlayerQueue:     memory.NewMatchPlayerQueueRepository(client),
+		MatchLobbyQueue:      memory.NewMatchLobbyQueueRepository(client),
+		MatchPlayerQueue:     memory.NewMatchLobbyPlayerQueueRepository(client),
 		LobbySummaries:       database.NewLobbySummaryDatabaseRepository(db),
 		LobbyPlayerSummaries: cache.NewLobbyPlayerSummaryRepository(external.NewLobbyPlayerSummaryRepository(identity), memory.NewLobbyPlayerSummaryRepository(client, serial.NewLobbyPlayerSummaryJSONSerialiser())),
 		Games:                memory.NewGameInstanceRepository(client, serial.NewGameInstanceJSONSerialiser()),

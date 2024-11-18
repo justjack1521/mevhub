@@ -8,31 +8,31 @@ import (
 	"mevhub/internal/core/port"
 )
 
-type UnreadyParticipantCommand struct {
+type ParticipantUnreadyCommand struct {
 	BasicCommand
 	LobbyID uuid.UUID
 }
 
-func (c UnreadyParticipantCommand) CommandName() string {
+func (c ParticipantUnreadyCommand) CommandName() string {
 	return "participant.unready"
 }
 
-func NewUnreadyParticipantCommand(id uuid.UUID) *UnreadyParticipantCommand {
-	return &UnreadyParticipantCommand{LobbyID: id}
+func NewParticipantUnreadyCommand(id uuid.UUID) *ParticipantUnreadyCommand {
+	return &ParticipantUnreadyCommand{LobbyID: id}
 }
 
-type UnreadyParticipantCommandHandler struct {
+type ParticipantUnreadyCommandHandler struct {
 	EventPublisher        *mevent.Publisher
 	SessionRepository     session.InstanceReadRepository
 	InstanceRepository    port.LobbyInstanceRepository
 	ParticipantRepository port.LobbyParticipantRepository
 }
 
-func NewUnreadyParticipantCommandHandler(publisher *mevent.Publisher, sessions session.InstanceReadRepository, instances port.LobbyInstanceRepository, participants port.LobbyParticipantRepository) *UnreadyParticipantCommandHandler {
-	return &UnreadyParticipantCommandHandler{EventPublisher: publisher, SessionRepository: sessions, InstanceRepository: instances, ParticipantRepository: participants}
+func NewParticipantUnreadyCommandHandler(publisher *mevent.Publisher, sessions session.InstanceReadRepository, instances port.LobbyInstanceRepository, participants port.LobbyParticipantRepository) *ParticipantUnreadyCommandHandler {
+	return &ParticipantUnreadyCommandHandler{EventPublisher: publisher, SessionRepository: sessions, InstanceRepository: instances, ParticipantRepository: participants}
 }
 
-func (h *UnreadyParticipantCommandHandler) Handle(ctx Context, cmd *UnreadyParticipantCommand) error {
+func (h *ParticipantUnreadyCommandHandler) Handle(ctx Context, cmd *ParticipantUnreadyCommand) error {
 
 	current, err := h.SessionRepository.QueryByID(ctx, ctx.UserID())
 	if err != nil {

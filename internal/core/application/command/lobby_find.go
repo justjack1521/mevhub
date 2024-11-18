@@ -22,7 +22,7 @@ func (c FindLobbyCommand) CommandName() string {
 
 type FindLobbyCommandHandler struct {
 	QuestRepository       port.QuestRepository
-	MatchmakingRepository port.MatchPlayerQueueWriteRepository
+	MatchmakingRepository port.MatchLobbyPlayerQueueWriteRepository
 }
 
 func (h *FindLobbyCommandHandler) Handle(ctx Context, cmd *FindLobbyCommand) error {

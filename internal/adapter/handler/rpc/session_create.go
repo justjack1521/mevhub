@@ -6,12 +6,12 @@ import (
 	"mevhub/internal/core/application/command"
 )
 
-func (g MultiGrpcServer) CreateSession(context context.Context, request *protomulti.CreateSessionRequest) (*protomulti.CreateSessionResponse, error) {
+func (g MultiGrpcServer) SessionCreate(context context.Context, request *protomulti.SessionCreateRequest) (*protomulti.SessionCreateResponse, error) {
 
 	if err := g.app.SubApplications.Lobby.Commands.SessionCreate.Handle(g.NewCommandContext(context), command.NewSessionCreateCommand()); err != nil {
 		return nil, err
 	}
 
-	return &protomulti.CreateSessionResponse{}, nil
+	return &protomulti.SessionCreateResponse{}, nil
 
 }

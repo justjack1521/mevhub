@@ -16,7 +16,7 @@ const (
 type LobbyMatchmakingQueueWorker struct {
 	ctx        context.Context
 	mode       game.ModeIdentifier
-	repository port.MatchPlayerQueueRepository
+	repository port.MatchLobbyPlayerQueueRepository
 	dispatcher port.PlayerMatchmakingDispatcher
 }
 

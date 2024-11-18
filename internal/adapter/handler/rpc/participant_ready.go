@@ -7,18 +7,18 @@ import (
 	"mevhub/internal/core/application/command"
 )
 
-func (g MultiGrpcServer) ReadyLobby(ctx context.Context, request *protomulti.ReadyLobbyRequest) (*protomulti.ReadyLobbyResponse, error) {
+func (g MultiGrpcServer) ParticipantReady(ctx context.Context, request *protomulti.ParticipantReadyRequest) (*protomulti.ParticipantReadyResponse, error) {
 
 	lobby, err := uuid.FromString(request.LobbyId)
 	if err != nil {
 		return nil, err
 	}
 
-	var cmd = command.NewReadyParticipantCommand(lobby, int(request.DeckIndex))
+	var cmd = command.NewParticipantReadyCommand(lobby, int(request.DeckIndex))
 
 	if err := g.app.SubApplications.Lobby.Commands.ParticipantReady.Handle(g.NewCommandContext(ctx), cmd); err != nil {
 		return nil, err
 	}
 
-	return &protomulti.ReadyLobbyResponse{}, nil
+	return &protomulti.ParticipantReadyResponse{}, nil
 }
