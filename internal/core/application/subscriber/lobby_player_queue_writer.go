@@ -61,6 +61,9 @@ func (s *LobbyPlayerQueueWriter) Handle(evt lobby.InstanceCreatedEvent) error {
 
 	var sum int
 	for _, participant := range participants {
+		if participant.HasPlayer() == false {
+			continue
+		}
 		player, err := s.PlayerSummaryRepository.Query(evt.Context(), participant.PlayerID)
 		if err != nil {
 			return err
