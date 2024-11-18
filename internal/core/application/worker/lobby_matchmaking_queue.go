@@ -60,6 +60,9 @@ func (w *LobbyMatchmakingQueueWorker) process(quest uuid.UUID) error {
 		if err != nil {
 			continue
 		}
+		if found.Zero() {
+			continue
+		}
 		remove, err := w.dispatcher.Dispatch(w.ctx, w.mode, quest, queued, found)
 		if err != nil {
 			continue

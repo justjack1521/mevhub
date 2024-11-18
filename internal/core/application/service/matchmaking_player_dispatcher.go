@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"github.com/justjack1521/mevium/pkg/mevent"
 	uuid "github.com/satori/go.uuid"
 	"mevhub/internal/core/domain/game"
@@ -15,10 +16,11 @@ type PlayerMatchmakingDispatcher struct {
 	EventPublisher            *mevent.Publisher
 	SessionInstanceRepository session.InstanceReadRepository
 	LobbyInstanceRepository   port.LobbyInstanceReadRepository
+	QuestRepository           port.QuestRepository
 	ParticipantRepository     port.LobbyParticipantRepository
 }
 
-func NewPlayerMatchmakingDispatcher(publisher *mevent.Publisher, sessions session.InstanceReadRepository, lobbies port.LobbyInstanceReadRepository, participants port.LobbyParticipantRepository) *PlayerMatchmakingDispatcher {
+func NewPlayerMatchmakingDispatcher(publisher *mevent.Publisher, sessions session.InstanceReadRepository, lobbies port.LobbyInstanceReadRepository, quests port.QuestRepository, participants port.LobbyParticipantRepository) *PlayerMatchmakingDispatcher {
 	return &PlayerMatchmakingDispatcher{EventPublisher: publisher, SessionInstanceRepository: sessions, LobbyInstanceRepository: lobbies, ParticipantRepository: participants}
 }
 
@@ -39,11 +41,20 @@ func (s PlayerMatchmakingDispatcher) Dispatch(ctx context.Context, mode game.Mod
 		return false, err
 	}
 
+	quest, err := s.QuestRepository.QueryByID(entry.QuestID)
+	if err != nil {
+		return false, err
+	}
+
 	var filled int
 	for _, exist := range existing {
 		if exist.HasPlayer() {
 			filled++
 		}
+	}
+
+	if filled == quest.Tier.GameMode.MaxPlayers {
+		return false, errors.New("lobby is full")
 	}
 
 	participant, err := s.ParticipantRepository.QueryParticipantForLobby(ctx, instance.SysID, filled)
@@ -68,6 +79,8 @@ func (s PlayerMatchmakingDispatcher) Dispatch(ctx context.Context, mode game.Mod
 	}
 
 	s.EventPublisher.Notify(lobby.NewParticipantCreatedEvent(ctx, participant.UserID, participant.PlayerID, participant.LobbyID, participant.DeckIndex, participant.PlayerSlot))
+
+	filled++
 
 	return filled == instance.PlayerSlotCount, nil
 

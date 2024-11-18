@@ -90,7 +90,7 @@ func NewLobbyApplication(core *CoreApplication) *LobbyApplication {
 		subscriber.NewSessionLobbyWriter(core.Services.EventPublisher, core.data.Sessions),
 	}
 
-	var dispatch = service.NewPlayerMatchmakingDispatcher(core.Services.EventPublisher, core.data.Sessions, core.data.Lobbies, core.data.LobbyParticipants)
+	var dispatch = service.NewPlayerMatchmakingDispatcher(core.Services.EventPublisher, core.data.Sessions, core.data.Lobbies, core.repositories.Quests, core.data.LobbyParticipants)
 	var work = worker.NewLobbyMatchmakingQueueWorker(context.Background(), game.ModeIdentifierCompDuo, core.data.MatchPlayerQueue, dispatch)
 	go work.Run()
 
