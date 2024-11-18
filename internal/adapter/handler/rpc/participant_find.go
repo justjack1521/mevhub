@@ -7,7 +7,7 @@ import (
 	"mevhub/internal/core/application/command"
 )
 
-func (g MultiGrpcServer) ParticipantFindResponse(ctx context.Context, request *protomulti.ParticipantFindRequest) (*protomulti.ParticipantFindResponse, error) {
+func (g MultiGrpcServer) ParticipantFind(ctx context.Context, request *protomulti.ParticipantFindRequest) (*protomulti.ParticipantFindResponse, error) {
 
 	id, err := uuid.FromString(request.QuestId)
 	if err != nil {
