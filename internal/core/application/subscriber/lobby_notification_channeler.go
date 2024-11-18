@@ -112,7 +112,7 @@ func (s *LobbyNotificationChanneler) HandleDelete(event lobby.InstanceDeletedEve
 
 	var message = &protocommon.Notification{
 		Service: protocommon.ServiceKey_MULTI,
-		Type:    int32(protomulti.MultiLobbyNotificationType_LOBBY_CANCEL),
+		Type:    int32(protomulti.MultiLobbyNotificationType_LOBBY_NOTIFY_CANCEL),
 		Data:    n,
 	}
 

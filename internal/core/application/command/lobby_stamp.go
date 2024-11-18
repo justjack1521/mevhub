@@ -48,7 +48,7 @@ func (h *LobbyStampCommandHandler) Handle(ctx Context, cmd *LobbyStampCommand) e
 		return err
 	}
 
-	cmd.QueueEvent(consumer.NewLobbyClientNotificationEvent(ctx, protomulti.MultiLobbyNotificationType_STAMP_SEND, current.LobbyID, bytes))
+	cmd.QueueEvent(consumer.NewLobbyClientNotificationEvent(ctx, protomulti.MultiLobbyNotificationType_LOBBY_NOTIFY_STAMP_SEND, current.LobbyID, bytes))
 
 	return nil
 
