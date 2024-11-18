@@ -20,6 +20,10 @@ type LobbyMatchmakingQueueWorker struct {
 	dispatcher port.PlayerMatchmakingDispatcher
 }
 
+func NewLobbyMatchmakingQueueWorker(ctx context.Context, mode game.ModeIdentifier, queue port.MatchLobbyPlayerQueueRepository, dispatcher port.PlayerMatchmakingDispatcher) *LobbyMatchmakingQueueWorker {
+	return &LobbyMatchmakingQueueWorker{ctx: ctx, mode: mode, repository: queue, dispatcher: dispatcher}
+}
+
 func (w *LobbyMatchmakingQueueWorker) Run() {
 
 	var ticker = time.NewTicker(matchmakingQueueWorkerInterval)

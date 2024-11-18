@@ -18,6 +18,10 @@ type PlayerMatchmakingDispatcher struct {
 	ParticipantRepository     port.LobbyParticipantRepository
 }
 
+func NewPlayerMatchmakingDispatcher(publisher *mevent.Publisher, sessions session.InstanceReadRepository, lobbies port.LobbyInstanceReadRepository, participants port.LobbyParticipantRepository) *PlayerMatchmakingDispatcher {
+	return &PlayerMatchmakingDispatcher{EventPublisher: publisher, SessionInstanceRepository: sessions, LobbyInstanceRepository: lobbies, ParticipantRepository: participants}
+}
+
 func (s PlayerMatchmakingDispatcher) Dispatch(ctx context.Context, mode game.ModeIdentifier, id uuid.UUID, entry match.LobbyQueueEntry, player match.PlayerQueueEntry) (bool, error) {
 
 	sesh, err := s.SessionInstanceRepository.QueryByID(ctx, player.UserID)

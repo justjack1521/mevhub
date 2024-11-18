@@ -11,6 +11,7 @@ const (
 	ModeIdentifierNone        = "none"
 	ModeIdentifierCoopDefault = "coop_default"
 	ModeIdentifierCompSingle  = "comp_solo"
+	ModeIdentifierCompDuo     = "comp_duo"
 )
 
 type FulfillMethod string

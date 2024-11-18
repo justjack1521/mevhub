@@ -1,6 +1,7 @@
 package application
 
 import (
+	"context"
 	"mevhub/internal/adapter/memory"
 	"mevhub/internal/adapter/translate"
 	"mevhub/internal/core/application/command"
@@ -8,6 +9,8 @@ import (
 	"mevhub/internal/core/application/query"
 	"mevhub/internal/core/application/service"
 	"mevhub/internal/core/application/subscriber"
+	"mevhub/internal/core/application/worker"
+	"mevhub/internal/core/domain/game"
 	"mevhub/internal/core/domain/lobby"
 	"mevhub/internal/decorator"
 )
@@ -86,6 +89,11 @@ func NewLobbyApplication(core *CoreApplication) *LobbyApplication {
 		subscriber.NewLobbyClientNotifier(core.Services.EventPublisher, core.Services.Redis),
 		subscriber.NewSessionLobbyWriter(core.Services.EventPublisher, core.data.Sessions),
 	}
+
+	var dispatch = service.NewPlayerMatchmakingDispatcher(core.Services.EventPublisher, core.data.Sessions, core.data.Lobbies, core.data.LobbyParticipants)
+	var work = worker.NewLobbyMatchmakingQueueWorker(context.Background(), game.ModeIdentifierCompDuo, core.data.MatchPlayerQueue, dispatch)
+	go work.Run()
+
 	return application
 }
 
