@@ -11,14 +11,14 @@ import (
 )
 
 type LobbyPlayerQueueWriter struct {
-	LobbyRepository       port.LobbyInstanceReadRepository
-	QueueRepository       port.MatchLobbyPlayerQueueWriteRepository
-	QuestRepository       port.QuestRepository
-	ParticipantRepository port.LobbyParticipantReadRepository
+	QueueRepository         port.MatchLobbyPlayerQueueWriteRepository
+	QuestRepository         port.QuestRepository
+	ParticipantRepository   port.LobbyParticipantReadRepository
+	PlayerSummaryRepository port.LobbyPlayerSummaryReadRepository
 }
 
-func NewLobbyPlayerQueueWriter(publisher *mevent.Publisher, lobbies port.LobbyInstanceReadRepository, queues port.MatchLobbyPlayerQueueWriteRepository, quests port.QuestRepository, participants port.LobbyParticipantReadRepository) *LobbyPlayerQueueWriter {
-	var subscriber = &LobbyPlayerQueueWriter{LobbyRepository: lobbies, QueueRepository: queues, QuestRepository: quests, ParticipantRepository: participants}
+func NewLobbyPlayerQueueWriter(publisher *mevent.Publisher, queues port.MatchLobbyPlayerQueueWriteRepository, quests port.QuestRepository, participants port.LobbyParticipantReadRepository, players port.LobbyPlayerSummaryReadRepository) *LobbyPlayerQueueWriter {
+	var subscriber = &LobbyPlayerQueueWriter{QueueRepository: queues, QuestRepository: quests, ParticipantRepository: participants, PlayerSummaryRepository: players}
 	publisher.Subscribe(subscriber, lobby.InstanceCreatedEvent{})
 	return subscriber
 }
@@ -43,29 +43,35 @@ func (s *LobbyPlayerQueueWriter) Handle(evt lobby.InstanceCreatedEvent) error {
 		return nil
 	}
 
-	instance, err := s.LobbyRepository.QueryByID(evt.Context(), evt.LobbyID())
+	participants, err := s.ParticipantRepository.QueryAllForLobby(evt.Context(), evt.LobbyID())
 	if err != nil {
 		return err
 	}
 
-	participants, err := s.ParticipantRepository.QueryAllForLobby(evt.Context(), instance.SysID)
-	if err != nil {
-		return err
+	var filled int
+	for _, participant := range participants {
+		if participant.HasPlayer() {
+			filled++
+		}
 	}
 
-	if len(participants) == quest.Tier.GameMode.MaxPlayers {
+	if filled >= quest.Tier.GameMode.MaxPlayers {
 		return nil
 	}
 
 	var sum int
 	for _, participant := range participants {
-		sum += participant.PlayerSlot * 10
+		player, err := s.PlayerSummaryRepository.Query(evt.Context(), participant.PlayerID)
+		if err != nil {
+			return err
+		}
+		sum += player.Loadout.CalculateDeckLevel()
 	}
-	var average = sum / len(participants)
+	var average = sum / filled
 
 	var entry = match.LobbyQueueEntry{
-		LobbyID:      instance.SysID,
-		QuestID:      instance.QuestID,
+		LobbyID:      evt.LobbyID(),
+		QuestID:      evt.QuestID(),
 		AverageLevel: average,
 		JoinedAt:     time.Now().UTC(),
 	}

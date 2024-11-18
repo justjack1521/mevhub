@@ -9,23 +9,32 @@ import (
 	"time"
 )
 
-type FindLobbyCommand struct {
+type ParticipantFindCommand struct {
 	BasicCommand
 	QuestID    uuid.UUID
 	DeckIndex  int
 	UseStamina bool
 }
 
-func (c FindLobbyCommand) CommandName() string {
-	return "find.lobby"
+func NewParticipantFindCommand(quest uuid.UUID, index int, stamina bool) *ParticipantFindCommand {
+	return &ParticipantFindCommand{QuestID: quest, DeckIndex: index, UseStamina: stamina}
 }
 
-type FindLobbyCommandHandler struct {
-	QuestRepository       port.QuestRepository
-	MatchmakingRepository port.MatchLobbyPlayerQueueWriteRepository
+func (c ParticipantFindCommand) CommandName() string {
+	return "participant.find"
 }
 
-func (h *FindLobbyCommandHandler) Handle(ctx Context, cmd *FindLobbyCommand) error {
+type ParticipantFindCommandHandler struct {
+	QuestRepository         port.QuestRepository
+	MatchmakingRepository   port.MatchLobbyPlayerQueueWriteRepository
+	PlayerSummaryRepository port.LobbyPlayerSummaryReadRepository
+}
+
+func NewParticipantFindCommandHandler(quests port.QuestRepository, queue port.MatchLobbyPlayerQueueWriteRepository, players port.LobbyPlayerSummaryReadRepository) *ParticipantFindCommandHandler {
+	return &ParticipantFindCommandHandler{QuestRepository: quests, MatchmakingRepository: queue, PlayerSummaryRepository: players}
+}
+
+func (h *ParticipantFindCommandHandler) Handle(ctx Context, cmd *ParticipantFindCommand) error {
 
 	quest, err := h.QuestRepository.QueryByID(cmd.QuestID)
 	if err != nil {
@@ -36,10 +45,15 @@ func (h *FindLobbyCommandHandler) Handle(ctx Context, cmd *FindLobbyCommand) err
 		return errors.New("cannot find lobbies for this game mode")
 	}
 
+	player, err := h.PlayerSummaryRepository.Query(ctx, ctx.PlayerID())
+	if err != nil {
+		return err
+	}
+
 	var entry = match.PlayerQueueEntry{
 		UserID:    ctx.UserID(),
 		QuestID:   cmd.QuestID,
-		DeckLevel: cmd.DeckIndex,
+		DeckLevel: player.Loadout.CalculateDeckLevel(),
 		JoinedAt:  time.Now().UTC(),
 	}
 

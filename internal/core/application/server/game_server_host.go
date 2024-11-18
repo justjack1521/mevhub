@@ -90,6 +90,10 @@ func (h *GameServerHost) unregister(id uuid.UUID) {
 
 func (h *GameServerHost) action(request *GameActionRequest) {
 
+	if request.InstanceID == uuid.Nil {
+		return
+	}
+
 	instance, exists := h.games[request.InstanceID]
 
 	if exists == false {

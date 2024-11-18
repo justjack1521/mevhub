@@ -40,6 +40,14 @@ type PlayerLoadout struct {
 	AbilityCards []PlayerAbilityCardSummary
 }
 
+func (x PlayerLoadout) CalculateDeckLevel() int {
+	var level = x.JobCard.CrownLevel
+	for _, card := range x.AbilityCards {
+		level += card.AbilityCardLevel
+	}
+	return level
+}
+
 type PlayerJobCardSummary struct {
 	JobCardID      uuid.UUID
 	SubJobIndex    int

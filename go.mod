@@ -5,7 +5,7 @@ go 1.22.3
 require (
 	github.com/go-redis/redis/v8 v8.11.5
 	github.com/jinzhu/configor v1.2.1
-	github.com/justjack1521/mevium v0.0.0-20241118053404-c11178f8ff29
+	github.com/justjack1521/mevium v0.0.0-20241118112748-c79e533aad5f
 	github.com/satori/go.uuid v1.2.0
 	github.com/stretchr/testify v1.9.0
 	github.com/wagslane/go-rabbitmq v0.14.2
