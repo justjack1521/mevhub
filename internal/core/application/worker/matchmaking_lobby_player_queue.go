@@ -55,6 +55,7 @@ func (w *LobbyPlayerMatchmakingQueueWorker) Run() {
 			}
 		}
 	}
+
 }
 
 func (w *LobbyPlayerMatchmakingQueueWorker) findMatches() error {

@@ -11,7 +11,9 @@ import (
 )
 
 const (
-	matchmakingLobbyQueueWorkerInterval = time.Second * 10
+	matchmakingLobbyQueueWorkerFindInterval      = time.Second * 10
+	matchmakingLobbyQueueWorkerLobbyReapInterval = time.Second * 20
+	matchmakingLobbyQueueWorkerQuestReapInterval = time.Minute * 1
 )
 
 type LobbyMatchmakingQueueWorker struct {
@@ -27,29 +29,50 @@ func NewLobbyMatchmakingQueueWorker(ctx context.Context, mode game.ModeIdentifie
 
 func (w *LobbyMatchmakingQueueWorker) Run() {
 
-	var ticker = time.NewTicker(matchmakingLobbyQueueWorkerInterval)
-	defer ticker.Stop()
+	var findTicker = time.NewTicker(matchmakingLobbyPlayerQueueWorkerFindInterval)
+	defer findTicker.Stop()
+
+	var lobbyReapTicker = time.NewTicker(matchmakingLobbyPlayerQueueWorkerLobbyReapInterval)
+	defer lobbyReapTicker.Stop()
+
+	var questReapTicket = time.NewTicker(matchmakingLobbyPlayerQueueWorkerQuestReapInterval)
+	defer questReapTicket.Stop()
 
 	for {
 		select {
 		case <-w.ctx.Done():
 			return
-		case <-ticker.C:
-			actives, err := w.repository.GetActiveQuests(w.ctx, w.mode)
-			if err != nil {
-				continue
+		case <-findTicker.C:
+			if err := w.findMatches(); err != nil {
+				fmt.Println(err)
 			}
-			for _, active := range actives {
-				if err := w.process(active); err != nil {
-					fmt.Println(err)
-				}
+		case <-lobbyReapTicker.C:
+			if err := w.reapLobbies(); err != nil {
+				fmt.Println(err)
 			}
-
+		case <-questReapTicket.C:
+			if err := w.reapQuests(); err != nil {
+				fmt.Println(err)
+			}
 		}
 	}
+
 }
 
-func (w *LobbyMatchmakingQueueWorker) process(quest uuid.UUID) error {
+func (w *LobbyMatchmakingQueueWorker) findMatches() error {
+	actives, err := w.repository.GetActiveQuests(w.ctx, w.mode)
+	if err != nil {
+		return err
+	}
+	for _, active := range actives {
+		if err := w.findMatch(active); err != nil {
+			fmt.Println(err)
+		}
+	}
+	return nil
+}
+
+func (w *LobbyMatchmakingQueueWorker) findMatch(quest uuid.UUID) error {
 
 	lobbies, err := w.repository.GetQueuedLobbies(w.ctx, w.mode, quest)
 	if err != nil {
@@ -77,4 +100,34 @@ func (w *LobbyMatchmakingQueueWorker) process(quest uuid.UUID) error {
 
 	return nil
 
+}
+
+func (w *LobbyMatchmakingQueueWorker) reapLobbies() error {
+	actives, err := w.repository.GetActiveQuests(w.ctx, w.mode)
+	if err != nil {
+		return err
+	}
+	for _, active := range actives {
+		if err := w.repository.RemoveExpiredLobbies(w.ctx, w.mode, active); err != nil {
+			fmt.Println(err)
+		}
+	}
+	return nil
+}
+
+func (w *LobbyMatchmakingQueueWorker) reapQuests() error {
+	actives, err := w.repository.GetActiveQuests(w.ctx, w.mode)
+	if err != nil {
+		return err
+	}
+	for _, active := range actives {
+		count, err := w.repository.GetCountQueuedLobbies(w.ctx, w.mode, active)
+		if err != nil || count > 0 {
+			continue
+		}
+		if err := w.repository.RemoveInactiveQuest(w.ctx, w.mode, active); err != nil {
+			fmt.Println(err)
+		}
+	}
+	return nil
 }

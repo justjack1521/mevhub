@@ -22,6 +22,38 @@ type MatchLobbyQueueRepository struct {
 	client *redis.Client
 }
 
+func (r *MatchLobbyQueueRepository) GetCountQueuedLobbies(ctx context.Context, mode game.ModeIdentifier, quest uuid.UUID) (int, error) {
+	var q = r.matchmakingLobbyQueueKey(mode, quest)
+	result, err := r.client.ZCard(ctx, q).Result()
+	if err != nil {
+		return 0, err
+	}
+	return int(result), nil
+}
+
+func (r *MatchLobbyQueueRepository) RemoveExpiredLobbies(ctx context.Context, mode game.ModeIdentifier, quest uuid.UUID) error {
+	var q = r.matchmakingLobbyQueueKey(mode, quest)
+	var t = r.matchmakingLobbyQueueTimeKey(mode)
+
+	var expire = time.Now().UTC().Add(time.Minute * -20)
+	var threshold = float64(expire.Unix())
+
+	if err := r.client.ZRemRangeByScore(ctx, q, "-inf", fmt.Sprintf("%f", threshold)).Err(); err != nil {
+		return err
+	}
+	if err := r.client.ZRemRangeByScore(ctx, t, "-inf", fmt.Sprintf("%f", threshold)).Err(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *MatchLobbyQueueRepository) RemoveInactiveQuest(ctx context.Context, mode game.ModeIdentifier, quest uuid.UUID) error {
+	if err := r.client.SRem(ctx, r.activeQueueKey(mode), quest.String()).Err(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func NewMatchLobbyQueueRepository(client *redis.Client) *MatchLobbyQueueRepository {
 	return &MatchLobbyQueueRepository{client: client}
 }
@@ -179,8 +211,17 @@ func (r *MatchLobbyQueueRepository) AddLobbyToQueue(ctx context.Context, mode ga
 }
 
 func (r *MatchLobbyQueueRepository) RemoveLobbyFromQueue(ctx context.Context, mode game.ModeIdentifier, quest uuid.UUID, id uuid.UUID) error {
-	//TODO implement me
-	panic("implement me")
+
+	if err := r.client.ZRem(ctx, r.matchmakingLobbyQueueKey(mode, quest), id.String()).Err(); err != nil {
+		return err
+	}
+
+	if err := r.client.ZRem(ctx, r.matchmakingLobbyQueueTimeKey(mode), id.String()).Err(); err != nil {
+		return err
+	}
+
+	return nil
+
 }
 
 func (r *MatchLobbyQueueRepository) activeQueueKey(mode game.ModeIdentifier) string {

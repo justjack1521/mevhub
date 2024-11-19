@@ -8,7 +8,7 @@ import (
 )
 
 type LobbyMatchmakingDispatcher interface {
-	Dispatch(ctx context.Context, mode game.ModeIdentifier, id uuid.UUID, lobbies []match.LobbyQueueEntry) error
+	Dispatch(ctx context.Context, mode game.ModeIdentifier, id uuid.UUID, lobbies match.LobbyQueueEntryCollection) error
 }
 
 type PlayerMatchmakingDispatcher interface {

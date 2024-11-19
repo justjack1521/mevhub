@@ -90,9 +90,18 @@ func NewLobbyApplication(core *CoreApplication) *LobbyApplication {
 		subscriber.NewSessionLobbyWriter(core.Services.EventPublisher, core.data.Sessions),
 	}
 
-	var dispatch = service.NewPlayerMatchmakingDispatcher(core.Services.EventPublisher, core.data.Sessions, core.data.Lobbies, core.repositories.Quests, core.data.LobbyParticipants)
-	var work = worker.NewLobbyPlayerMatchmakingQueueWorker(context.Background(), game.ModeIdentifierCompDuo, core.data.MatchPlayerQueue, dispatch)
-	go work.Run()
+	var lobbyDispatcher = service.NewLobbyMatchmakingDispatcher(core.Services.EventPublisher, core.repositories.Quests, core.data.Lobbies, core.data.LobbyParticipants)
+
+	var soloLobbyQueueWorker = worker.NewLobbyMatchmakingQueueWorker(context.Background(), game.ModeIdentifierCompSingle, core.data.MatchLobbyQueue, lobbyDispatcher)
+	go soloLobbyQueueWorker.Run()
+
+	var duoLobbyQueueWorker = worker.NewLobbyMatchmakingQueueWorker(context.Background(), game.ModeIdentifierCompDuo, core.data.MatchLobbyQueue, lobbyDispatcher)
+	go duoLobbyQueueWorker.Run()
+
+	var lobbyPlayerDispatcher = service.NewPlayerMatchmakingDispatcher(core.Services.EventPublisher, core.data.Sessions, core.data.Lobbies, core.repositories.Quests, core.data.LobbyParticipants)
+
+	var duoLobbyPlayerQueueWorker = worker.NewLobbyPlayerMatchmakingQueueWorker(context.Background(), game.ModeIdentifierCompDuo, core.data.MatchPlayerQueue, lobbyPlayerDispatcher)
+	go duoLobbyPlayerQueueWorker.Run()
 
 	return application
 }
