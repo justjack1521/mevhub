@@ -134,7 +134,7 @@ func (s *LobbyNotificationChanneler) HandleParticipantAdd(event lobby.Participan
 	if exists == false || channel == nil {
 		return
 	}
-	if err := s.repository.Create(event.Context(), event.LobbyID(), event.UserID()); err != nil {
+	if err := s.repository.CreateListener(event.Context(), event.LobbyID(), event.UserID()); err != nil {
 		return
 	}
 }
@@ -144,7 +144,7 @@ func (s *LobbyNotificationChanneler) HandleParticipantDelete(event lobby.Partici
 	if exists == false || channel == nil {
 		return
 	}
-	if err := s.repository.Delete(event.Context(), event.LobbyID(), event.UserID()); err != nil {
+	if err := s.repository.DeleteListener(event.Context(), event.LobbyID(), event.UserID()); err != nil {
 		return
 	}
 }
@@ -154,7 +154,7 @@ func (s *LobbyNotificationChanneler) HandleWatcherAdd(event lobby.WatcherAddedEv
 	if exists == false || channel == nil {
 		return
 	}
-	if err := s.repository.Create(event.Context(), event.LobbyID(), event.UserID()); err != nil {
+	if err := s.repository.CreateListener(event.Context(), event.LobbyID(), event.UserID()); err != nil {
 		return
 	}
 }

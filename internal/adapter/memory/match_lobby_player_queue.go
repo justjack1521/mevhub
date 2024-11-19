@@ -73,13 +73,6 @@ func (r *MatchLobbyPlayerQueueRepository) UpdateLobbyScore(ctx context.Context, 
 	return nil
 }
 
-func (r *MatchLobbyPlayerQueueRepository) AddActiveQuest(ctx context.Context, mode game.ModeIdentifier, id uuid.UUID) error {
-	if err := r.client.SAdd(ctx, r.activeQueueKey(mode), id.String()).Err(); err != nil {
-		return err
-	}
-	return nil
-}
-
 func (r *MatchLobbyPlayerQueueRepository) RemoveInactiveQuest(ctx context.Context, mode game.ModeIdentifier, quest uuid.UUID) error {
 	if err := r.client.SRem(ctx, r.activeQueueKey(mode), quest.String()).Err(); err != nil {
 		return err
@@ -89,55 +82,43 @@ func (r *MatchLobbyPlayerQueueRepository) RemoveInactiveQuest(ctx context.Contex
 
 func (r *MatchLobbyPlayerQueueRepository) AddLobbyToQueue(ctx context.Context, mode game.ModeIdentifier, entry match.LobbyQueueEntry) error {
 
-	if err := r.AddActiveQuest(ctx, mode, entry.QuestID); err != nil {
-		return err
-	}
-
 	var l = r.matchmakingLobbyQueueKey(mode, entry.QuestID)
 	var t = r.matchmakingLobbyQueueTimeKey(mode)
 
-	if err := r.client.ZAddArgs(ctx, l, redis.ZAddArgs{
-		GT:      true,
-		Members: []redis.Z{{Member: entry.LobbyID.String(), Score: float64(entry.AverageLevel)}},
-	}).Err(); err != nil {
-		return err
-	}
-
-	if err := r.client.ZAddArgs(ctx, t, redis.ZAddArgs{
-		GT:      true,
-		Members: []redis.Z{{Member: entry.LobbyID.String(), Score: float64(entry.JoinedAt.Unix())}},
-	}).Err(); err != nil {
-		return err
-	}
-
-	return nil
+	_, err := r.client.TxPipelined(ctx, func(pipe redis.Pipeliner) error {
+		pipe.SAdd(ctx, r.activeQueueKey(mode), entry.QuestID.String())
+		pipe.ZAddArgs(ctx, l, redis.ZAddArgs{
+			GT:      true,
+			Members: []redis.Z{{Member: entry.LobbyID.String(), Score: float64(entry.AverageLevel)}},
+		})
+		pipe.ZAddArgs(ctx, t, redis.ZAddArgs{
+			GT:      true,
+			Members: []redis.Z{{Member: entry.LobbyID.String(), Score: float64(entry.JoinedAt.Unix())}},
+		})
+		return nil
+	})
+	return err
 
 }
 
 func (r *MatchLobbyPlayerQueueRepository) AddPlayerToQueue(ctx context.Context, mode game.ModeIdentifier, entry match.PlayerQueueEntry) error {
 
-	if err := r.AddActiveQuest(ctx, mode, entry.QuestID); err != nil {
-		return err
-	}
-
 	var q = r.matchmakingPlayerQueueKey(mode, entry.QuestID)
 	var t = r.matchmakingPlayerQueueTimeKey(mode)
 
-	if err := r.client.ZAddArgs(ctx, q, redis.ZAddArgs{
-		GT:      true,
-		Members: []redis.Z{{Member: entry.UserID.String(), Score: float64(entry.DeckLevel)}},
-	}).Err(); err != nil {
-		return err
-	}
-
-	if err := r.client.ZAddArgs(ctx, t, redis.ZAddArgs{
-		GT:      true,
-		Members: []redis.Z{{Member: entry.UserID.String(), Score: float64(entry.JoinedAt.Unix())}},
-	}).Err(); err != nil {
-		return err
-	}
-
-	return nil
+	_, err := r.client.TxPipelined(ctx, func(pipe redis.Pipeliner) error {
+		pipe.SAdd(ctx, r.activeQueueKey(mode), entry.QuestID.String())
+		pipe.ZAddArgs(ctx, q, redis.ZAddArgs{
+			GT:      true,
+			Members: []redis.Z{{Member: entry.UserID.String(), Score: float64(entry.DeckLevel)}},
+		})
+		pipe.ZAddArgs(ctx, t, redis.ZAddArgs{
+			GT:      true,
+			Members: []redis.Z{{Member: entry.UserID.String(), Score: float64(entry.JoinedAt.Unix())}},
+		})
+		return nil
+	})
+	return err
 
 }
 
@@ -203,13 +184,12 @@ func (r *MatchLobbyPlayerQueueRepository) RemoveExpiredLobbies(ctx context.Conte
 	var expire = time.Now().UTC().Add(time.Minute * -20)
 	var threshold = float64(expire.Unix())
 
-	if err := r.client.ZRemRangeByScore(ctx, q, "-inf", fmt.Sprintf("%f", threshold)).Err(); err != nil {
-		return err
-	}
-	if err := r.client.ZRemRangeByScore(ctx, t, "-inf", fmt.Sprintf("%f", threshold)).Err(); err != nil {
-		return err
-	}
-	return nil
+	_, err := r.client.TxPipelined(ctx, func(pipe redis.Pipeliner) error {
+		pipe.ZRemRangeByScore(ctx, q, "-inf", fmt.Sprintf("%f", threshold))
+		pipe.ZRemRangeByScore(ctx, t, "-inf", fmt.Sprintf("%f", threshold))
+		return nil
+	})
+	return err
 
 }
 
@@ -230,6 +210,10 @@ func (r *MatchLobbyPlayerQueueRepository) GetQueuedLobbies(ctx context.Context, 
 
 	lobbies := make([]match.LobbyQueueEntry, 0, len(results))
 	lobbyIDs := make([]string, len(results))
+
+	if len(results) == 0 {
+		return lobbies, err
+	}
 
 	for i, result := range results {
 		lobbyIDs[i] = result.Member.(string)
@@ -264,29 +248,29 @@ func (r *MatchLobbyPlayerQueueRepository) GetQueuedLobbies(ctx context.Context, 
 
 func (r *MatchLobbyPlayerQueueRepository) RemoveLobbyFromQueue(ctx context.Context, mode game.ModeIdentifier, quest uuid.UUID, id uuid.UUID) error {
 
-	if err := r.client.ZRem(ctx, r.matchmakingLobbyQueueKey(mode, quest), id.String()).Err(); err != nil {
-		return err
-	}
+	q := r.matchmakingLobbyQueueKey(mode, quest)
+	t := r.matchmakingLobbyQueueTimeKey(mode)
 
-	if err := r.client.ZRem(ctx, r.matchmakingLobbyQueueTimeKey(mode), id.String()).Err(); err != nil {
-		return err
-	}
-
-	return nil
+	_, err := r.client.TxPipelined(ctx, func(pipe redis.Pipeliner) error {
+		pipe.ZRem(ctx, q, id.String())
+		pipe.ZRem(ctx, t, id.String())
+		return nil
+	})
+	return err
 
 }
 
 func (r *MatchLobbyPlayerQueueRepository) RemovePlayerFromQueue(ctx context.Context, mode game.ModeIdentifier, quest uuid.UUID, id uuid.UUID) error {
 
-	if err := r.client.ZRem(ctx, r.matchmakingPlayerQueueKey(mode, quest), id.String()).Err(); err != nil {
-		return err
-	}
+	q := r.matchmakingPlayerQueueKey(mode, quest)
+	t := r.matchmakingPlayerQueueTimeKey(mode)
 
-	if err := r.client.ZRem(ctx, r.matchmakingPlayerQueueTimeKey(mode), id.String()).Err(); err != nil {
-		return err
-	}
-
-	return nil
+	_, err := r.client.TxPipelined(ctx, func(pipe redis.Pipeliner) error {
+		pipe.ZRem(ctx, q, id.String())
+		pipe.ZRem(ctx, t, id.String())
+		return nil
+	})
+	return err
 
 }
 

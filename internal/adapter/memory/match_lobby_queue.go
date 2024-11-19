@@ -58,13 +58,6 @@ func NewMatchLobbyQueueRepository(client *redis.Client) *MatchLobbyQueueReposito
 	return &MatchLobbyQueueRepository{client: client}
 }
 
-func (r *MatchLobbyQueueRepository) AddActiveQuest(ctx context.Context, mode game.ModeIdentifier, id uuid.UUID) error {
-	if err := r.client.SAdd(ctx, r.activeQueueKey(mode), id.String()).Err(); err != nil {
-		return err
-	}
-	return nil
-}
-
 func (r *MatchLobbyQueueRepository) GetActiveQuests(ctx context.Context, mode game.ModeIdentifier) ([]uuid.UUID, error) {
 	var a = r.activeQueueKey(mode)
 
@@ -102,6 +95,10 @@ func (r *MatchLobbyQueueRepository) GetQueuedLobbies(ctx context.Context, mode g
 
 	lobbies := make([]match.LobbyQueueEntry, 0, len(results))
 	lobbyIDs := make([]string, len(results))
+
+	if len(results) == 0 {
+		return lobbies, err
+	}
 
 	for i, result := range results {
 		lobbyIDs[i] = result.Member.(string)
@@ -190,41 +187,36 @@ func (r *MatchLobbyQueueRepository) FindMatch(ctx context.Context, mode game.Mod
 
 func (r *MatchLobbyQueueRepository) AddLobbyToQueue(ctx context.Context, mode game.ModeIdentifier, entry match.LobbyQueueEntry) error {
 
-	if err := r.AddActiveQuest(ctx, mode, entry.QuestID); err != nil {
-		return err
-	}
-
 	var l = r.matchmakingLobbyQueueKey(mode, entry.QuestID)
 	var t = r.matchmakingLobbyQueueTimeKey(mode)
 
-	if err := r.client.ZAddArgs(ctx, l, redis.ZAddArgs{
-		GT:      true,
-		Members: []redis.Z{{Member: entry.LobbyID.String(), Score: float64(entry.AverageLevel)}},
-	}).Err(); err != nil {
-		return err
-	}
+	_, err := r.client.TxPipelined(ctx, func(pipe redis.Pipeliner) error {
+		pipe.SAdd(ctx, r.activeQueueKey(mode), entry.QuestID.String())
+		pipe.ZAddArgs(ctx, l, redis.ZAddArgs{
+			GT:      true,
+			Members: []redis.Z{{Member: entry.LobbyID.String(), Score: float64(entry.AverageLevel)}},
+		})
+		pipe.ZAddArgs(ctx, t, redis.ZAddArgs{
+			GT:      true,
+			Members: []redis.Z{{Member: entry.LobbyID.String(), Score: float64(entry.JoinedAt.Unix())}},
+		})
+		return nil
+	})
+	return err
 
-	if err := r.client.ZAddArgs(ctx, t, redis.ZAddArgs{
-		GT:      true,
-		Members: []redis.Z{{Member: entry.LobbyID.String(), Score: float64(entry.JoinedAt.Unix())}},
-	}).Err(); err != nil {
-		return err
-	}
-
-	return nil
 }
 
 func (r *MatchLobbyQueueRepository) RemoveLobbyFromQueue(ctx context.Context, mode game.ModeIdentifier, quest uuid.UUID, id uuid.UUID) error {
 
-	if err := r.client.ZRem(ctx, r.matchmakingLobbyQueueKey(mode, quest), id.String()).Err(); err != nil {
-		return err
-	}
+	q := r.matchmakingLobbyQueueKey(mode, quest)
+	t := r.matchmakingLobbyQueueTimeKey(mode)
 
-	if err := r.client.ZRem(ctx, r.matchmakingLobbyQueueTimeKey(mode), id.String()).Err(); err != nil {
-		return err
-	}
-
-	return nil
+	_, err := r.client.TxPipelined(ctx, func(pipe redis.Pipeliner) error {
+		pipe.ZRem(ctx, q, id.String())
+		pipe.ZRem(ctx, t, id.String())
+		return nil
+	})
+	return err
 
 }
 

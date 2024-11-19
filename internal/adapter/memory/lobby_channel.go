@@ -35,7 +35,7 @@ func (r *LobbyChannelRepository) QueryAllForLobby(ctx context.Context, id uuid.U
 	return members, nil
 }
 
-func (r *LobbyChannelRepository) Create(ctx context.Context, id uuid.UUID, user uuid.UUID) error {
+func (r *LobbyChannelRepository) CreateListener(ctx context.Context, id uuid.UUID, user uuid.UUID) error {
 	var key = r.GenerateKeyForLobby(id)
 	if err := r.client.SAdd(ctx, key, user.String()).Err(); err != nil {
 		return err
@@ -44,7 +44,7 @@ func (r *LobbyChannelRepository) Create(ctx context.Context, id uuid.UUID, user 
 	return nil
 }
 
-func (r *LobbyChannelRepository) Delete(ctx context.Context, id uuid.UUID, user uuid.UUID) error {
+func (r *LobbyChannelRepository) DeleteListener(ctx context.Context, id uuid.UUID, user uuid.UUID) error {
 	var key = r.GenerateKeyForLobby(id)
 	if err := r.client.SRem(ctx, key, user.String()).Err(); err != nil {
 		return err

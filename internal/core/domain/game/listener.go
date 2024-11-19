@@ -16,5 +16,5 @@ type NotificationListenerReadRepository interface {
 }
 
 type NotificationListenerWriteRepository interface {
-	Create(ctx context.Context, id uuid.UUID, user uuid.UUID) error
+	CreateListener(ctx context.Context, id uuid.UUID, user uuid.UUID) error
 }

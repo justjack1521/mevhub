@@ -25,8 +25,8 @@ type NotificationListenerReadRepository interface {
 }
 
 type NotificationListenerWriteRepository interface {
-	Create(ctx context.Context, lobby uuid.UUID, user uuid.UUID) error
-	Delete(ctx context.Context, id uuid.UUID, user uuid.UUID) error
+	CreateListener(ctx context.Context, lobby uuid.UUID, user uuid.UUID) error
+	DeleteListener(ctx context.Context, id uuid.UUID, user uuid.UUID) error
 	DeleteAll(ctx context.Context, lobby uuid.UUID) error
 }
 
