@@ -3,6 +3,7 @@ package command
 import (
 	"github.com/justjack1521/mevium/pkg/mevent"
 	"mevhub/internal/core/domain/session"
+	"mevhub/internal/core/port"
 )
 
 type SessionCreateCommand struct {
@@ -19,18 +20,18 @@ func (c SessionCreateCommand) CommandName() string {
 
 type SessionCreateCommandHandler struct {
 	EventPublisher    *mevent.Publisher
-	SessionRepository session.InstanceWriteRepository
+	SessionRepository port.SessionInstanceWriteRepository
 }
 
-func NewSessionCreateCommandHandler(publisher *mevent.Publisher, sessions session.InstanceWriteRepository) *SessionCreateCommandHandler {
+func NewSessionCreateCommandHandler(publisher *mevent.Publisher, sessions port.SessionInstanceWriteRepository) *SessionCreateCommandHandler {
 	return &SessionCreateCommandHandler{EventPublisher: publisher, SessionRepository: sessions}
 }
 
 func (h *SessionCreateCommandHandler) Handle(ctx Context, cmd *SessionCreateCommand) error {
 
-	var instance = &session.Instance{
-		UserID:   ctx.UserID(),
-		PlayerID: ctx.PlayerID(),
+	instance, err := session.NewInstance(ctx.UserID(), ctx.PlayerID())
+	if err != nil {
+		return err
 	}
 
 	if err := h.SessionRepository.Create(ctx, instance); err != nil {

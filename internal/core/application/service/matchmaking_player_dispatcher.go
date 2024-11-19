@@ -8,19 +8,18 @@ import (
 	"mevhub/internal/core/domain/game"
 	"mevhub/internal/core/domain/lobby"
 	"mevhub/internal/core/domain/match"
-	"mevhub/internal/core/domain/session"
 	"mevhub/internal/core/port"
 )
 
 type PlayerMatchmakingDispatcher struct {
 	EventPublisher            *mevent.Publisher
-	SessionInstanceRepository session.InstanceReadRepository
+	SessionInstanceRepository port.SessionInstanceReadRepository
 	LobbyInstanceRepository   port.LobbyInstanceReadRepository
 	QuestRepository           port.QuestRepository
 	ParticipantRepository     port.LobbyParticipantRepository
 }
 
-func NewPlayerMatchmakingDispatcher(publisher *mevent.Publisher, sessions session.InstanceReadRepository, lobbies port.LobbyInstanceReadRepository, quests port.QuestRepository, participants port.LobbyParticipantRepository) *PlayerMatchmakingDispatcher {
+func NewPlayerMatchmakingDispatcher(publisher *mevent.Publisher, sessions port.SessionInstanceReadRepository, lobbies port.LobbyInstanceReadRepository, quests port.QuestRepository, participants port.LobbyParticipantRepository) *PlayerMatchmakingDispatcher {
 	return &PlayerMatchmakingDispatcher{EventPublisher: publisher, SessionInstanceRepository: sessions, LobbyInstanceRepository: lobbies, ParticipantRepository: participants}
 }
 

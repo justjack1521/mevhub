@@ -13,7 +13,6 @@ import (
 	"mevhub/internal/adapter/external"
 	"mevhub/internal/adapter/memory"
 	"mevhub/internal/adapter/serial"
-	"mevhub/internal/core/domain/session"
 	"mevhub/internal/core/port"
 )
 
@@ -44,7 +43,7 @@ type Repositories struct {
 }
 
 type DataRepositories struct {
-	Sessions             session.InstanceRepository
+	Sessions             port.SessionInstanceRepository
 	Lobbies              port.LobbyInstanceRepository
 	LobbyParticipants    port.LobbyParticipantRepository
 	LobbySummaries       port.LobbySummaryRepository

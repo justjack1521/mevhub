@@ -3,7 +3,7 @@ package command
 import (
 	"mevhub/internal/core/application/server"
 	"mevhub/internal/core/domain/game"
-	"mevhub/internal/core/domain/session"
+	"mevhub/internal/core/port"
 )
 
 type DequeueActionCommand struct {
@@ -19,11 +19,11 @@ func NewDequeueActionCommand() *DequeueActionCommand {
 }
 
 type DequeueActionCommandHandler struct {
-	SessionRepository session.InstanceReadRepository
+	SessionRepository port.SessionInstanceReadRepository
 	GameServerHost    *server.GameServerHost
 }
 
-func NewDequeueActionCommandHandler(sessions session.InstanceReadRepository, server *server.GameServerHost) *DequeueActionCommandHandler {
+func NewDequeueActionCommandHandler(sessions port.SessionInstanceReadRepository, server *server.GameServerHost) *DequeueActionCommandHandler {
 	return &DequeueActionCommandHandler{SessionRepository: sessions, GameServerHost: server}
 }
 

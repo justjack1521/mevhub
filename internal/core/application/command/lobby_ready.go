@@ -4,7 +4,6 @@ import (
 	"github.com/justjack1521/mevium/pkg/mevent"
 	"mevhub/internal/core/domain/game"
 	"mevhub/internal/core/domain/lobby"
-	"mevhub/internal/core/domain/session"
 	"mevhub/internal/core/port"
 )
 
@@ -22,13 +21,13 @@ func NewLobbyReadyCommand() *LobbyReadyCommand {
 
 type LobbyReadyCommandHandler struct {
 	EventPublisher             *mevent.Publisher
-	SessionRepository          session.InstanceReadRepository
+	SessionRepository          port.SessionInstanceReadRepository
 	InstanceRepository         port.LobbyInstanceRepository
 	QuestRepository            port.QuestRepository
 	LobbyPlayerQueueRepository port.MatchLobbyPlayerQueueWriteRepository
 }
 
-func NewLobbyReadyCommandHandler(publisher *mevent.Publisher, sessions session.InstanceReadRepository, lobbies port.LobbyInstanceRepository, quests port.QuestRepository, queues port.MatchLobbyPlayerQueueWriteRepository) *LobbyReadyCommandHandler {
+func NewLobbyReadyCommandHandler(publisher *mevent.Publisher, sessions port.SessionInstanceReadRepository, lobbies port.LobbyInstanceRepository, quests port.QuestRepository, queues port.MatchLobbyPlayerQueueWriteRepository) *LobbyReadyCommandHandler {
 	return &LobbyReadyCommandHandler{EventPublisher: publisher, SessionRepository: sessions, InstanceRepository: lobbies, QuestRepository: quests, LobbyPlayerQueueRepository: queues}
 }
 

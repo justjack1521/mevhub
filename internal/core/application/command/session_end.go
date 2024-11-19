@@ -3,6 +3,7 @@ package command
 import (
 	"github.com/justjack1521/mevium/pkg/mevent"
 	"mevhub/internal/core/domain/session"
+	"mevhub/internal/core/port"
 )
 
 type SessionEndCommand struct {
@@ -19,11 +20,11 @@ func NewSessionEndCommand() *SessionEndCommand {
 
 type SessionEndCommandHandler struct {
 	EventPublisher         *mevent.Publisher
-	SessionReadRepository  session.InstanceReadRepository
-	SessionWriteRepository session.InstanceWriteRepository
+	SessionReadRepository  port.SessionInstanceReadRepository
+	SessionWriteRepository port.SessionInstanceWriteRepository
 }
 
-func NewSessionEndCommandHandler(publisher *mevent.Publisher, read session.InstanceReadRepository, write session.InstanceWriteRepository) *SessionEndCommandHandler {
+func NewSessionEndCommandHandler(publisher *mevent.Publisher, read port.SessionInstanceReadRepository, write port.SessionInstanceWriteRepository) *SessionEndCommandHandler {
 	return &SessionEndCommandHandler{EventPublisher: publisher, SessionReadRepository: read, SessionWriteRepository: write}
 }
 

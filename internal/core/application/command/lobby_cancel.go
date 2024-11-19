@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/justjack1521/mevium/pkg/mevent"
 	"mevhub/internal/core/domain/lobby"
-	"mevhub/internal/core/domain/session"
 	"mevhub/internal/core/port"
 )
 
@@ -28,12 +27,12 @@ var (
 
 type LobbyCancelCommandHandler struct {
 	EventPublisher        *mevent.Publisher
-	SessionRepository     session.InstanceReadRepository
+	SessionRepository     port.SessionInstanceReadRepository
 	InstanceRepository    port.LobbyInstanceRepository
 	ParticipantRepository port.LobbyParticipantRepository
 }
 
-func NewLobbyCancelCommandHandler(publisher *mevent.Publisher, sessions session.InstanceReadRepository, instances port.LobbyInstanceRepository, participants port.LobbyParticipantRepository) *LobbyCancelCommandHandler {
+func NewLobbyCancelCommandHandler(publisher *mevent.Publisher, sessions port.SessionInstanceReadRepository, instances port.LobbyInstanceRepository, participants port.LobbyParticipantRepository) *LobbyCancelCommandHandler {
 	return &LobbyCancelCommandHandler{EventPublisher: publisher, SessionRepository: sessions, InstanceRepository: instances, ParticipantRepository: participants}
 }
 

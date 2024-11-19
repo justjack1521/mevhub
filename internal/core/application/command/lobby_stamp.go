@@ -5,7 +5,7 @@ import (
 	"github.com/justjack1521/mevium/pkg/mevent"
 	uuid "github.com/satori/go.uuid"
 	"mevhub/internal/core/application/consumer"
-	"mevhub/internal/core/domain/session"
+	"mevhub/internal/core/port"
 )
 
 type LobbyStampCommand struct {
@@ -23,10 +23,10 @@ func (c LobbyStampCommand) CommandName() string {
 
 type LobbyStampCommandHandler struct {
 	EventPublisher    *mevent.Publisher
-	SessionRepository session.InstanceReadRepository
+	SessionRepository port.SessionInstanceReadRepository
 }
 
-func NewLobbyStampCommandHandler(publisher *mevent.Publisher, sessions session.InstanceReadRepository) *LobbyStampCommandHandler {
+func NewLobbyStampCommandHandler(publisher *mevent.Publisher, sessions port.SessionInstanceReadRepository) *LobbyStampCommandHandler {
 	return &LobbyStampCommandHandler{EventPublisher: publisher, SessionRepository: sessions}
 }
 

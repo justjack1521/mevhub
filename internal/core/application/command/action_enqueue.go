@@ -4,7 +4,7 @@ import (
 	uuid "github.com/satori/go.uuid"
 	"mevhub/internal/core/application/server"
 	"mevhub/internal/core/domain/game"
-	"mevhub/internal/core/domain/session"
+	"mevhub/internal/core/port"
 )
 
 type EnqueueActionCommand struct {
@@ -29,11 +29,11 @@ func NewEnqueueActionCommand(action game.PlayerActionType, target, slot int, ele
 }
 
 type EnqueueActionCommandHandler struct {
-	SessionRepository session.InstanceReadRepository
+	SessionRepository port.SessionInstanceReadRepository
 	GameServerHost    *server.GameServerHost
 }
 
-func NewEnqueueActionCommandHandler(sessions session.InstanceReadRepository, server *server.GameServerHost) *EnqueueActionCommandHandler {
+func NewEnqueueActionCommandHandler(sessions port.SessionInstanceReadRepository, server *server.GameServerHost) *EnqueueActionCommandHandler {
 	return &EnqueueActionCommandHandler{SessionRepository: sessions, GameServerHost: server}
 }
 

@@ -7,14 +7,15 @@ import (
 	"mevhub/internal/core/domain/lobby"
 	"mevhub/internal/core/domain/player"
 	"mevhub/internal/core/domain/session"
+	"mevhub/internal/core/port"
 )
 
 type SessionLobbyWriter struct {
 	EventPublisher    *mevent.Publisher
-	SessionRepository session.InstanceRepository
+	SessionRepository port.SessionInstanceRepository
 }
 
-func NewSessionLobbyWriter(publisher *mevent.Publisher, sessions session.InstanceRepository) *SessionLobbyWriter {
+func NewSessionLobbyWriter(publisher *mevent.Publisher, sessions port.SessionInstanceRepository) *SessionLobbyWriter {
 	var subscriber = &SessionLobbyWriter{EventPublisher: publisher, SessionRepository: sessions}
 	publisher.Subscribe(subscriber, lobby.ParticipantCreatedEvent{}, lobby.ParticipantDeletedEvent{}, player.DisconnectedEvent{})
 	return subscriber
@@ -65,6 +66,15 @@ func (s *SessionLobbyWriter) HandlePlayerDisconnected(event player.DisconnectedE
 
 func (s *SessionLobbyWriter) HandleParticipantCreate(event lobby.ParticipantCreatedEvent) error {
 
+	exists, err := s.SessionRepository.Exists(event.Context(), event.UserID())
+	if err != nil {
+		return err
+	}
+
+	if exists == false {
+		return nil
+	}
+
 	instance, err := s.SessionRepository.QueryByID(event.Context(), event.UserID())
 	if err != nil {
 		return err
@@ -83,6 +93,15 @@ func (s *SessionLobbyWriter) HandleParticipantCreate(event lobby.ParticipantCrea
 }
 
 func (s *SessionLobbyWriter) HandleParticipantDelete(event lobby.ParticipantDeletedEvent) error {
+
+	exists, err := s.SessionRepository.Exists(event.Context(), event.UserID())
+	if err != nil {
+		return err
+	}
+
+	if exists == false {
+		return nil
+	}
 
 	instance, err := s.SessionRepository.QueryByID(event.Context(), event.UserID())
 	if err != nil {

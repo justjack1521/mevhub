@@ -4,7 +4,6 @@ import (
 	"github.com/justjack1521/mevium/pkg/mevent"
 	uuid "github.com/satori/go.uuid"
 	"mevhub/internal/core/domain/lobby"
-	"mevhub/internal/core/domain/session"
 	"mevhub/internal/core/port"
 )
 
@@ -23,12 +22,12 @@ func NewParticipantUnreadyCommand(id uuid.UUID) *ParticipantUnreadyCommand {
 
 type ParticipantUnreadyCommandHandler struct {
 	EventPublisher        *mevent.Publisher
-	SessionRepository     session.InstanceReadRepository
+	SessionRepository     port.SessionInstanceReadRepository
 	InstanceRepository    port.LobbyInstanceRepository
 	ParticipantRepository port.LobbyParticipantRepository
 }
 
-func NewParticipantUnreadyCommandHandler(publisher *mevent.Publisher, sessions session.InstanceReadRepository, instances port.LobbyInstanceRepository, participants port.LobbyParticipantRepository) *ParticipantUnreadyCommandHandler {
+func NewParticipantUnreadyCommandHandler(publisher *mevent.Publisher, sessions port.SessionInstanceReadRepository, instances port.LobbyInstanceRepository, participants port.LobbyParticipantRepository) *ParticipantUnreadyCommandHandler {
 	return &ParticipantUnreadyCommandHandler{EventPublisher: publisher, SessionRepository: sessions, InstanceRepository: instances, ParticipantRepository: participants}
 }
 

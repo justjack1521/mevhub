@@ -3,7 +3,7 @@ package command
 import (
 	"mevhub/internal/core/application/server"
 	"mevhub/internal/core/domain/game"
-	"mevhub/internal/core/domain/session"
+	"mevhub/internal/core/port"
 )
 
 type LockActionCommand struct {
@@ -19,11 +19,11 @@ func NewLockActionCommand() *LockActionCommand {
 }
 
 type LockActionCommandHandler struct {
-	SessionRepository session.InstanceReadRepository
+	SessionRepository port.SessionInstanceReadRepository
 	GameServerHost    *server.GameServerHost
 }
 
-func NewLockActionCommandHandler(sessions session.InstanceReadRepository, server *server.GameServerHost) *LockActionCommandHandler {
+func NewLockActionCommandHandler(sessions port.SessionInstanceReadRepository, server *server.GameServerHost) *LockActionCommandHandler {
 	return &LockActionCommandHandler{SessionRepository: sessions, GameServerHost: server}
 }
 

@@ -2,7 +2,6 @@ package query
 
 import (
 	"mevhub/internal/core/domain/game"
-	"mevhub/internal/core/domain/session"
 	"mevhub/internal/core/port"
 )
 
@@ -18,12 +17,12 @@ func NewGameSummaryQuery() GameSummaryQuery {
 }
 
 type GameSummaryQueryHandler struct {
-	SessionRepository           session.InstanceReadRepository
+	SessionRepository           port.SessionInstanceReadRepository
 	InstanceRepository          port.GameInstanceReadRepository
 	PlayerParticipantRepository port.PlayerParticipantReadRepository
 }
 
-func NewGameSummaryQueryHandler(sessions session.InstanceReadRepository, instances port.GameInstanceReadRepository, players port.PlayerParticipantReadRepository) *GameSummaryQueryHandler {
+func NewGameSummaryQueryHandler(sessions port.SessionInstanceReadRepository, instances port.GameInstanceReadRepository, players port.PlayerParticipantReadRepository) *GameSummaryQueryHandler {
 	return &GameSummaryQueryHandler{SessionRepository: sessions, InstanceRepository: instances, PlayerParticipantRepository: players}
 }
 

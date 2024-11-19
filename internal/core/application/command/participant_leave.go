@@ -3,7 +3,6 @@ package command
 import (
 	"github.com/justjack1521/mevium/pkg/mevent"
 	"mevhub/internal/core/domain/lobby"
-	"mevhub/internal/core/domain/session"
 	"mevhub/internal/core/port"
 )
 
@@ -21,11 +20,11 @@ func NewParticipantLeaveCommand() *ParticipantLeaveCommand {
 
 type ParticipantLeaveCommandHandler struct {
 	EventPublisher        *mevent.Publisher
-	SessionRepository     session.InstanceRepository
+	SessionRepository     port.SessionInstanceRepository
 	ParticipantRepository port.LobbyParticipantRepository
 }
 
-func NewParticipantLeaveCommandHandler(publisher *mevent.Publisher, sessions session.InstanceRepository, participants port.LobbyParticipantRepository) *ParticipantLeaveCommandHandler {
+func NewParticipantLeaveCommandHandler(publisher *mevent.Publisher, sessions port.SessionInstanceRepository, participants port.LobbyParticipantRepository) *ParticipantLeaveCommandHandler {
 	return &ParticipantLeaveCommandHandler{EventPublisher: publisher, SessionRepository: sessions, ParticipantRepository: participants}
 }
 

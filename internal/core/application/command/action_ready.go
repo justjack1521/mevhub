@@ -3,7 +3,7 @@ package command
 import (
 	"mevhub/internal/core/application/server"
 	"mevhub/internal/core/domain/game"
-	"mevhub/internal/core/domain/session"
+	"mevhub/internal/core/port"
 )
 
 type ReadyPlayerCommand struct {
@@ -19,11 +19,11 @@ func NewReadyPlayerCommand() *ReadyPlayerCommand {
 }
 
 type ReadyPlayerCommandHandler struct {
-	SessionRepository session.InstanceReadRepository
+	SessionRepository port.SessionInstanceReadRepository
 	GameServerHost    *server.GameServerHost
 }
 
-func NewReadyPlayerCommandHandler(sessions session.InstanceReadRepository, server *server.GameServerHost) *ReadyPlayerCommandHandler {
+func NewReadyPlayerCommandHandler(sessions port.SessionInstanceReadRepository, server *server.GameServerHost) *ReadyPlayerCommandHandler {
 	return &ReadyPlayerCommandHandler{SessionRepository: sessions, GameServerHost: server}
 }
 
