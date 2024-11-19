@@ -170,6 +170,10 @@ func (r *MatchLobbyPlayerQueueRepository) FindMatch(ctx context.Context, mode ga
 			continue
 		}
 
+		if id == entry.LobbyID {
+			continue
+		}
+
 		joined, err := r.client.ZScore(ctx, t, id.String()).Result()
 		if err != nil {
 			continue
