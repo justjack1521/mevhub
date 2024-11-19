@@ -2,6 +2,7 @@ package command
 
 import (
 	"github.com/justjack1521/mevium/pkg/mevent"
+	"mevhub/internal/core/domain/game"
 	"mevhub/internal/core/domain/lobby"
 	"mevhub/internal/core/domain/session"
 	"mevhub/internal/core/port"
@@ -48,8 +49,10 @@ func (h *LobbyReadyCommandHandler) Handle(ctx Context, cmd *LobbyReadyCommand) e
 		return err
 	}
 
-	if err := h.LobbyPlayerQueueRepository.RemoveLobbyFromQueue(ctx, quest.Tier.GameMode.ModeIdentifier, instance.QuestID, instance.SysID); err != nil {
-		return err
+	if quest.Tier.GameMode.FulfillMethod == game.FulfillMethodMatch {
+		if err := h.LobbyPlayerQueueRepository.RemoveLobbyFromQueue(ctx, quest.Tier.GameMode.ModeIdentifier, instance.QuestID, instance.SysID); err != nil {
+			return err
+		}
 	}
 
 	h.EventPublisher.Notify(lobby.NewInstanceReadyEvent(ctx, instance.SysID, instance.QuestID))

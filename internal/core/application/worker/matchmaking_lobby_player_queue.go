@@ -42,44 +42,35 @@ func (w *LobbyPlayerMatchmakingQueueWorker) Run() {
 		case <-w.ctx.Done():
 			return
 		case <-findTicker.C:
-			actives, err := w.repository.GetActiveQuests(w.ctx, w.mode)
-			if err != nil {
-				continue
-			}
-			for _, active := range actives {
-				if err := w.processFindMatch(active); err != nil {
-					fmt.Println(err)
-				}
+			if err := w.findMatches(); err != nil {
+				fmt.Println(err)
 			}
 		case <-lobbyReapTicker.C:
-			actives, err := w.repository.GetActiveQuests(w.ctx, w.mode)
-			if err != nil {
-				continue
-			}
-			for _, active := range actives {
-				if err := w.repository.RemoveExpiredLobbies(w.ctx, w.mode, active); err != nil {
-					fmt.Println(err)
-				}
+			if err := w.reapLobbies(); err != nil {
+				fmt.Println(err)
 			}
 		case <-questReapTicket.C:
-			actives, err := w.repository.GetActiveQuests(w.ctx, w.mode)
-			if err != nil {
-				continue
-			}
-			for _, active := range actives {
-				count, err := w.repository.GetCountQueuedLobbies(w.ctx, w.mode, active)
-				if err != nil || count > 0 {
-					continue
-				}
-				if err := w.repository.RemoveInactiveQuest(w.ctx, w.mode, active); err != nil {
-					fmt.Println(err)
-				}
+			if err := w.reapQuests(); err != nil {
+				fmt.Println(err)
 			}
 		}
 	}
 }
 
-func (w *LobbyPlayerMatchmakingQueueWorker) processFindMatch(quest uuid.UUID) error {
+func (w *LobbyPlayerMatchmakingQueueWorker) findMatches() error {
+	actives, err := w.repository.GetActiveQuests(w.ctx, w.mode)
+	if err != nil {
+		return err
+	}
+	for _, active := range actives {
+		if err := w.findMatch(active); err != nil {
+			fmt.Println(err)
+		}
+	}
+	return nil
+}
+
+func (w *LobbyPlayerMatchmakingQueueWorker) findMatch(quest uuid.UUID) error {
 
 	lobbies, err := w.repository.GetQueuedLobbies(w.ctx, w.mode, quest)
 	if err != nil {
@@ -110,4 +101,34 @@ func (w *LobbyPlayerMatchmakingQueueWorker) processFindMatch(quest uuid.UUID) er
 
 	return nil
 
+}
+
+func (w *LobbyPlayerMatchmakingQueueWorker) reapLobbies() error {
+	actives, err := w.repository.GetActiveQuests(w.ctx, w.mode)
+	if err != nil {
+		return err
+	}
+	for _, active := range actives {
+		if err := w.repository.RemoveExpiredLobbies(w.ctx, w.mode, active); err != nil {
+			fmt.Println(err)
+		}
+	}
+	return nil
+}
+
+func (w *LobbyPlayerMatchmakingQueueWorker) reapQuests() error {
+	actives, err := w.repository.GetActiveQuests(w.ctx, w.mode)
+	if err != nil {
+		return err
+	}
+	for _, active := range actives {
+		count, err := w.repository.GetCountQueuedLobbies(w.ctx, w.mode, active)
+		if err != nil || count > 0 {
+			continue
+		}
+		if err := w.repository.RemoveInactiveQuest(w.ctx, w.mode, active); err != nil {
+			fmt.Println(err)
+		}
+	}
+	return nil
 }

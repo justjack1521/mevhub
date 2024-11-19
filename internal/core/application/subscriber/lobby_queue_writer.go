@@ -19,20 +19,43 @@ type LobbyQueueWriter struct {
 
 func NewLobbyQueueWriter(publisher *mevent.Publisher, instance port.LobbyInstanceReadRepository, quests port.QuestRepository, queue port.MatchLobbyQueueWriteRepository, participants port.LobbyParticipantReadRepository) *LobbyQueueWriter {
 	var subscriber = &LobbyQueueWriter{LobbyRepository: instance, QuestRepository: quests, QueueRepository: queue, ParticipantRepository: participants}
-	publisher.Subscribe(subscriber, lobby.InstanceReadyEvent{})
+	publisher.Subscribe(subscriber, lobby.InstanceReadyEvent{}, lobby.InstanceDeletedEvent{})
 	return subscriber
 }
 
 func (s *LobbyQueueWriter) Notify(event mevent.Event) {
 	switch actual := event.(type) {
 	case lobby.InstanceReadyEvent:
-		if err := s.Handle(actual); err != nil {
+		if err := s.HandleLobbyReady(actual); err != nil {
+			fmt.Println(err)
+		}
+	case lobby.InstanceDeletedEvent:
+		if err := s.HandleLobbyDelete(actual); err != nil {
 			fmt.Println(err)
 		}
 	}
 }
 
-func (s *LobbyQueueWriter) Handle(evt lobby.InstanceReadyEvent) error {
+func (s *LobbyQueueWriter) HandleLobbyDelete(evt lobby.InstanceDeletedEvent) error {
+
+	quest, err := s.QuestRepository.QueryByID(evt.QuestID())
+	if err != nil {
+		return err
+	}
+
+	if quest.Tier.GameMode.FulfillMethod != game.FulfillMethodMatch {
+		return nil
+	}
+
+	if err := s.QueueRepository.RemoveLobbyFromQueue(evt.Context(), quest.Tier.GameMode.ModeIdentifier, evt.QuestID(), evt.LobbyID()); err != nil {
+		return err
+	}
+
+	return nil
+
+}
+
+func (s *LobbyQueueWriter) HandleLobbyReady(evt lobby.InstanceReadyEvent) error {
 
 	quest, err := s.QuestRepository.QueryByID(evt.QuestID())
 	if err != nil {
