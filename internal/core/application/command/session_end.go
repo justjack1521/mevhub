@@ -29,6 +29,15 @@ func NewSessionEndCommandHandler(publisher *mevent.Publisher, read session.Insta
 
 func (h *SessionEndCommandHandler) Handle(ctx Context, cmd *SessionEndCommand) error {
 
+	exists, err := h.SessionReadRepository.Exists(ctx, ctx.UserID())
+	if err != nil {
+		return err
+	}
+
+	if exists == false {
+		return nil
+	}
+
 	instance, err := h.SessionReadRepository.QueryByID(ctx, ctx.UserID())
 	if err != nil {
 		return err

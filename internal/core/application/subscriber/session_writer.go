@@ -39,6 +39,15 @@ func (s *SessionLobbyWriter) Notify(event mevent.Event) {
 
 func (s *SessionLobbyWriter) HandlePlayerDisconnected(event player.DisconnectedEvent) error {
 
+	exists, err := s.SessionRepository.Exists(event.Context(), event.UserID())
+	if err != nil {
+		return err
+	}
+
+	if exists == false {
+		return nil
+	}
+
 	instance, err := s.SessionRepository.QueryByID(event.Context(), event.UserID())
 	if err != nil {
 		return err

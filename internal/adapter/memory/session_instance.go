@@ -22,6 +22,15 @@ func NewLobbySessionRedisRepository(client *redis.Client) *SessionInstanceRedisR
 	return &SessionInstanceRedisRepository{client: client}
 }
 
+func (r *SessionInstanceRedisRepository) Exists(ctx context.Context, id uuid.UUID) (bool, error) {
+	var key = r.GenerateSessionKey(id)
+	result, err := r.client.Exists(ctx, key).Result()
+	if err != nil {
+		return false, err
+	}
+	return result > 0, nil
+}
+
 func (r *SessionInstanceRedisRepository) QueryByID(ctx context.Context, id uuid.UUID) (*session.Instance, error) {
 	var key = r.GenerateSessionKey(id)
 	var cmd = r.client.HGetAll(ctx, key)

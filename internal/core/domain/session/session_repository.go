@@ -6,6 +6,7 @@ import (
 )
 
 type InstanceReadRepository interface {
+	Exists(ctx context.Context, id uuid.UUID) (bool, error)
 	QueryByID(ctx context.Context, id uuid.UUID) (*Instance, error)
 }
 
