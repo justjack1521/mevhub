@@ -10,23 +10,23 @@ import (
 )
 
 const (
-	matchmakingQueueWorkerInterval = time.Second * 10
+	matchmakingLobbyPlayerQueueWorkerInterval = time.Second * 10
 )
 
-type LobbyMatchmakingQueueWorker struct {
+type LobbyPlayerMatchmakingQueueWorker struct {
 	ctx        context.Context
 	mode       game.ModeIdentifier
 	repository port.MatchLobbyPlayerQueueRepository
 	dispatcher port.PlayerMatchmakingDispatcher
 }
 
-func NewLobbyMatchmakingQueueWorker(ctx context.Context, mode game.ModeIdentifier, queue port.MatchLobbyPlayerQueueRepository, dispatcher port.PlayerMatchmakingDispatcher) *LobbyMatchmakingQueueWorker {
-	return &LobbyMatchmakingQueueWorker{ctx: ctx, mode: mode, repository: queue, dispatcher: dispatcher}
+func NewLobbyPlayerMatchmakingQueueWorker(ctx context.Context, mode game.ModeIdentifier, queues port.MatchLobbyPlayerQueueRepository, dispatcher port.PlayerMatchmakingDispatcher) *LobbyPlayerMatchmakingQueueWorker {
+	return &LobbyPlayerMatchmakingQueueWorker{ctx: ctx, mode: mode, repository: queues, dispatcher: dispatcher}
 }
 
-func (w *LobbyMatchmakingQueueWorker) Run() {
+func (w *LobbyPlayerMatchmakingQueueWorker) Run() {
 
-	var ticker = time.NewTicker(matchmakingQueueWorkerInterval)
+	var ticker = time.NewTicker(matchmakingLobbyPlayerQueueWorkerInterval)
 	defer ticker.Stop()
 
 	for {
@@ -48,7 +48,7 @@ func (w *LobbyMatchmakingQueueWorker) Run() {
 	}
 }
 
-func (w *LobbyMatchmakingQueueWorker) process(quest uuid.UUID) error {
+func (w *LobbyPlayerMatchmakingQueueWorker) process(quest uuid.UUID) error {
 
 	lobbies, err := w.repository.GetQueuedLobbies(w.ctx, w.mode, quest)
 	if err != nil {

@@ -7,12 +7,13 @@ import (
 )
 
 type InstanceDeletedEvent struct {
-	ctx context.Context
-	id  uuid.UUID
+	ctx     context.Context
+	id      uuid.UUID
+	questID uuid.UUID
 }
 
-func NewInstanceDeletedEvent(ctx context.Context, id uuid.UUID) InstanceDeletedEvent {
-	return InstanceDeletedEvent{ctx: ctx, id: id}
+func NewInstanceDeletedEvent(ctx context.Context, id, quest uuid.UUID) InstanceDeletedEvent {
+	return InstanceDeletedEvent{ctx: ctx, id: id, questID: quest}
 }
 
 func (e InstanceDeletedEvent) Name() string {
@@ -32,4 +33,8 @@ func (e InstanceDeletedEvent) Context() context.Context {
 
 func (e InstanceDeletedEvent) LobbyID() uuid.UUID {
 	return e.id
+}
+
+func (e InstanceDeletedEvent) QuestID() uuid.UUID {
+	return e.questID
 }
