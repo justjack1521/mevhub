@@ -29,6 +29,7 @@ type MatchLobbyPlayerQueueWriteRepository interface {
 	UpdateLobbyScore(ctx context.Context, mode game.ModeIdentifier, quest uuid.UUID, id uuid.UUID, score int) error
 	RemovePlayerFromQueue(ctx context.Context, mode game.ModeIdentifier, quest uuid.UUID, id uuid.UUID) error
 	RemoveLobbyFromQueue(ctx context.Context, mode game.ModeIdentifier, quest uuid.UUID, id uuid.UUID) error
+	RemoveExpiredLobbies(ctx context.Context, mode game.ModeIdentifier, quest uuid.UUID) error
 }
 
 type MatchLobbyPlayerQueueRepository interface {

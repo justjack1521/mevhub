@@ -175,6 +175,24 @@ func (r *MatchLobbyPlayerQueueRepository) FindMatch(ctx context.Context, mode ga
 
 }
 
+func (r *MatchLobbyPlayerQueueRepository) RemoveExpiredLobbies(ctx context.Context, mode game.ModeIdentifier, quest uuid.UUID) error {
+
+	var q = r.matchmakingLobbyQueueKey(mode, quest)
+	var t = r.matchmakingLobbyQueueTimeKey(mode)
+
+	var expire = time.Now().UTC().Add(time.Minute * -20)
+	var threshold = float64(expire.Unix())
+
+	if err := r.client.ZRemRangeByScore(ctx, q, "-inf", fmt.Sprintf("%f", threshold)).Err(); err != nil {
+		return err
+	}
+	if err := r.client.ZRemRangeByScore(ctx, t, "-inf", fmt.Sprintf("%f", threshold)).Err(); err != nil {
+		return err
+	}
+	return nil
+
+}
+
 func (r *MatchLobbyPlayerQueueRepository) GetQueuedLobbies(ctx context.Context, mode game.ModeIdentifier, quest uuid.UUID) ([]match.LobbyQueueEntry, error) {
 
 	var q = r.matchmakingLobbyQueueKey(mode, quest)

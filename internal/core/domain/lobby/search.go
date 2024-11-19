@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-const KeepAliveTime = time.Hour * 3
+const KeepAliveTime = time.Minute * 20
 
 type SearchEntry struct {
 	InstanceID         uuid.UUID

@@ -10,7 +10,8 @@ import (
 )
 
 const (
-	matchmakingLobbyPlayerQueueWorkerInterval = time.Second * 10
+	matchmakingLobbyPlayerQueueWorkerFindInterval = time.Second * 10
+	matchmakingLobbyPlayerQueueWorkerReapInterval = time.Second * 20
 )
 
 type LobbyPlayerMatchmakingQueueWorker struct {
@@ -26,29 +27,41 @@ func NewLobbyPlayerMatchmakingQueueWorker(ctx context.Context, mode game.ModeIde
 
 func (w *LobbyPlayerMatchmakingQueueWorker) Run() {
 
-	var ticker = time.NewTicker(matchmakingLobbyPlayerQueueWorkerInterval)
-	defer ticker.Stop()
+	var findTicker = time.NewTicker(matchmakingLobbyPlayerQueueWorkerFindInterval)
+	defer findTicker.Stop()
+
+	var reapTicker = time.NewTicker(matchmakingLobbyPlayerQueueWorkerReapInterval)
+	defer reapTicker.Stop()
 
 	for {
 		select {
 		case <-w.ctx.Done():
 			return
-		case <-ticker.C:
+		case <-findTicker.C:
 			actives, err := w.repository.GetActiveQuests(w.ctx, w.mode)
 			if err != nil {
 				continue
 			}
 			for _, active := range actives {
-				if err := w.process(active); err != nil {
+				if err := w.processFindMatch(active); err != nil {
 					fmt.Println(err)
 				}
 			}
-
+		case <-reapTicker.C:
+			actives, err := w.repository.GetActiveQuests(w.ctx, w.mode)
+			if err != nil {
+				continue
+			}
+			for _, active := range actives {
+				if err := w.repository.RemoveExpiredLobbies(w.ctx, w.mode, active); err != nil {
+					fmt.Println(err)
+				}
+			}
 		}
 	}
 }
 
-func (w *LobbyPlayerMatchmakingQueueWorker) process(quest uuid.UUID) error {
+func (w *LobbyPlayerMatchmakingQueueWorker) processFindMatch(quest uuid.UUID) error {
 
 	lobbies, err := w.repository.GetQueuedLobbies(w.ctx, w.mode, quest)
 	if err != nil {
