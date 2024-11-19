@@ -28,6 +28,15 @@ func NewMatchLobbyPlayerQueueRepository(client *redis.Client) *MatchLobbyPlayerQ
 	return &MatchLobbyPlayerQueueRepository{client: client}
 }
 
+func (r *MatchLobbyPlayerQueueRepository) GetCountQueuedLobbies(ctx context.Context, mode game.ModeIdentifier, quest uuid.UUID) (int, error) {
+	var q = r.matchmakingLobbyQueueKey(mode, quest)
+	result, err := r.client.ZCard(ctx, q).Result()
+	if err != nil {
+		return 0, err
+	}
+	return int(result), nil
+}
+
 func (r *MatchLobbyPlayerQueueRepository) GetActiveQuests(ctx context.Context, mode game.ModeIdentifier) ([]uuid.UUID, error) {
 	var a = r.activeQueueKey(mode)
 
@@ -66,6 +75,13 @@ func (r *MatchLobbyPlayerQueueRepository) UpdateLobbyScore(ctx context.Context, 
 
 func (r *MatchLobbyPlayerQueueRepository) AddActiveQuest(ctx context.Context, mode game.ModeIdentifier, id uuid.UUID) error {
 	if err := r.client.SAdd(ctx, r.activeQueueKey(mode), id.String()).Err(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *MatchLobbyPlayerQueueRepository) RemoveInactiveQuest(ctx context.Context, mode game.ModeIdentifier, quest uuid.UUID) error {
+	if err := r.client.SRem(ctx, r.activeQueueKey(mode), quest.String()).Err(); err != nil {
 		return err
 	}
 	return nil

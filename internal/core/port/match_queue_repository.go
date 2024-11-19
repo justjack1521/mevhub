@@ -20,6 +20,7 @@ var (
 type MatchLobbyPlayerQueueReadRepository interface {
 	GetActiveQuests(ctx context.Context, mode game.ModeIdentifier) ([]uuid.UUID, error)
 	GetQueuedLobbies(ctx context.Context, mode game.ModeIdentifier, id uuid.UUID) ([]match.LobbyQueueEntry, error)
+	GetCountQueuedLobbies(ctx context.Context, mode game.ModeIdentifier, id uuid.UUID) (int, error)
 	FindMatch(ctx context.Context, mode game.ModeIdentifier, entry match.LobbyQueueEntry, offset int) (match.PlayerQueueEntry, error)
 }
 
@@ -30,6 +31,7 @@ type MatchLobbyPlayerQueueWriteRepository interface {
 	RemovePlayerFromQueue(ctx context.Context, mode game.ModeIdentifier, quest uuid.UUID, id uuid.UUID) error
 	RemoveLobbyFromQueue(ctx context.Context, mode game.ModeIdentifier, quest uuid.UUID, id uuid.UUID) error
 	RemoveExpiredLobbies(ctx context.Context, mode game.ModeIdentifier, quest uuid.UUID) error
+	RemoveInactiveQuest(ctx context.Context, mode game.ModeIdentifier, quest uuid.UUID) error
 }
 
 type MatchLobbyPlayerQueueRepository interface {
