@@ -57,19 +57,6 @@ func (h *LobbyCancelCommandHandler) Handle(ctx Context, cmd *LobbyCancelCommand)
 	}
 
 	cmd.QueueEvent(lobby.NewInstanceDeletedEvent(ctx, instance.SysID, instance.QuestID))
-
-	participants, err := h.ParticipantRepository.QueryAllForLobby(ctx, current.LobbyID)
-	if err != nil {
-		return err
-	}
-
-	for _, participant := range participants {
-		if err := h.ParticipantRepository.Delete(ctx, participant); err != nil {
-			return err
-		}
-		cmd.QueueEvent(lobby.NewParticipantDeletedEvent(ctx, participant.UserID, participant.PlayerID, participant.LobbyID, participant.PlayerSlot))
-	}
-
 	return nil
 
 }

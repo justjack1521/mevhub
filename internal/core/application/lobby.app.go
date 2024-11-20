@@ -89,6 +89,7 @@ func NewLobbyApplication(core *CoreApplication) *LobbyApplication {
 		subscriber.NewLobbyClientNotifier(core.Services.EventPublisher, core.Services.Redis),
 		subscriber.NewSessionLobbyWriter(core.Services.EventPublisher, core.data.Sessions),
 		subscriber.NewLobbyInstanceWriter(core.Services.EventPublisher, core.data.Lobbies),
+		subscriber.NewLobbyParticipantWriter(core.Services.EventPublisher, core.data.LobbyParticipants),
 	}
 
 	var lobbyDispatcher = service.NewLobbyMatchmakingDispatcher(core.Services.EventPublisher, core.repositories.Quests, core.data.Lobbies, core.data.LobbyParticipants)
