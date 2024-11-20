@@ -3,6 +3,7 @@ package application
 import (
 	"mevhub/internal/adapter/translate"
 	"mevhub/internal/core/application/command"
+	"mevhub/internal/core/application/factory"
 	"mevhub/internal/core/application/query"
 	"mevhub/internal/core/application/server"
 	"mevhub/internal/core/application/subscriber"
@@ -46,7 +47,7 @@ func NewGameApplication(core *CoreApplication) *GameApplication {
 	}
 
 	application.Queries = &GameApplicationQueries{
-		GameSummary: query.NewGameSummaryQueryHandler(),
+		GameSummary: query.NewGameSummaryQueryHandler(core.data.Games, core.data.GameParties, core.data.GameParticipants, factory.NewGamePlayerFactory(core.data.GamePlayerLoadouts)),
 	}
 
 	application.Commands = &GameApplicationCommands{

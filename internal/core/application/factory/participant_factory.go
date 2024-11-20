@@ -3,7 +3,6 @@ package factory
 import (
 	"context"
 	"mevhub/internal/core/domain/game"
-	"mevhub/internal/core/domain/lobby"
 	"mevhub/internal/core/port"
 )
 
@@ -15,7 +14,7 @@ func NewGamePlayerFactory(loadout port.GamePlayerLoadoutReadRepository) *GamePla
 	return &GamePlayerFactory{loadout: loadout}
 }
 
-func (f *GamePlayerFactory) Create(ctx context.Context, source *lobby.Participant) (game.Player, error) {
+func (f *GamePlayerFactory) Create(ctx context.Context, source *game.Participant) (game.Player, error) {
 
 	loadout, err := f.loadout.Query(ctx, source.PlayerID, source.DeckIndex)
 	if err != nil {
