@@ -25,6 +25,7 @@ func (t lobbySummaryTranslator) Marshall(data lobby.Summary) (out *protomulti.Pr
 	var result = &protomulti.ProtoLobbySummary{
 		InstanceId:         data.InstanceID.String(),
 		QuestId:            data.QuestID.String(),
+		PartyId:            data.PartyID,
 		Comment:            data.LobbyComment,
 		MinimumPlayerLevel: int32(data.MinimumPlayerLevel),
 		Players:            make([]*protomulti.ProtoLobbyPlayerSlot, len(data.Players)),
@@ -43,6 +44,7 @@ func (t lobbySummaryTranslator) Unmarshall(data *protomulti.ProtoLobbySummary) (
 	var result = lobby.Summary{
 		InstanceID:         uuid.FromStringOrNil(data.InstanceId),
 		QuestID:            uuid.FromStringOrNil(data.QuestId),
+		PartyID:            data.PartyId,
 		LobbyComment:       data.Comment,
 		MinimumPlayerLevel: int(data.MinimumPlayerLevel),
 		Players:            make([]lobby.PlayerSlotSummary, len(data.Players)),
