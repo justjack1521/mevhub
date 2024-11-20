@@ -1,6 +1,7 @@
 package subscriber
 
 import (
+	"errors"
 	"fmt"
 	"github.com/justjack1521/mevium/pkg/mevent"
 	"mevhub/internal/core/domain/game"
@@ -34,6 +35,10 @@ func (s *GamePartyWriter) HandleInstanceCreated(evt game.InstanceCreatedEvent) e
 	parent, err := s.GameInstanceRepository.Get(evt.Context(), evt.InstanceID())
 	if err != nil {
 		return err
+	}
+
+	if len(parent.LobbyIDs) == 0 {
+		return errors.New("invalid number of lobbies in game")
 	}
 
 	for index, value := range parent.LobbyIDs {

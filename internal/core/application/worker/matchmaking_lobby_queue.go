@@ -36,8 +36,6 @@ func (w *LobbyMatchmakingQueueWorker) Run() {
 
 	for {
 		select {
-		case <-w.ctx.Done():
-			return
 		case <-findTicker.C:
 			if err := w.findMatches(); err != nil {
 				fmt.Println(err)
