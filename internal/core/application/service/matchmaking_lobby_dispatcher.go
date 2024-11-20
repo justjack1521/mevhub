@@ -38,8 +38,8 @@ func (d *LobbyMatchmakingDispatcher) Dispatch(ctx context.Context, mode game.Mod
 
 	var instances = make([]*lobby.Instance, len(lobbies))
 
-	for index, value := range instances {
-		instance, err := d.LobbyInstanceRepository.QueryByID(ctx, value.SysID)
+	for index, value := range lobbies {
+		instance, err := d.LobbyInstanceRepository.QueryByID(ctx, value.LobbyID)
 		if err != nil {
 			return err
 		}
@@ -56,7 +56,7 @@ func (d *LobbyMatchmakingDispatcher) Dispatch(ctx context.Context, mode game.Mod
 	}
 
 	for _, value := range lobbies {
-		d.EventPublisher.Notify(lobby.NewInstanceStartedEvent(ctx, value.LobbyID))
+		d.EventPublisher.Notify(lobby.NewInstanceStartedEvent(ctx, value.LobbyID, result.SysID))
 	}
 
 	d.EventPublisher.Notify(game.NewInstanceCreatedEvent(ctx, result.SysID))

@@ -76,6 +76,7 @@ func (s *LobbyChannelEventNotifier) HandleLobbyStartEvent(event lobby.InstanceSt
 
 	var notification = &protomulti.LobbyStartNotification{
 		LobbyId: event.LobbyID().String(),
+		GameId:  event.GameID().String(),
 	}
 
 	return s.publish(event.Context(), protomulti.MultiLobbyNotificationType_LOBBY_NOTIFY_START, event.LobbyID(), notification)

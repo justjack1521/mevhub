@@ -7,12 +7,13 @@ import (
 )
 
 type InstanceStartedEvent struct {
-	ctx context.Context
-	id  uuid.UUID
+	ctx    context.Context
+	id     uuid.UUID
+	gameID uuid.UUID
 }
 
-func NewInstanceStartedEvent(ctx context.Context, id uuid.UUID) InstanceStartedEvent {
-	return InstanceStartedEvent{ctx: ctx, id: id}
+func NewInstanceStartedEvent(ctx context.Context, id uuid.UUID, g uuid.UUID) InstanceStartedEvent {
+	return InstanceStartedEvent{ctx: ctx, id: id, gameID: g}
 }
 
 func (e InstanceStartedEvent) Name() string {
@@ -32,4 +33,8 @@ func (e InstanceStartedEvent) Context() context.Context {
 
 func (e InstanceStartedEvent) LobbyID() uuid.UUID {
 	return e.id
+}
+
+func (e InstanceStartedEvent) GameID() uuid.UUID {
+	return e.gameID
 }

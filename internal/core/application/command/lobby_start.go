@@ -50,12 +50,12 @@ func (h *LobbyStartCommandHandler) Handle(ctx Context, cmd *LobbyStartCommand) e
 		return err
 	}
 
-	cmd.QueueEvent(lobby.NewInstanceStartedEvent(ctx, instance.SysID))
-
 	result, err := h.GameInstanceFactory.Create(cmd.GameID, instance)
 	if err != nil {
 		return err
 	}
+
+	cmd.QueueEvent(lobby.NewInstanceStartedEvent(ctx, instance.SysID, result.SysID))
 
 	if err := h.GameInstanceRepository.Create(ctx, result); err != nil {
 		return err
