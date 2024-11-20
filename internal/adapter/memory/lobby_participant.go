@@ -14,15 +14,15 @@ import (
 const lobbyParticipantKey = "lobby_participant"
 const lobbyKeySeparator = ":"
 
-type LobbyParticipantRedisRepository struct {
+type LobbyParticipantRepository struct {
 	client *redis.Client
 }
 
-func NewLobbyParticipantRedisRepository(client *redis.Client) *LobbyParticipantRedisRepository {
-	return &LobbyParticipantRedisRepository{client: client}
+func NewLobbyParticipantRepository(client *redis.Client) *LobbyParticipantRepository {
+	return &LobbyParticipantRepository{client: client}
 }
 
-func (r *LobbyParticipantRedisRepository) QueryCountForLobby(ctx context.Context, id uuid.UUID) (int, error) {
+func (r *LobbyParticipantRepository) QueryCountForLobby(ctx context.Context, id uuid.UUID) (int, error) {
 	var cursor uint64
 	var total int
 	var key = r.GenerateLobbyKey(id)
@@ -41,7 +41,7 @@ func (r *LobbyParticipantRedisRepository) QueryCountForLobby(ctx context.Context
 	return total, nil
 }
 
-func (r *LobbyParticipantRedisRepository) QueryParticipantForLobby(ctx context.Context, id uuid.UUID, slot int) (*lobby.Participant, error) {
+func (r *LobbyParticipantRepository) QueryParticipantForLobby(ctx context.Context, id uuid.UUID, slot int) (*lobby.Participant, error) {
 	var cmd = r.client.HGetAll(ctx, r.GenerateParticipantKey(id, slot))
 	if cmd.Err() != nil {
 		return nil, port.ErrFailedQueryParticipantForLobby(id, port.ErrFailedQueryParticipant(slot, cmd.Err()))
@@ -53,7 +53,7 @@ func (r *LobbyParticipantRedisRepository) QueryParticipantForLobby(ctx context.C
 	return result.ToEntity(), nil
 }
 
-func (r *LobbyParticipantRedisRepository) QueryParticipantExists(ctx context.Context, id uuid.UUID, slot int) (bool, error) {
+func (r *LobbyParticipantRepository) QueryParticipantExists(ctx context.Context, id uuid.UUID, slot int) (bool, error) {
 	var key = r.GenerateParticipantKey(id, slot)
 	result, err := r.client.Exists(ctx, key).Result()
 	if err != nil {
@@ -62,7 +62,7 @@ func (r *LobbyParticipantRedisRepository) QueryParticipantExists(ctx context.Con
 	return result > 0, nil
 }
 
-func (r *LobbyParticipantRedisRepository) Delete(ctx context.Context, participant *lobby.Participant) error {
+func (r *LobbyParticipantRepository) Delete(ctx context.Context, participant *lobby.Participant) error {
 	var key = r.GenerateParticipantKey(participant.LobbyID, participant.PlayerSlot)
 	_, err := r.client.Del(ctx, key).Result()
 	if err != nil {
@@ -71,24 +71,26 @@ func (r *LobbyParticipantRedisRepository) Delete(ctx context.Context, participan
 	return nil
 }
 
-func (r *LobbyParticipantRedisRepository) DeleteAllForLobby(ctx context.Context, id uuid.UUID) error {
+func (r *LobbyParticipantRepository) DeleteAllForLobby(ctx context.Context, id uuid.UUID) error {
 
 	keys, err := r.client.Keys(ctx, r.GenerateLobbyKey(id)).Result()
 	if err != nil {
 		return err
 	}
 
-	for _, key := range keys {
-		if err := r.client.Del(ctx, key).Err(); err != nil {
-			return err
-		}
+	if len(keys) == 0 {
+		return nil
+	}
+
+	if err := r.client.Del(ctx, keys...).Err(); err != nil {
+		return err
 	}
 
 	return nil
 
 }
 
-func (r *LobbyParticipantRedisRepository) QueryAllForLobby(ctx context.Context, id uuid.UUID) ([]*lobby.Participant, error) {
+func (r *LobbyParticipantRepository) QueryAllForLobby(ctx context.Context, id uuid.UUID) ([]*lobby.Participant, error) {
 	keys, err := r.client.Keys(ctx, r.GenerateLobbyKey(id)).Result()
 	if err != nil {
 		return nil, port.ErrFailedQueryAllParticipantsForLobby(id, err)
@@ -108,7 +110,7 @@ func (r *LobbyParticipantRedisRepository) QueryAllForLobby(ctx context.Context, 
 	return participants, nil
 }
 
-func (r *LobbyParticipantRedisRepository) Create(ctx context.Context, participant *lobby.Participant) error {
+func (r *LobbyParticipantRepository) Create(ctx context.Context, participant *lobby.Participant) error {
 
 	result, err := r.ParticipantToTransfer(participant)
 	if err != nil {
@@ -126,7 +128,7 @@ func (r *LobbyParticipantRedisRepository) Create(ctx context.Context, participan
 	return nil
 }
 
-func (r *LobbyParticipantRedisRepository) Update(ctx context.Context, participant *lobby.Participant) error {
+func (r *LobbyParticipantRepository) Update(ctx context.Context, participant *lobby.Participant) error {
 
 	result, err := r.ParticipantToTransfer(participant)
 	if err != nil {
@@ -143,7 +145,7 @@ func (r *LobbyParticipantRedisRepository) Update(ctx context.Context, participan
 
 }
 
-func (r *LobbyParticipantRedisRepository) ParticipantToTransfer(participant *lobby.Participant) (dto.LobbyParticipantRedis, error) {
+func (r *LobbyParticipantRepository) ParticipantToTransfer(participant *lobby.Participant) (dto.LobbyParticipantRedis, error) {
 	if participant == nil {
 		return dto.LobbyParticipantRedis{}, port.ErrParticipantNil
 	}
@@ -164,10 +166,10 @@ func (r *LobbyParticipantRedisRepository) ParticipantToTransfer(participant *lob
 	return result, nil
 }
 
-func (r *LobbyParticipantRedisRepository) GenerateLobbyKey(id uuid.UUID) string {
+func (r *LobbyParticipantRepository) GenerateLobbyKey(id uuid.UUID) string {
 	return strings.Join([]string{serviceKey, lobbyParticipantKey, id.String(), "*"}, lobbyKeySeparator)
 }
 
-func (r *LobbyParticipantRedisRepository) GenerateParticipantKey(id uuid.UUID, slot int) string {
+func (r *LobbyParticipantRepository) GenerateParticipantKey(id uuid.UUID, slot int) string {
 	return strings.Join([]string{serviceKey, lobbyParticipantKey, id.String(), strconv.Itoa(slot)}, lobbyKeySeparator)
 }

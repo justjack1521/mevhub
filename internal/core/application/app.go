@@ -52,8 +52,10 @@ type DataRepositories struct {
 	MatchPlayerQueue     port.MatchLobbyPlayerQueueRepository
 	MatchLobbyQueue      port.MatchLobbyQueueRepository
 	Games                port.GameInstanceRepository
-	GameParticipants     port.PlayerParticipantRepository
-	GamePlayerLoadouts   port.PlayerLoadoutReadRepository
+	GameParties          port.GamePartyRepository
+	GameParticipants     port.GameParticipantRepository
+	GamePlayers          port.GamePlayerRepository
+	GamePlayerLoadouts   port.GamePlayerLoadoutReadRepository
 }
 
 type ApplicationServices struct {
@@ -100,14 +102,16 @@ func (a *CoreApplication) BuildDataRepos(db *gorm.DB, client *redis.Client, iden
 	a.data = &DataRepositories{
 		Sessions:             memory.NewLobbySessionRedisRepository(client),
 		Lobbies:              memory.NewLobbyInstanceRedisRepository(client),
-		LobbyParticipants:    memory.NewLobbyParticipantRedisRepository(client),
+		LobbyParticipants:    memory.NewLobbyParticipantRepository(client),
 		LobbySearch:          memory.NewLobbySearchRepository(client),
 		MatchLobbyQueue:      memory.NewMatchLobbyQueueRepository(client),
 		MatchPlayerQueue:     memory.NewMatchLobbyPlayerQueueRepository(client),
-		LobbySummaries:       database.NewLobbySummaryDatabaseRepository(db),
+		LobbySummaries:       memory.NewLobbySummaryRepository(client, serial.NewLobbySummaryJSONSerialiser()),
 		LobbyPlayerSummaries: cache.NewLobbyPlayerSummaryRepository(external.NewLobbyPlayerSummaryRepository(identity), memory.NewLobbyPlayerSummaryRepository(client, serial.NewLobbyPlayerSummaryJSONSerialiser())),
 		Games:                memory.NewGameInstanceRepository(client, serial.NewGameInstanceJSONSerialiser()),
-		GameParticipants:     memory.NewGameParticipantRepository(client, serial.NewGamePlayerParticipantJSONSerialiser()),
+		GameParties:          memory.NewGamePartyRepository(client),
+		GameParticipants:     memory.NewGameParticipantRepository(client),
+		GamePlayers:          memory.NewGamePlayerRepository(client, serial.NewGamePlayerJSONSerialiser()),
 		GamePlayerLoadouts:   external.NewGamePlayerLoadoutRepository(identity),
 	}
 	return a

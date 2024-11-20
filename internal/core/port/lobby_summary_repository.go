@@ -8,8 +8,7 @@ import (
 )
 
 type LobbySummaryReadRepository interface {
-	QueryByID(ctx context.Context, id uuid.UUID) (lobby.Summary, error)
-	QueryByPartyID(ctx context.Context, party string) (lobby.Summary, error)
+	Query(ctx context.Context, id uuid.UUID) (lobby.Summary, error)
 }
 
 type LobbySummaryWriteRepository interface {

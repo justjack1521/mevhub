@@ -10,7 +10,7 @@ import (
 	"strings"
 )
 
-const lobbySummaryKey = "lobby_instance"
+const lobbyInstanceKey = "lobby_instance"
 const lobbyPartyKey = "lobby_party"
 
 var (
@@ -98,7 +98,7 @@ func (r *LobbyInstanceRedisRepository) Delete(ctx context.Context, id uuid.UUID)
 }
 
 func (r *LobbyInstanceRedisRepository) GenerateLobbyInstanceKey(id uuid.UUID) string {
-	return strings.Join([]string{serviceKey, lobbySummaryKey, id.String()}, ":")
+	return strings.Join([]string{serviceKey, lobbyInstanceKey, id.String()}, ":")
 }
 
 func (r *LobbyInstanceRedisRepository) GenerateLobbyPartyKey(party string) string {

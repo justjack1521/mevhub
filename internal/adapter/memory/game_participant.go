@@ -4,7 +4,7 @@ import (
 	"context"
 	"github.com/go-redis/redis/v8"
 	uuid "github.com/satori/go.uuid"
-	"mevhub/internal/adapter/serial"
+	"mevhub/internal/adapter/memory/dto"
 	"mevhub/internal/core/domain/game"
 	"strconv"
 	"strings"
@@ -12,29 +12,43 @@ import (
 )
 
 const (
-	gameParticipantKey = "game_participant"
-	gameParticipantTTL = time.Hour * 3
+	gameParticipantKey          = "game_participant"
+	gameParticipantKeySeparator = ":"
+	gameParticipantTTL          = time.Hour * 3
 )
 
 type GameParticipantRepository struct {
-	client     *redis.Client
-	serialiser serial.GamePlayerParticipantSerialiser
+	client *redis.Client
 }
 
-func NewGameParticipantRepository(client *redis.Client, serialiser serial.GamePlayerParticipantSerialiser) *GameParticipantRepository {
-	return &GameParticipantRepository{client: client, serialiser: serialiser}
+func NewGameParticipantRepository(client *redis.Client) *GameParticipantRepository {
+	return &GameParticipantRepository{client: client}
 }
 
-func (r *GameParticipantRepository) Query(ctx context.Context, id uuid.UUID, slot int) (*game.PlayerParticipant, error) {
-	return r.query(ctx, r.Key(id, slot))
+func (r *GameParticipantRepository) query(ctx context.Context, key string) (*game.Participant, error) {
+	var cmd = r.client.HGetAll(ctx, key)
+	if cmd.Err() != nil {
+		return nil, cmd.Err()
+	}
+	var result = &dto.GameParticipantRedis{}
+	if err := cmd.Scan(result); err != nil {
+		return nil, err
+	}
+	return result.ToEntity(), nil
 }
 
-func (r *GameParticipantRepository) QueryAll(ctx context.Context, id uuid.UUID) ([]*game.PlayerParticipant, error) {
-	keys, err := r.client.Keys(ctx, r.GameKey(id)).Result()
+func (r *GameParticipantRepository) Query(ctx context.Context, party uuid.UUID, slot int) (*game.Participant, error) {
+	var key = r.Key(party, slot)
+	return r.query(ctx, key)
+
+}
+
+func (r *GameParticipantRepository) QueryAll(ctx context.Context, party uuid.UUID) ([]*game.Participant, error) {
+	keys, err := r.client.Keys(ctx, r.PartyKey(party)).Result()
 	if err != nil {
 		return nil, err
 	}
-	var participants = make([]*game.PlayerParticipant, len(keys))
+	var participants = make([]*game.Participant, len(keys))
 	for index, key := range keys {
 		participant, err := r.query(ctx, key)
 		if err != nil {
@@ -45,33 +59,58 @@ func (r *GameParticipantRepository) QueryAll(ctx context.Context, id uuid.UUID) 
 	return participants, nil
 }
 
-func (r *GameParticipantRepository) Create(ctx context.Context, id uuid.UUID, slot int, participant *game.PlayerParticipant) error {
-	result, err := r.serialiser.Marshall(participant)
-	if err != nil {
+func (r *GameParticipantRepository) Create(ctx context.Context, party uuid.UUID, participant *game.Participant) error {
+
+	var result = &dto.GameParticipantRedis{
+		UserID:     participant.UserID.String(),
+		PlayerID:   participant.PlayerID.String(),
+		PlayerSlot: participant.PlayerSlot,
+		DeckIndex:  participant.DeckIndex,
+		BotControl: participant.BotControl,
+	}
+
+	var key = r.Key(party, participant.PlayerSlot)
+
+	if err := r.client.HSet(ctx, key, result.ToMapStringInterface()).Err(); err != nil {
 		return err
 	}
-	if err := r.client.Set(ctx, r.Key(id, slot), result, gameParticipantTTL).Err(); err != nil {
+
+	r.client.Expire(ctx, key, gameParticipantTTL)
+	return nil
+
+}
+
+func (r *GameParticipantRepository) Delete(ctx context.Context, party uuid.UUID, slot int) error {
+	var key = r.Key(party, slot)
+	if err := r.client.Del(ctx, key).Err(); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (r *GameParticipantRepository) query(ctx context.Context, key string) (*game.PlayerParticipant, error) {
-	value, err := r.client.Get(ctx, key).Result()
+func (r *GameParticipantRepository) DeleteAll(ctx context.Context, party uuid.UUID) error {
+
+	keys, err := r.client.Keys(ctx, r.PartyKey(party)).Result()
 	if err != nil {
-		return nil, err
+		return err
 	}
-	result, err := r.serialiser.Unmarshall([]byte(value))
-	if err != nil {
-		return nil, err
+
+	if len(keys) == 0 {
+		return nil
 	}
-	return result, nil
+
+	if err := r.client.Del(ctx, keys...).Err(); err != nil {
+		return err
+	}
+
+	return nil
+
 }
 
-func (r *GameParticipantRepository) GameKey(id uuid.UUID) string {
-	return strings.Join([]string{serviceKey, gameParticipantKey, id.String(), "*"}, ":")
+func (r *GameParticipantRepository) PartyKey(id uuid.UUID) string {
+	return strings.Join([]string{serviceKey, gameParticipantKey, id.String(), "*"}, gameParticipantKeySeparator)
 }
 
 func (r *GameParticipantRepository) Key(id uuid.UUID, slot int) string {
-	return strings.Join([]string{serviceKey, gameParticipantKey, id.String(), strconv.Itoa(slot)}, ":")
+	return strings.Join([]string{serviceKey, gameParticipantKey, id.String(), strconv.Itoa(slot)}, gameParticipantKeySeparator)
 }

@@ -31,7 +31,8 @@ type GameApplicationCommands struct {
 }
 
 type GameApplicationTranslators struct {
-	PlayerParticipant translate.GamePlayerParticipantTranslator
+	Summary translate.GameSummaryTranslator
+	Player  translate.GamePlayerTranslator
 }
 
 func NewGameApplication(core *CoreApplication) *GameApplication {
@@ -46,7 +47,7 @@ func NewGameApplication(core *CoreApplication) *GameApplication {
 	}
 
 	application.Queries = &GameApplicationQueries{
-		GameSummary: query.NewGameSummaryQueryHandler(core.data.Sessions, core.data.Games, core.data.GameParticipants),
+		GameSummary: query.NewGameSummaryQueryHandler(),
 	}
 
 	application.Commands = &GameApplicationCommands{
@@ -57,14 +58,15 @@ func NewGameApplication(core *CoreApplication) *GameApplication {
 	}
 
 	application.Translators = &GameApplicationTranslators{
-		PlayerParticipant: translate.NewGameParticipantTranslator(),
+		Summary: translate.NewGameSummaryTranslator(),
+		Player:  translate.NewGamePlayerTranslator(),
 	}
 
 	application.subscribers = []ApplicationSubscriber{
 		subscriber.NewGameChannelEventNotifier(core.Services.EventPublisher),
 		subscriber.NewGameInstanceWriter(core.Services.EventPublisher, core.data.Lobbies, factory.NewGameInstanceFactory(core.repositories.Quests), core.data.Games),
-		subscriber.NewGameParticipantWriter(core.Services.EventPublisher, core.data.LobbyParticipants, factory.NewPlayerParticipantFactory(core.data.GamePlayerLoadouts), core.data.GameParticipants),
-		subscriber.NewGameChannelServerWriter(svr, core.Services.EventPublisher, core.data.Games, core.data.GameParticipants),
+		subscriber.NewGameParticipantWriter(core.Services.EventPublisher, core.data.LobbyParticipants, factory.NewPlayerParticipantFactory(core.data.GamePlayerLoadouts), core.data.GamePlayers),
+		subscriber.NewGameChannelServerWriter(svr, core.Services.EventPublisher, core.data.Games, core.data.GamePlayers),
 	}
 
 	return application

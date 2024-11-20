@@ -14,6 +14,7 @@ type Instance struct {
 	UserID    uuid.UUID
 	PlayerID  uuid.UUID
 	LobbyID   uuid.UUID
+	GameID    uuid.UUID
 	PartySlot int
 	DeckIndex int
 }

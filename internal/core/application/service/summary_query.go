@@ -33,21 +33,21 @@ func (s *SummaryQueryService) QueryByPartyID(ctx context.Context, party string) 
 	if err != nil {
 		return lobby.Summary{}, ErrFailedQueryLobbyPartySummary(party, err)
 	}
-	summary, err := s.QueryByID(ctx, instance.SysID)
+	summary, err := s.Query(ctx, instance.SysID)
 	if err != nil {
 		return lobby.Summary{}, ErrFailedQueryLobbyPartySummary(party, err)
 	}
 	return summary, nil
 }
 
-func (s *SummaryQueryService) QueryByID(ctx context.Context, id uuid.UUID) (lobby.Summary, error) {
+func (s *SummaryQueryService) Query(ctx context.Context, id uuid.UUID) (lobby.Summary, error) {
 
 	instance, err := s.InstanceRepository.QueryByID(ctx, id)
 	if err != nil {
 		return lobby.Summary{}, ErrFailedQueryLobbySummary(id, err)
 	}
 
-	summary, err := s.LobbySummary.QueryByID(ctx, instance.SysID)
+	summary, err := s.LobbySummary.Query(ctx, instance.SysID)
 	if err != nil {
 		return lobby.Summary{}, ErrFailedQueryLobbySummary(id, err)
 	}

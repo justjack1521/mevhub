@@ -2,32 +2,13 @@ package port
 
 import (
 	"context"
-	"errors"
-	"fmt"
 	uuid "github.com/satori/go.uuid"
 	"mevhub/internal/core/domain/game"
-)
-
-var (
-	ErrGameInstanceNotFound = func(err error) error {
-		return fmt.Errorf("game instance not found: %w", err)
-	}
-	ErrGameInstanceNotFoundByID = func(id uuid.UUID) error {
-		return fmt.Errorf("game instance not found by id: %s", id.String())
-	}
 )
 
 type GameInstanceReadRepository interface {
 	Get(ctx context.Context, id uuid.UUID) (*game.Instance, error)
 }
-
-var (
-	ErrGameInstanceNil          = errors.New("game instance is nil")
-	ErrFailedCreateGameInstance = func(err error) error {
-		return fmt.Errorf("failed to create game instance: %w", err)
-	}
-)
-
 type GameInstanceWriteRepository interface {
 	Create(ctx context.Context, instance *game.Instance) error
 }
@@ -35,4 +16,21 @@ type GameInstanceWriteRepository interface {
 type GameInstanceRepository interface {
 	GameInstanceReadRepository
 	GameInstanceWriteRepository
+}
+
+type GamePartyReadRepository interface {
+	Get(ctx context.Context, id uuid.UUID) (*game.Party, error)
+	Query(ctx context.Context, game uuid.UUID, slot int) (*game.Party, error)
+	QueryAll(ctx context.Context, game uuid.UUID) ([]*game.Party, error)
+}
+
+type GamePartyWriteRepository interface {
+	Create(ctx context.Context, id uuid.UUID, party *game.Party) error
+	Delete(ctx context.Context, id uuid.UUID, slot int) error
+	DeleteAll(ctx context.Context, id uuid.UUID) error
+}
+
+type GamePartyRepository interface {
+	GamePartyReadRepository
+	GamePartyWriteRepository
 }

@@ -4,7 +4,15 @@ import (
 	uuid "github.com/satori/go.uuid"
 )
 
-type PlayerParticipant struct {
+type Participant struct {
+	UserID     uuid.UUID
+	PlayerID   uuid.UUID
+	PlayerSlot int
+	DeckIndex  int
+	BotControl bool
+}
+
+type Player struct {
 	UserID     uuid.UUID
 	PlayerID   uuid.UUID
 	PlayerSlot int

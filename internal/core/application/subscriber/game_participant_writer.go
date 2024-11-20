@@ -13,10 +13,10 @@ type GameParticipantWriter struct {
 	EventPublisher             *mevent.Publisher
 	LobbyParticipantRepository port.LobbyParticipantReadRepository
 	GameParticipantFactory     *factory.PlayerParticipantFactory
-	GameParticipantRepository  port.PlayerParticipantWriteRepository
+	GameParticipantRepository  port.GamePlayerWriteRepository
 }
 
-func NewGameParticipantWriter(publisher *mevent.Publisher, participants port.LobbyParticipantReadRepository, factory *factory.PlayerParticipantFactory, players port.PlayerParticipantWriteRepository) *GameParticipantWriter {
+func NewGameParticipantWriter(publisher *mevent.Publisher, participants port.LobbyParticipantReadRepository, factory *factory.PlayerParticipantFactory, players port.GamePlayerWriteRepository) *GameParticipantWriter {
 	var subscriber = &GameParticipantWriter{
 		EventPublisher:             publisher,
 		LobbyParticipantRepository: participants,

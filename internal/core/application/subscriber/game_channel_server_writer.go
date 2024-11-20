@@ -12,10 +12,10 @@ type GameChannelServerWriter struct {
 	Server                *server.GameServerHost
 	EventPublisher        *mevent.Publisher
 	InstanceRepository    port.GameInstanceReadRepository
-	ParticipantRepository port.PlayerParticipantReadRepository
+	ParticipantRepository port.GamePlayerReadRepository
 }
 
-func NewGameChannelServerWriter(server *server.GameServerHost, publisher *mevent.Publisher, instances port.GameInstanceRepository, participants port.PlayerParticipantReadRepository) *GameChannelServerWriter {
+func NewGameChannelServerWriter(server *server.GameServerHost, publisher *mevent.Publisher, instances port.GameInstanceRepository, participants port.GamePlayerReadRepository) *GameChannelServerWriter {
 	var writer = &GameChannelServerWriter{Server: server, EventPublisher: publisher, InstanceRepository: instances, ParticipantRepository: participants}
 	publisher.Subscribe(writer, game.InstanceCreatedEvent{}, game.InstanceDeletedEvent{}, game.ParticipantCreatedEvent{}, session.InstanceDeletedEvent{})
 	return writer

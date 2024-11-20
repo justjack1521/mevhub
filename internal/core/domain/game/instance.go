@@ -30,3 +30,9 @@ const (
 	InstanceGamePendingState InstanceState = 100
 	InstanceGameStartedState InstanceState = 200
 )
+
+type Summary struct {
+	SysID   uuid.UUID
+	Seed    int
+	Parties []PartySummary
+}

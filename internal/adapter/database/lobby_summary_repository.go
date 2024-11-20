@@ -16,7 +16,7 @@ func NewLobbySummaryDatabaseRepository(db *gorm.DB) *LobbySummaryDatabaseReposit
 	return &LobbySummaryDatabaseRepository{database: db}
 }
 
-func (r *LobbySummaryDatabaseRepository) QueryByID(ctx context.Context, id uuid.UUID) (lobby.Summary, error) {
+func (r *LobbySummaryDatabaseRepository) Query(ctx context.Context, id uuid.UUID) (lobby.Summary, error) {
 
 	var cond = &dto.LobbySummaryGorm{LobbyID: id}
 	var res = &dto.LobbySummaryGorm{}

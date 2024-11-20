@@ -19,8 +19,9 @@ func NewSearchLobbyQuery(qry lobby.SearchQuery, party string) SearchLobbyQuery {
 }
 
 type SearchLobbyQueryHandler struct {
-	SearchRepository  port.LobbySearchReadRepository
-	SummaryRepository port.LobbySummaryReadRepository
+	InstanceRepository port.LobbyInstanceRepository
+	SearchRepository   port.LobbySearchReadRepository
+	SummaryRepository  port.LobbySummaryReadRepository
 }
 
 func NewSearchLobbyQueryHandler(lobbies port.LobbySearchReadRepository, summaries port.LobbySummaryReadRepository) *SearchLobbyQueryHandler {
@@ -32,7 +33,11 @@ func (h *SearchLobbyQueryHandler) Handle(ctx Context, qry SearchLobbyQuery) ([]l
 	var summaries = make([]lobby.Summary, 0)
 
 	if qry.party != "" {
-		summary, err := h.SummaryRepository.QueryByPartyID(ctx, qry.party)
+		instance, err := h.InstanceRepository.QueryByPartyID(ctx, qry.party)
+		if err != nil {
+			return nil, err
+		}
+		summary, err := h.SummaryRepository.Query(ctx, instance.SysID)
 		if err != nil {
 			return nil, err
 		}
@@ -43,7 +48,7 @@ func (h *SearchLobbyQueryHandler) Handle(ctx Context, qry SearchLobbyQuery) ([]l
 			return nil, err
 		}
 		for _, value := range lobbies {
-			summary, err := h.SummaryRepository.QueryByID(ctx, value.LobbyID)
+			summary, err := h.SummaryRepository.Query(ctx, value.LobbyID)
 			if err != nil {
 				continue
 			}

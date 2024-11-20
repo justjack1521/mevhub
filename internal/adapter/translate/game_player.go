@@ -7,25 +7,25 @@ import (
 	"mevhub/internal/core/domain/game"
 )
 
-type GamePlayerParticipantTranslator Translator[*game.PlayerParticipant, *protomulti.ProtoGameParticipant]
+type GamePlayerTranslator Translator[game.Player, *protomulti.ProtoGamePlayer]
 type GamePlayerLoadoutTranslator Translator[game.PlayerLoadout, *protoidentity.ProtoPlayerLoadout]
 type GameJobCardLoadoutTranslator Translator[game.PlayerJobCardLoadout, *protoidentity.ProtoPlayerJobLoadout]
 type GameWeaponLoadoutTranslator Translator[game.PlayerWeaponLoadout, *protoidentity.ProtoPlayerWeaponLoadout]
 type GameAbilityCardLoadoutTranslator Translator[game.PlayerAbilityCardLoadout, *protoidentity.ProtoPlayerAbilityCardLoadout]
 
-type gamePlayerParticipantTranslator struct {
+type gamePlayerTranslator struct {
 	loadout GamePlayerLoadoutTranslator
 }
 
-func NewGameParticipantTranslator() GamePlayerParticipantTranslator {
-	return gamePlayerParticipantTranslator{
+func NewGamePlayerTranslator() GamePlayerTranslator {
+	return gamePlayerTranslator{
 		loadout: NewGamePlayerLoadoutTranslator(),
 	}
 }
 
-func (f gamePlayerParticipantTranslator) Marshall(data *game.PlayerParticipant) (out *protomulti.ProtoGameParticipant, err error) {
+func (f gamePlayerTranslator) Marshall(data game.Player) (out *protomulti.ProtoGamePlayer, err error) {
 	loadout, err := f.loadout.Marshall(data.Loadout)
-	return &protomulti.ProtoGameParticipant{
+	return &protomulti.ProtoGamePlayer{
 		UserId:     data.UserID.String(),
 		PlayerId:   data.PlayerID.String(),
 		PartySlot:  int32(data.PlayerSlot),
@@ -34,12 +34,12 @@ func (f gamePlayerParticipantTranslator) Marshall(data *game.PlayerParticipant) 
 	}, nil
 }
 
-func (f gamePlayerParticipantTranslator) Unmarshall(data *protomulti.ProtoGameParticipant) (out *game.PlayerParticipant, err error) {
+func (f gamePlayerTranslator) Unmarshall(data *protomulti.ProtoGamePlayer) (out game.Player, err error) {
 	loadout, err := f.loadout.Unmarshall(data.Loadout)
 	if err != nil {
-		return nil, err
+		return game.Player{}, err
 	}
-	return &game.PlayerParticipant{
+	return game.Player{
 		UserID:     uuid.FromStringOrNil(data.UserId),
 		PlayerID:   uuid.FromStringOrNil(data.PlayerId),
 		PlayerSlot: int(data.PartySlot),
