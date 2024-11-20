@@ -7,15 +7,15 @@ import (
 	"mevhub/internal/core/port"
 )
 
-type PlayerParticipantFactory struct {
+type GamePlayerFactory struct {
 	loadout port.GamePlayerLoadoutReadRepository
 }
 
-func NewPlayerParticipantFactory(loadout port.GamePlayerLoadoutReadRepository) *PlayerParticipantFactory {
-	return &PlayerParticipantFactory{loadout: loadout}
+func NewGamePlayerFactory(loadout port.GamePlayerLoadoutReadRepository) *GamePlayerFactory {
+	return &GamePlayerFactory{loadout: loadout}
 }
 
-func (f *PlayerParticipantFactory) Create(ctx context.Context, source *lobby.Participant) (game.Player, error) {
+func (f *GamePlayerFactory) Create(ctx context.Context, source *lobby.Participant) (game.Player, error) {
 
 	loadout, err := f.loadout.Query(ctx, source.PlayerID, source.DeckIndex)
 	if err != nil {

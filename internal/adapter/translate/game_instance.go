@@ -18,11 +18,10 @@ func NewGameInstanceTranslator() GameInstanceTranslator {
 
 func (f gameInstanceTranslator) Marshall(data *game.Instance) (out *protomulti.ProtoGameInstance, err error) {
 	var result = &protomulti.ProtoGameInstance{
-		SysId:     data.SysID.String(),
-		LobbyIds:  make([]string, len(data.LobbyIDs)),
-		Seed:      int32(data.Seed),
-		State:     int32(data.State),
-		StartedAt: data.StartedAt.Unix(),
+		SysId:    data.SysID.String(),
+		LobbyIds: make([]string, len(data.LobbyIDs)),
+		Seed:     int32(data.Seed),
+		State:    int32(data.State),
 		Options: &protomulti.ProtoGameInstanceOptions{
 			MinimumPlayerLevel: int32(data.Options.MinimumPlayerLevel),
 			MaxRunTime:         int64(data.Options.MaxRunTime),
@@ -39,11 +38,10 @@ func (f gameInstanceTranslator) Marshall(data *game.Instance) (out *protomulti.P
 
 func (f gameInstanceTranslator) Unmarshall(data *protomulti.ProtoGameInstance) (out *game.Instance, err error) {
 	var result = &game.Instance{
-		SysID:     uuid.FromStringOrNil(data.SysId),
-		LobbyIDs:  make([]uuid.UUID, len(data.LobbyIds)),
-		Seed:      int(data.Seed),
-		State:     game.InstanceState(data.State),
-		StartedAt: time.Unix(data.StartedAt, 0),
+		SysID:    uuid.FromStringOrNil(data.SysId),
+		LobbyIDs: make([]uuid.UUID, len(data.LobbyIds)),
+		Seed:     int(data.Seed),
+		State:    game.InstanceState(data.State),
 		Options: &game.InstanceOptions{
 			MinimumPlayerLevel: int(data.Options.MinimumPlayerLevel),
 			MaxRunTime:         time.Duration(data.Options.MaxRunTime),

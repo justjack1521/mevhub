@@ -11,7 +11,6 @@ type Instance struct {
 	LobbyIDs     []uuid.UUID
 	Options      *InstanceOptions
 	State        InstanceState
-	StartedAt    time.Time
 	RegisteredAt time.Time
 }
 

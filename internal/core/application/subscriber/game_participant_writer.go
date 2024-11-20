@@ -3,66 +3,54 @@ package subscriber
 import (
 	"fmt"
 	"github.com/justjack1521/mevium/pkg/mevent"
-	uuid "github.com/satori/go.uuid"
-	"mevhub/internal/core/application/factory"
 	"mevhub/internal/core/domain/game"
 	"mevhub/internal/core/port"
 )
 
 type GameParticipantWriter struct {
 	EventPublisher             *mevent.Publisher
-	LobbyParticipantRepository port.LobbyParticipantReadRepository
-	GameParticipantFactory     *factory.PlayerParticipantFactory
-	GameParticipantRepository  port.GamePlayerWriteRepository
+	ParticipantReadRepository  port.LobbyParticipantReadRepository
+	ParticipantWriteRepository port.GameParticipantWriteRepository
 }
 
-func NewGameParticipantWriter(publisher *mevent.Publisher, participants port.LobbyParticipantReadRepository, factory *factory.PlayerParticipantFactory, players port.GamePlayerWriteRepository) *GameParticipantWriter {
-	var subscriber = &GameParticipantWriter{
-		EventPublisher:             publisher,
-		LobbyParticipantRepository: participants,
-		GameParticipantFactory:     factory,
-		GameParticipantRepository:  players,
-	}
-	publisher.Subscribe(subscriber, game.InstanceRegisteredEvent{})
-	return subscriber
+func NewGameParticipantWriter(publisher *mevent.Publisher, source port.LobbyParticipantReadRepository, target port.GameParticipantWriteRepository) *GameParticipantWriter {
+	var service = &GameParticipantWriter{EventPublisher: publisher, ParticipantReadRepository: source, ParticipantWriteRepository: target}
+	publisher.Subscribe(service, game.PartyCreatedEvent{})
+	return service
 }
 
 func (s *GameParticipantWriter) Notify(event mevent.Event) {
 	switch actual := event.(type) {
-	case game.InstanceRegisteredEvent:
-		if err := s.HandleCreate(actual); err != nil {
+	case game.PartyCreatedEvent:
+		if err := s.HandlePartyCreated(actual); err != nil {
 			fmt.Println(err)
 		}
 	}
 }
 
-func (s *GameParticipantWriter) HandleCreate(event game.InstanceRegisteredEvent) error {
+func (s *GameParticipantWriter) HandlePartyCreated(evt game.PartyCreatedEvent) error {
 
-	participants, err := s.LobbyParticipantRepository.QueryAllForLobby(event.Context(), event.InstanceID())
+	participants, err := s.ParticipantReadRepository.QueryAllForLobby(evt.Context(), evt.PartyID())
 	if err != nil {
 		return err
 	}
 
 	for _, participant := range participants {
 
-		if uuid.Equal(participant.PlayerID, uuid.Nil) {
-			continue
+		var result = &game.Participant{
+			UserID:     participant.UserID,
+			PlayerID:   participant.PlayerID,
+			PlayerSlot: participant.PlayerSlot,
+			DeckIndex:  participant.DeckIndex,
+			BotControl: participant.BotControl,
 		}
 
-		player, err := s.GameParticipantFactory.Create(event.Context(), participant)
-		if err != nil {
+		if err := s.ParticipantWriteRepository.Create(evt.Context(), evt.PartyID(), result); err != nil {
 			return err
 		}
-
-		if err := s.GameParticipantRepository.Create(event.Context(), event.InstanceID(), participant.PlayerSlot, player); err != nil {
-			return err
-		}
-
-		s.EventPublisher.Notify(game.NewParticipantCreatedEvent(event.Context(), event.InstanceID(), participant.PlayerSlot))
 
 	}
 
-	s.EventPublisher.Notify(game.NewInstanceReadyEvent(event.Context(), event.InstanceID()))
-
 	return nil
+
 }

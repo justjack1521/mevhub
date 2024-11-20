@@ -20,6 +20,7 @@ func (f *GameServerFactory) Create(instance *game.Instance, notifier Notificatio
 		game:         game.NewLiveGameInstance(instance),
 		clients:      make(map[uuid.UUID]*PlayerChannel),
 		publisher:    notifier,
+		logger:       logrus.New(),
 		ErrorHandler: ErrorHandlerDefault{},
 	}
 	for _, action := range f.actions {
