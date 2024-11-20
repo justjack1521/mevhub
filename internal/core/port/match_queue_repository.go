@@ -49,7 +49,7 @@ type MatchLobbyQueueReadRepository interface {
 type MatchLobbyQueueWriteRepository interface {
 	AddLobbyToQueue(ctx context.Context, mode game.ModeIdentifier, entry match.LobbyQueueEntry) error
 	RemoveLobbyFromQueue(ctx context.Context, mode game.ModeIdentifier, quest uuid.UUID, id uuid.UUID) error
-	RemoveExpiredLobbies(ctx context.Context, mode game.ModeIdentifier, quest uuid.UUID) error
+	RemoveExpiredLobbies(ctx context.Context, mode game.ModeIdentifier, quest uuid.UUID) (int, error)
 	RemoveInactiveQuest(ctx context.Context, mode game.ModeIdentifier, quest uuid.UUID) error
 }
 

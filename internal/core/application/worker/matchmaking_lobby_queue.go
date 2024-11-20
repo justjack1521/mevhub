@@ -100,9 +100,11 @@ func (w *LobbyMatchmakingQueueWorker) reapLobbies() error {
 		return err
 	}
 	for _, active := range actives {
-		if err := w.repository.RemoveExpiredLobbies(w.ctx, w.mode, active); err != nil {
+		count, err := w.repository.RemoveExpiredLobbies(w.ctx, w.mode, active)
+		if err != nil {
 			fmt.Println(err)
 		}
+		fmt.Println(fmt.Sprintf("%d expired lobbies reaped", count))
 	}
 	return nil
 }

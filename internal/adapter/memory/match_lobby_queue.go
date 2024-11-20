@@ -31,7 +31,7 @@ func (r *MatchLobbyQueueRepository) GetCountQueuedLobbies(ctx context.Context, m
 	return int(result), nil
 }
 
-func (r *MatchLobbyQueueRepository) RemoveExpiredLobbies(ctx context.Context, mode game.ModeIdentifier, quest uuid.UUID) error {
+func (r *MatchLobbyQueueRepository) RemoveExpiredLobbies(ctx context.Context, mode game.ModeIdentifier, quest uuid.UUID) (int, error) {
 
 	var q = r.matchmakingLobbyQueueKey(mode, quest)
 	var t = r.matchmakingLobbyQueueTimeKey(mode)
@@ -46,11 +46,11 @@ func (r *MatchLobbyQueueRepository) RemoveExpiredLobbies(ctx context.Context, mo
 		Count:  0,
 	}).Result()
 	if err != nil {
-		return err
+		return 0, err
 	}
 
 	if len(expired) == 0 {
-		return nil
+		return 0, nil
 	}
 
 	_, err = r.client.TxPipelined(ctx, func(pipe redis.Pipeliner) error {
@@ -58,7 +58,8 @@ func (r *MatchLobbyQueueRepository) RemoveExpiredLobbies(ctx context.Context, mo
 		pipe.ZRem(ctx, t, expired)
 		return nil
 	})
-	return err
+	return len(expired), nil
+
 }
 
 func (r *MatchLobbyQueueRepository) RemoveInactiveQuest(ctx context.Context, mode game.ModeIdentifier, quest uuid.UUID) error {
