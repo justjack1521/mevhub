@@ -15,7 +15,7 @@ import (
 	"strings"
 )
 
-const LobbyChannelPrefix string = "lobby_channel"
+const LobbyChannelPrefix string = "lobby_notification_channel"
 const LobbyChannelSeparator string = ":"
 
 type LobbyNotificationChanneler struct {

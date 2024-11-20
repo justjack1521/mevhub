@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-const lobbyChannelKey = "lobby_channel"
+const lobbyChannelKey = "lobby_notification_channel"
 
 type LobbyChannelRepository struct {
 	client *redis.Client
