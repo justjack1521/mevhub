@@ -40,6 +40,7 @@ func (f gameInstanceTranslator) Marshall(data *game.Instance) (out *protomulti.P
 func (f gameInstanceTranslator) Unmarshall(data *protomulti.ProtoGameInstance) (out *game.Instance, err error) {
 	var result = &game.Instance{
 		SysID:     uuid.FromStringOrNil(data.SysId),
+		LobbyIDs:  make([]uuid.UUID, len(data.LobbyIds)),
 		Seed:      int(data.Seed),
 		State:     game.InstanceState(data.State),
 		StartedAt: time.Unix(data.StartedAt, 0),
