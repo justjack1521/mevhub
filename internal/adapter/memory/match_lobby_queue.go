@@ -194,11 +194,13 @@ func (r *MatchLobbyQueueRepository) FindMatch(ctx context.Context, mode game.Mod
 
 func (r *MatchLobbyQueueRepository) AddLobbyToQueue(ctx context.Context, mode game.ModeIdentifier, entry match.LobbyQueueEntry) error {
 
+	var q = r.activeQueueKey(mode)
 	var l = r.matchmakingLobbyQueueKey(mode, entry.QuestID)
 	var t = r.matchmakingLobbyQueueTimeKey(mode)
 
 	_, err := r.client.TxPipelined(ctx, func(pipe redis.Pipeliner) error {
-		pipe.SAdd(ctx, r.activeQueueKey(mode), entry.QuestID.String())
+		pipe.SAdd(ctx, q, entry.QuestID.String())
+		pipe.Expire(ctx, q, time.Minute*30)
 		pipe.ZAddArgs(ctx, l, redis.ZAddArgs{
 			GT:      true,
 			Members: []redis.Z{{Member: entry.LobbyID.String(), Score: float64(entry.AverageLevel)}},

@@ -13,7 +13,6 @@ import (
 const (
 	matchmakingLobbyQueueWorkerFindInterval      = time.Second * 10
 	matchmakingLobbyQueueWorkerLobbyReapInterval = time.Second * 20
-	matchmakingLobbyQueueWorkerQuestReapInterval = time.Minute * 1
 )
 
 type LobbyMatchmakingQueueWorker struct {
@@ -29,14 +28,11 @@ func NewLobbyMatchmakingQueueWorker(ctx context.Context, mode game.ModeIdentifie
 
 func (w *LobbyMatchmakingQueueWorker) Run() {
 
-	var findTicker = time.NewTicker(matchmakingLobbyPlayerQueueWorkerFindInterval)
+	var findTicker = time.NewTicker(matchmakingLobbyQueueWorkerFindInterval)
 	defer findTicker.Stop()
 
-	var lobbyReapTicker = time.NewTicker(matchmakingLobbyPlayerQueueWorkerLobbyReapInterval)
+	var lobbyReapTicker = time.NewTicker(matchmakingLobbyQueueWorkerLobbyReapInterval)
 	defer lobbyReapTicker.Stop()
-
-	var questReapTicket = time.NewTicker(matchmakingLobbyPlayerQueueWorkerQuestReapInterval)
-	defer questReapTicket.Stop()
 
 	for {
 		select {
@@ -48,10 +44,6 @@ func (w *LobbyMatchmakingQueueWorker) Run() {
 			}
 		case <-lobbyReapTicker.C:
 			if err := w.reapLobbies(); err != nil {
-				fmt.Println(err)
-			}
-		case <-questReapTicket.C:
-			if err := w.reapQuests(); err != nil {
 				fmt.Println(err)
 			}
 		}
@@ -109,23 +101,6 @@ func (w *LobbyMatchmakingQueueWorker) reapLobbies() error {
 	}
 	for _, active := range actives {
 		if err := w.repository.RemoveExpiredLobbies(w.ctx, w.mode, active); err != nil {
-			fmt.Println(err)
-		}
-	}
-	return nil
-}
-
-func (w *LobbyMatchmakingQueueWorker) reapQuests() error {
-	actives, err := w.repository.GetActiveQuests(w.ctx, w.mode)
-	if err != nil {
-		return err
-	}
-	for _, active := range actives {
-		count, err := w.repository.GetCountQueuedLobbies(w.ctx, w.mode, active)
-		if err != nil || count > 0 {
-			continue
-		}
-		if err := w.repository.RemoveInactiveQuest(w.ctx, w.mode, active); err != nil {
 			fmt.Println(err)
 		}
 	}
