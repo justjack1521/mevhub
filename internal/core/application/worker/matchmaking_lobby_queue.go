@@ -80,6 +80,7 @@ func (w *LobbyMatchmakingQueueWorker) findMatch(quest uuid.UUID) error {
 			continue
 		}
 		if err := w.dispatcher.Dispatch(w.ctx, w.mode, quest, []match.LobbyQueueEntry{queued, found}); err != nil {
+			fmt.Println(err)
 			continue
 		}
 		if err := w.repository.RemoveLobbyFromQueue(w.ctx, w.mode, quest, queued.LobbyID); err != nil {
