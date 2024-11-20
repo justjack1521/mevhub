@@ -1,12 +1,16 @@
 package command
 
 import (
+	uuid "github.com/satori/go.uuid"
+	"mevhub/internal/core/application/factory"
+	"mevhub/internal/core/domain/game"
 	"mevhub/internal/core/domain/lobby"
 	"mevhub/internal/core/port"
 )
 
 type LobbyStartCommand struct {
 	BasicCommand
+	GameID uuid.UUID
 }
 
 func (c LobbyStartCommand) CommandName() string {
@@ -14,21 +18,20 @@ func (c LobbyStartCommand) CommandName() string {
 }
 
 func NewLobbyStartCommand() *LobbyStartCommand {
-	return &LobbyStartCommand{}
+	return &LobbyStartCommand{
+		GameID: uuid.NewV4(),
+	}
 }
 
 type LobbyStartCommandHandler struct {
-	SessionRepository          port.SessionInstanceReadRepository
-	LobbyInstanceRepository    port.LobbyInstanceRepository
-	LobbyParticipantRepository port.LobbyParticipantReadRepository
+	SessionRepository       port.SessionInstanceReadRepository
+	LobbyInstanceRepository port.LobbyInstanceRepository
+	GameInstanceRepository  port.GameInstanceRepository
+	GameInstanceFactory     *factory.GameInstanceFactory
 }
 
-func NewLobbyStartCommandHandler(sessions port.SessionInstanceReadRepository, lobbies port.LobbyInstanceRepository, participants port.LobbyParticipantReadRepository) *LobbyStartCommandHandler {
-	return &LobbyStartCommandHandler{
-		SessionRepository:          sessions,
-		LobbyInstanceRepository:    lobbies,
-		LobbyParticipantRepository: participants,
-	}
+func NewLobbyStartCommandHandler(sessions port.SessionInstanceReadRepository, lobbies port.LobbyInstanceRepository, games port.GameInstanceRepository, factory *factory.GameInstanceFactory) *LobbyStartCommandHandler {
+	return &LobbyStartCommandHandler{SessionRepository: sessions, LobbyInstanceRepository: lobbies, GameInstanceRepository: games, GameInstanceFactory: factory}
 }
 
 func (h *LobbyStartCommandHandler) Handle(ctx Context, cmd *LobbyStartCommand) error {
@@ -43,15 +46,22 @@ func (h *LobbyStartCommandHandler) Handle(ctx Context, cmd *LobbyStartCommand) e
 		return err
 	}
 
-	if err := instance.StartLobby(ctx.PlayerID()); err != nil {
+	if err := instance.CanStart(ctx.PlayerID()); err != nil {
 		return err
 	}
 
 	cmd.QueueEvent(lobby.NewInstanceStartedEvent(ctx, instance.SysID))
 
-	if err := h.LobbyInstanceRepository.Create(ctx, instance); err != nil {
+	result, err := h.GameInstanceFactory.Create(cmd.GameID, instance)
+	if err != nil {
 		return err
 	}
+
+	if err := h.GameInstanceRepository.Create(ctx, result); err != nil {
+		return err
+	}
+
+	cmd.QueueEvent(game.NewInstanceCreatedEvent(ctx, result.SysID))
 
 	return nil
 

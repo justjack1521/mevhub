@@ -14,6 +14,8 @@ func (g MultiGrpcServer) LobbyStart(ctx context.Context, request *protomulti.Lob
 		return nil, err
 	}
 
-	return &protomulti.LobbyStartResponse{}, nil
+	return &protomulti.LobbyStartResponse{
+		GameId: cmd.GameID.String(),
+	}, nil
 
 }

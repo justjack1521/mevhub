@@ -1,6 +1,7 @@
 package factory
 
 import (
+	uuid "github.com/satori/go.uuid"
 	"math/rand"
 	"mevhub/internal/core/domain/game"
 	"mevhub/internal/core/domain/lobby"
@@ -16,18 +17,24 @@ func NewGameInstanceFactory(quests port.QuestRepository) *GameInstanceFactory {
 	return &GameInstanceFactory{QuestRepository: quests}
 }
 
-func (f *GameInstanceFactory) Create(source *lobby.Instance) (*game.Instance, error) {
+func (f *GameInstanceFactory) Create(id uuid.UUID, sources ...*lobby.Instance) (*game.Instance, error) {
 
-	quest, err := f.QuestRepository.QueryByID(source.QuestID)
+	var ids = make([]uuid.UUID, len(sources))
+	for index, value := range sources {
+		ids[index] = value.SysID
+	}
+
+	quest, err := f.QuestRepository.QueryByID(sources[0].QuestID)
 	if err != nil {
 		return nil, err
 	}
 
 	return &game.Instance{
-		SysID: source.SysID,
-		Seed:  rand.Int(),
+		SysID:    id,
+		Seed:     rand.Int(),
+		LobbyIDs: ids,
 		Options: &game.InstanceOptions{
-			MinimumPlayerLevel: source.MinimumPlayerLevel,
+			MinimumPlayerLevel: sources[0].MinimumPlayerLevel,
 			MaxRunTime:         quest.Tier.TimeLimit,
 			PlayerTurnDuration: quest.Tier.PlayerTurnDuration,
 			MaxPlayerCount:     quest.Tier.GameMode.MaxPlayers,

@@ -139,6 +139,13 @@ var (
 	}
 )
 
+func (x *Instance) CanStart(player uuid.UUID) error {
+	if x.HostPlayerID != player {
+		return ErrPlayerNotLobbyHost(player, x.HostPlayerID)
+	}
+	return nil
+}
+
 func (x *Instance) CanCancel(player uuid.UUID) error {
 	if x.HostPlayerID != player {
 		return ErrPlayerNotLobbyHost(player, x.HostPlayerID)

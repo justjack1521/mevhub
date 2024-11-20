@@ -17,8 +17,9 @@ func NewGameInstanceTranslator() GameInstanceTranslator {
 }
 
 func (f gameInstanceTranslator) Marshall(data *game.Instance) (out *protomulti.ProtoGameInstance, err error) {
-	return &protomulti.ProtoGameInstance{
+	var result = &protomulti.ProtoGameInstance{
 		SysId:     data.SysID.String(),
+		LobbyIds:  make([]string, len(data.LobbyIDs)),
 		Seed:      int32(data.Seed),
 		State:     int32(data.State),
 		StartedAt: data.StartedAt.Unix(),
@@ -29,11 +30,15 @@ func (f gameInstanceTranslator) Marshall(data *game.Instance) (out *protomulti.P
 			MaxPlayerCount:     int32(data.Options.MaxPlayerCount),
 		},
 		RegisteredAt: data.RegisteredAt.Unix(),
-	}, nil
+	}
+	for index, value := range data.LobbyIDs {
+		result.LobbyIds[index] = value.String()
+	}
+	return result, nil
 }
 
 func (f gameInstanceTranslator) Unmarshall(data *protomulti.ProtoGameInstance) (out *game.Instance, err error) {
-	return &game.Instance{
+	var result = &game.Instance{
 		SysID:     uuid.FromStringOrNil(data.SysId),
 		Seed:      int(data.Seed),
 		State:     game.InstanceState(data.State),
@@ -45,5 +50,13 @@ func (f gameInstanceTranslator) Unmarshall(data *protomulti.ProtoGameInstance) (
 			MaxPlayerCount:     int(data.Options.MaxPlayerCount),
 		},
 		RegisteredAt: time.Unix(data.RegisteredAt, 0),
-	}, nil
+	}
+	for index, value := range data.LobbyIds {
+		id, err := uuid.FromString(value)
+		if err != nil {
+			return nil, err
+		}
+		result.LobbyIDs[index] = id
+	}
+	return result, nil
 }

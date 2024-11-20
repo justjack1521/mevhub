@@ -64,7 +64,6 @@ func NewGameApplication(core *CoreApplication) *GameApplication {
 
 	application.subscribers = []ApplicationSubscriber{
 		subscriber.NewGameChannelEventNotifier(core.Services.EventPublisher),
-		subscriber.NewGameInstanceWriter(core.Services.EventPublisher, core.data.Lobbies, factory.NewGameInstanceFactory(core.repositories.Quests), core.data.Games),
 		subscriber.NewGameParticipantWriter(core.Services.EventPublisher, core.data.LobbyParticipants, factory.NewPlayerParticipantFactory(core.data.GamePlayerLoadouts), core.data.GamePlayers),
 		subscriber.NewGameChannelServerWriter(svr, core.Services.EventPublisher, core.data.Games, core.data.GamePlayers),
 	}

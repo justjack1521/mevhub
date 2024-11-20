@@ -6,6 +6,7 @@ import (
 	"mevhub/internal/adapter/translate"
 	"mevhub/internal/core/application/command"
 	"mevhub/internal/core/application/consumer"
+	"mevhub/internal/core/application/factory"
 	"mevhub/internal/core/application/query"
 	"mevhub/internal/core/application/service"
 	"mevhub/internal/core/application/subscriber"
@@ -92,7 +93,7 @@ func NewLobbyApplication(core *CoreApplication) *LobbyApplication {
 		subscriber.NewLobbyParticipantWriter(core.Services.EventPublisher, core.data.LobbyParticipants),
 	}
 
-	var lobbyDispatcher = service.NewLobbyMatchmakingDispatcher(core.Services.EventPublisher, core.repositories.Quests, core.data.Lobbies, core.data.LobbyParticipants)
+	var lobbyDispatcher = service.NewLobbyMatchmakingDispatcher(core.Services.EventPublisher, core.repositories.Quests, core.data.Lobbies, core.data.Games, factory.NewGameInstanceFactory(core.repositories.Quests))
 
 	var soloLobbyQueueWorker = worker.NewLobbyMatchmakingQueueWorker(context.Background(), game.ModeIdentifierCompSingle, core.data.MatchLobbyQueue, lobbyDispatcher)
 	go soloLobbyQueueWorker.Run()
@@ -156,7 +157,7 @@ func (a *LobbyApplication) NewLobbyCancelCommandHandler(core *CoreApplication) L
 }
 
 func (a *LobbyApplication) NewLobbyStartCommandHandler(core *CoreApplication) LobbyStartCommandHandler {
-	var actual = command.NewLobbyStartCommandHandler(core.data.Sessions, core.data.Lobbies, core.data.LobbyParticipants)
+	var actual = command.NewLobbyStartCommandHandler(core.data.Sessions, core.data.Lobbies, core.data.Games, factory.NewGameInstanceFactory(core.repositories.Quests))
 	return decorator.NewStandardCommandDecorator[command.Context, *command.LobbyStartCommand](core.Services.EventPublisher, actual)
 }
 
