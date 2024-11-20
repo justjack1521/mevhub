@@ -24,7 +24,7 @@ require (
 	github.com/jinzhu/inflection v1.0.0 // indirect
 	github.com/jinzhu/now v1.1.5 // indirect
 	github.com/justjack1521/mevconn v0.0.0-20240724034951-1028ae2f3b3a // indirect
-	github.com/justjack1521/mevrabbit v0.0.0-20241030022126-6a68c26fe4a2 // indirect
+	github.com/justjack1521/mevrabbit v0.0.0-20241120034927-1727a709432d // indirect
 	github.com/justjack1521/mevrelic v0.0.0-20240509231826-42880847997d // indirect
 	github.com/justjack1521/mevrpc v0.0.0-20240508141837-73ab62053f83 // indirect
 	github.com/klauspost/compress v1.17.2 // indirect

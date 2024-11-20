@@ -19,7 +19,7 @@ func NewClientDisconnectConsumer(publisher *mevent.Publisher, conn *rabbitmq.Con
 	var service = &ClientDisconnectConsumer{
 		publisher: publisher,
 	}
-	consumer, err := mevrabbit.NewStandardConsumer(conn, mevrabbit.ClientUpdate, mevrabbit.ClientDisconnected, mevrabbit.Client, service.Consume)
+	consumer, err := mevrabbit.NewStandardConsumer(conn, mevrabbit.ClientDisconnect, mevrabbit.ClientDisconnected, mevrabbit.Client, service.Consume)
 	if err != nil {
 		panic(err)
 	}
