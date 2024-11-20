@@ -39,7 +39,7 @@ func (s *LobbyInstanceWriter) HandleSessionDeleted(evt session.InstanceDeletedEv
 		return nil
 	}
 
-	if err := s.LobbyInstanceRepository.Delete(evt.Context(), instance.SysID); err != nil {
+	if err := s.LobbyInstanceRepository.Delete(evt.Context(), instance); err != nil {
 		return err
 	}
 

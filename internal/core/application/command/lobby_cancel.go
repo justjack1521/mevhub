@@ -52,7 +52,7 @@ func (h *LobbyCancelCommandHandler) Handle(ctx Context, cmd *LobbyCancelCommand)
 		return ErrFailedHandleCancelLobbyCommand(err)
 	}
 
-	if err := h.InstanceRepository.Delete(ctx, current.LobbyID); err != nil {
+	if err := h.InstanceRepository.Delete(ctx, instance); err != nil {
 		return ErrFailedHandleCancelLobbyCommand(err)
 	}
 

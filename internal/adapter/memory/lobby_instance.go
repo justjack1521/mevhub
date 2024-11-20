@@ -89,9 +89,10 @@ func (r *LobbyInstanceRedisRepository) Create(ctx context.Context, instance *lob
 
 }
 
-func (r *LobbyInstanceRedisRepository) Delete(ctx context.Context, id uuid.UUID) error {
-	var key = r.GenerateLobbyInstanceKey(id)
-	if err := r.client.Del(ctx, key).Err(); err != nil {
+func (r *LobbyInstanceRedisRepository) Delete(ctx context.Context, instance *lobby.Instance) error {
+	var key = r.GenerateLobbyInstanceKey(instance.SysID)
+	var party = r.GenerateLobbyPartyKey(instance.PartyID)
+	if err := r.client.Del(ctx, key, party).Err(); err != nil {
 		return lobby.ErrFailedDeleteLobbyInstance(err)
 	}
 	return nil

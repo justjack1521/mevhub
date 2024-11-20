@@ -13,7 +13,7 @@ type LobbyInstanceReadRepository interface {
 
 type LobbyInstanceWriteRepository interface {
 	Create(ctx context.Context, instance *lobby.Instance) error
-	Delete(ctx context.Context, id uuid.UUID) error
+	Delete(ctx context.Context, instance *lobby.Instance) error
 }
 
 type LobbyInstanceRepository interface {
