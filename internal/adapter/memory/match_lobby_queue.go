@@ -45,6 +45,13 @@ func (r *MatchLobbyQueueRepository) RemoveExpiredLobbies(ctx context.Context, mo
 		Offset: 0,
 		Count:  0,
 	}).Result()
+	if err != nil {
+		return err
+	}
+
+	if len(expired) == 0 {
+		return nil
+	}
 
 	_, err = r.client.TxPipelined(ctx, func(pipe redis.Pipeliner) error {
 		pipe.ZRem(ctx, q, expired)
