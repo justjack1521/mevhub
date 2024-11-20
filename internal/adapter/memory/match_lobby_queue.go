@@ -32,19 +32,26 @@ func (r *MatchLobbyQueueRepository) GetCountQueuedLobbies(ctx context.Context, m
 }
 
 func (r *MatchLobbyQueueRepository) RemoveExpiredLobbies(ctx context.Context, mode game.ModeIdentifier, quest uuid.UUID) error {
+
 	var q = r.matchmakingLobbyQueueKey(mode, quest)
 	var t = r.matchmakingLobbyQueueTimeKey(mode)
 
 	var expire = time.Now().UTC().Add(time.Minute * -20)
 	var threshold = float64(expire.Unix())
 
-	if err := r.client.ZRemRangeByScore(ctx, q, "-inf", fmt.Sprintf("%f", threshold)).Err(); err != nil {
-		return err
-	}
-	if err := r.client.ZRemRangeByScore(ctx, t, "-inf", fmt.Sprintf("%f", threshold)).Err(); err != nil {
-		return err
-	}
-	return nil
+	expired, err := r.client.ZRangeByScore(ctx, t, &redis.ZRangeBy{
+		Min:    "-inf",
+		Max:    fmt.Sprintf("%f", threshold),
+		Offset: 0,
+		Count:  0,
+	}).Result()
+
+	_, err = r.client.TxPipelined(ctx, func(pipe redis.Pipeliner) error {
+		pipe.ZRem(ctx, q, expired)
+		pipe.ZRem(ctx, t, expired)
+		return nil
+	})
+	return err
 }
 
 func (r *MatchLobbyQueueRepository) RemoveInactiveQuest(ctx context.Context, mode game.ModeIdentifier, quest uuid.UUID) error {
