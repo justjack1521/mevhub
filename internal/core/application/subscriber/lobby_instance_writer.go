@@ -3,6 +3,7 @@ package subscriber
 import (
 	"fmt"
 	"github.com/justjack1521/mevium/pkg/mevent"
+	"mevhub/internal/core/domain/lobby"
 	"mevhub/internal/core/domain/session"
 	"mevhub/internal/core/port"
 )
@@ -41,6 +42,8 @@ func (s *LobbyInstanceWriter) HandleSessionDeleted(evt session.InstanceDeletedEv
 	if err := s.LobbyInstanceRepository.Delete(evt.Context(), instance.SysID); err != nil {
 		return err
 	}
+
+	s.EventPublisher.Notify(lobby.NewInstanceDeletedEvent(evt.Context(), instance.SysID, instance.QuestID))
 
 	return nil
 

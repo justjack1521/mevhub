@@ -24,6 +24,7 @@ func (e InstanceDeletedEvent) ToLogFields() logrus.Fields {
 	return logrus.Fields{
 		"event.name": e.Name(),
 		"lobby.id":   e.id,
+		"quest.id":   e.questID,
 	}
 }
 
