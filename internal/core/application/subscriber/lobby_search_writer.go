@@ -15,8 +15,8 @@ type LobbySearchWriter struct {
 	QuestRepository  port.QuestRepository
 }
 
-func NewLobbySearchWriter(publisher *mevent.Publisher, quests port.QuestRepository, searcher port.LobbySearchWriteRepository) *LobbySearchWriter {
-	var subscriber = &LobbySearchWriter{QuestRepository: quests, SearchRepository: searcher}
+func NewLobbySearchWriter(publisher *mevent.Publisher, lobbies port.LobbyInstanceReadRepository, search port.LobbySearchWriteRepository, quests port.QuestRepository) *LobbySearchWriter {
+	var subscriber = &LobbySearchWriter{LobbyRepository: lobbies, SearchRepository: search, QuestRepository: quests}
 	publisher.Subscribe(subscriber, lobby.InstanceCreatedEvent{})
 	return subscriber
 }

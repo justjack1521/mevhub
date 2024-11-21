@@ -83,7 +83,7 @@ func NewLobbyApplication(core *CoreApplication) *LobbyApplication {
 	application.subscribers = []ApplicationSubscriber{
 		subscriber.NewLobbyNotificationChanneler(core.Services.EventPublisher, core.Services.Redis, core.Services.RabbitMQConnection, memory.NewLobbyChannelRepository(core.Services.Redis)),
 		subscriber.NewLobbySummaryWriter(core.Services.EventPublisher, core.repositories.Quests, core.data.LobbySummaries),
-		subscriber.NewLobbySearchWriter(core.Services.EventPublisher, core.repositories.Quests, core.data.LobbySearch),
+		subscriber.NewLobbySearchWriter(core.Services.EventPublisher, core.data.Lobbies, core.data.LobbySearch, core.repositories.Quests),
 		subscriber.NewLobbyQueueWriter(core.Services.EventPublisher, core.data.Lobbies, core.repositories.Quests, core.data.MatchLobbyQueue, core.data.LobbyParticipants),
 		subscriber.NewLobbyPlayerQueueWriter(core.Services.EventPublisher, core.data.MatchPlayerQueue, core.repositories.Quests, core.data.LobbyParticipants, core.data.LobbyPlayerSummaries),
 		subscriber.NewLobbyChannelEventNotifier(core.Services.EventPublisher, core.data.LobbyPlayerSummaries, application.Translators.LobbyPlayer),
