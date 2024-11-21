@@ -82,9 +82,11 @@ func (w *LobbyMatchmakingQueueWorker) findMatch(quest uuid.UUID) error {
 			continue
 		}
 		if err := w.repository.RemoveLobbyFromQueue(w.ctx, w.mode, quest, queued.LobbyID); err != nil {
+			fmt.Println(err)
 			continue
 		}
 		if err := w.repository.RemoveLobbyFromQueue(w.ctx, w.mode, quest, found.LobbyID); err != nil {
+			fmt.Println(err)
 			continue
 		}
 	}

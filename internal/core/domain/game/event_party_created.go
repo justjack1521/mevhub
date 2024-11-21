@@ -17,7 +17,7 @@ func NewPartyCreatedEvent(ctx context.Context, partyID, gameID uuid.UUID) PartyC
 }
 
 func (e PartyCreatedEvent) Name() string {
-	return "game.instance.ready"
+	return "game.party.created"
 }
 
 func (e PartyCreatedEvent) ToLogFields() logrus.Fields {
