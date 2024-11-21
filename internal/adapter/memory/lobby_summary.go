@@ -12,7 +12,7 @@ import (
 
 const (
 	lobbySummaryKey = "lobby_summary"
-	lobbySummaryTTL = time.Minute * 180
+	lobbySummaryTTL = time.Minute * 45
 )
 
 type LobbySummaryRepository struct {
@@ -48,13 +48,12 @@ func (r *LobbySummaryRepository) Create(ctx context.Context, summary lobby.Summa
 }
 
 func (r *LobbySummaryRepository) Delete(ctx context.Context, id uuid.UUID) error {
-	var key = r.Key(id)
-	if err := r.client.Del(ctx, key).Err(); err != nil {
+	if err := r.client.Del(ctx, r.Key(id)).Err(); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (r *LobbySummaryRepository) Key(player uuid.UUID) string {
-	return strings.Join([]string{serviceKey, lobbySummaryKey, player.String()}, ":")
+func (r *LobbySummaryRepository) Key(id uuid.UUID) string {
+	return strings.Join([]string{serviceKey, lobbySummaryKey, id.String()}, ":")
 }
