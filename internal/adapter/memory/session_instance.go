@@ -109,6 +109,7 @@ func (r *SessionInstanceRedisRepository) InstanceToTransfer(instance *session.In
 		PlayerID:  instance.PlayerID.String(),
 		DeckIndex: instance.DeckIndex,
 		LobbyID:   instance.LobbyID.String(),
+		GameID:    instance.GameID.String(),
 		PartySlot: instance.PartySlot,
 	}, nil
 }

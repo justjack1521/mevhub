@@ -23,9 +23,9 @@ func NewLobbyMatchmakingDispatcher(publisher *mevent.Publisher, quests port.Ques
 	return &LobbyMatchmakingDispatcher{EventPublisher: publisher, QuestRepository: quests, LobbyInstanceRepository: lobbies, GameInstanceRepository: games, GameInstanceFactory: factory}
 }
 
-func (d *LobbyMatchmakingDispatcher) Dispatch(ctx context.Context, mode game.ModeIdentifier, id uuid.UUID, lobbies match.LobbyQueueEntryCollection) error {
+func (d *LobbyMatchmakingDispatcher) Dispatch(ctx context.Context, mode game.ModeIdentifier, q uuid.UUID, lobbies match.LobbyQueueEntryCollection) error {
 
-	quest, err := d.QuestRepository.QueryByID(id)
+	quest, err := d.QuestRepository.QueryByID(q)
 	if err != nil {
 		return err
 	}

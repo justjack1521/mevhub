@@ -35,7 +35,7 @@ func (h *DequeueActionCommandHandler) Handle(ctx Context, cmd *DequeueActionComm
 	}
 
 	var request = &server.GameActionRequest{
-		InstanceID: current.LobbyID,
+		PartyID: current.LobbyID,
 		Action: &game.PlayerDequeueAction{
 			InstanceID: current.LobbyID,
 			PlayerID:   current.PlayerID,

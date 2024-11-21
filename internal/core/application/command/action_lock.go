@@ -35,7 +35,7 @@ func (h *LockActionCommandHandler) Handle(ctx Context, cmd *LockActionCommand) e
 	}
 
 	var request = &server.GameActionRequest{
-		InstanceID: current.LobbyID,
+		PartyID: current.LobbyID,
 		Action: &game.PlayerLockAction{
 			InstanceID: current.LobbyID,
 			PlayerID:   current.PlayerID,

@@ -35,10 +35,12 @@ func (h *ReadyPlayerCommandHandler) Handle(ctx Context, cmd *ReadyPlayerCommand)
 	}
 
 	var request = &server.GameActionRequest{
-		InstanceID: current.LobbyID,
+		GameID:  current.GameID,
+		PartyID: current.LobbyID,
 		Action: &game.PlayerReadyAction{
-			InstanceID: current.LobbyID,
-			PlayerID:   current.PlayerID,
+			GameID:   current.GameID,
+			PartyID:  current.LobbyID,
+			PlayerID: current.PlayerID,
 		},
 	}
 

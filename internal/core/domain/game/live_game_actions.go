@@ -9,15 +9,52 @@ import (
 )
 
 var (
+	ErrPartyIDNil          = errors.New("party id is nil")
+	ErrPartyAlreadyInGame  = errors.New("party already added to game")
 	ErrPlayerGameFull      = errors.New("live game is full")
 	ErrPlayerAlreadyInGame = errors.New("player already added to game")
 	ErrPlayerNotInGame     = errors.New("player not in game")
+	ErrPlayerNotInParty    = errors.New("player not in party")
 	ErrUserIDNil           = errors.New("user id is nil")
 	ErrPlayerIDNil         = errors.New("player id is nil")
 )
 
 type Action interface {
 	Perform(game *LiveGameInstance) error
+}
+
+type PartyAddAction struct {
+	PartyID    uuid.UUID
+	PartyIndex int
+}
+
+func (a *PartyAddAction) Perform(game *LiveGameInstance) error {
+
+	if game.PartyExists(a.PartyID) {
+		return ErrPartyAlreadyInGame
+	}
+
+	if uuid.Equal(a.PartyID, uuid.Nil) {
+		return ErrPartyIDNil
+	}
+
+	game.Parties[a.PartyID] = &LiveParty{
+		PartyID:        a.PartyID,
+		PartyIndex:     a.PartyIndex,
+		Players:        make(map[uuid.UUID]*LivePlayer),
+		MaxPlayerCount: 100,
+		LastAction:     time.Now().UTC(),
+	}
+
+	var change = PartyAddChange{
+		PartyID:   a.PartyID,
+		PartySlot: a.PartyIndex,
+	}
+
+	game.SendChange(change)
+
+	return nil
+
 }
 
 var (
@@ -29,11 +66,18 @@ var (
 type PlayerAddAction struct {
 	UserID    uuid.UUID
 	PlayerID  uuid.UUID
+	PartyID   uuid.UUID
 	PartySlot int
 }
 
 func (a *PlayerAddAction) validate(game *LiveGameInstance) error {
-	if len(game.Players) == game.MaxPlayerCount {
+
+	party, err := game.GetParty(a.PartyID)
+	if err != nil {
+		return err
+	}
+
+	if party.GetPlayerCount() == party.MaxPlayerCount {
 		return ErrPlayerGameFull
 	}
 
@@ -45,7 +89,7 @@ func (a *PlayerAddAction) validate(game *LiveGameInstance) error {
 		return ErrPlayerIDNil
 	}
 
-	if _, exists := game.Players[a.PlayerID]; exists {
+	if _, exists := party.Players[a.PlayerID]; exists {
 		return ErrPlayerAlreadyInGame
 	}
 	return nil
@@ -57,7 +101,12 @@ func (a *PlayerAddAction) Perform(game *LiveGameInstance) error {
 		return ErrFailedAddPlayerToGame(a.PlayerID, err)
 	}
 
-	game.Players[a.PlayerID] = &LivePlayer{
+	party, err := game.GetParty(a.PartyID)
+	if err != nil {
+		return err
+	}
+
+	party.Players[a.PlayerID] = &LivePlayer{
 		UserID:    a.UserID,
 		PlayerID:  a.PlayerID,
 		PartySlot: a.PartySlot,
@@ -117,8 +166,9 @@ var (
 )
 
 type PlayerReadyAction struct {
-	InstanceID uuid.UUID
-	PlayerID   uuid.UUID
+	GameID   uuid.UUID
+	PartyID  uuid.UUID
+	PlayerID uuid.UUID
 }
 
 func (a *PlayerReadyAction) Perform(game *LiveGameInstance) error {
@@ -130,7 +180,7 @@ func (a *PlayerReadyAction) Perform(game *LiveGameInstance) error {
 
 	player.Ready = true
 	var change = PlayerReadyChange{
-		InstanceID: a.InstanceID,
+		InstanceID: a.GameID,
 		PartySlot:  player.PartySlot,
 	}
 	game.SendChange(change)

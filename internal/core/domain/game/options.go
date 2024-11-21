@@ -24,6 +24,7 @@ const (
 
 type InstanceOptions struct {
 	MinimumPlayerLevel int
+	MaxPartyCount      int
 	MaxPlayerCount     int
 	MaxRunTime         time.Duration
 	PlayerTurnDuration time.Duration

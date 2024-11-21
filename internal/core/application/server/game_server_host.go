@@ -90,15 +90,15 @@ func (h *GameServerHost) unregister(id uuid.UUID) {
 
 func (h *GameServerHost) action(request *GameActionRequest) {
 
-	if request.InstanceID == uuid.Nil {
+	if request.PartyID == uuid.Nil {
 		return
 	}
 
-	instance, exists := h.games[request.InstanceID]
+	instance, exists := h.games[request.PartyID]
 
 	if exists == false {
 		h.logger.With(
-			slog.String("instance.id", request.InstanceID.String()),
+			slog.String("instance.id", request.PartyID.String()),
 			slog.Group("action",
 				slog.String("action.type", reflect.TypeOf(request.Action).String()),
 			),
@@ -108,7 +108,7 @@ func (h *GameServerHost) action(request *GameActionRequest) {
 
 	instance.game.ActionChannel <- request.Action
 	h.logger.With(
-		slog.String("instance.id", request.InstanceID.String()),
+		slog.String("instance.id", request.PartyID.String()),
 		slog.Group("action",
 			slog.String("action.type", reflect.TypeOf(request.Action).String()),
 		),

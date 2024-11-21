@@ -202,15 +202,16 @@ func (s *GameServer) Publish(operation protomulti.MultiGameNotificationType, mes
 }
 
 type GameActionRequest struct {
-	InstanceID uuid.UUID
-	Action     game.Action
+	GameID  uuid.UUID
+	PartyID uuid.UUID
+	Action  game.Action
 }
 
 type PlayerAddRequest struct {
-	InstanceID uuid.UUID
-	UserID     uuid.UUID
-	PlayerID   uuid.UUID
-	PartySlot  int
+	PartyID   uuid.UUID
+	UserID    uuid.UUID
+	PlayerID  uuid.UUID
+	PartySlot int
 }
 
 type PlayerRemoveRequest struct {

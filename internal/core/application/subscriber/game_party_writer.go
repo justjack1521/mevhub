@@ -17,18 +17,28 @@ type GamePartyWriter struct {
 
 func NewGamePartyWriter(publisher *mevent.Publisher, games port.GameInstanceReadRepository, lobbies port.LobbySummaryReadRepository, parties port.GamePartyWriteRepository) *GamePartyWriter {
 	var service = &GamePartyWriter{EventPublisher: publisher, GameInstanceRepository: games, LobbySummaryRepository: lobbies, PartyRepository: parties}
-	publisher.Subscribe(service, game.InstanceCreatedEvent{})
+	publisher.Subscribe(service, game.InstanceCreatedEvent{}, game.InstanceDeletedEvent{})
 	return service
 }
 
 func (s *GamePartyWriter) Notify(event mevent.Event) {
 	switch actual := event.(type) {
 	case game.InstanceCreatedEvent:
-		fmt.Println("party writer received event")
 		if err := s.HandleInstanceCreated(actual); err != nil {
 			fmt.Println(err)
 		}
+	case game.InstanceDeletedEvent:
+		if err := s.HandleInstanceDeleted(actual); err != nil {
+			fmt.Println(err)
+		}
 	}
+}
+
+func (s *GamePartyWriter) HandleInstanceDeleted(evt game.InstanceDeletedEvent) error {
+	if err := s.PartyRepository.DeleteAll(evt.Context(), evt.InstanceID()); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (s *GamePartyWriter) HandleInstanceCreated(evt game.InstanceCreatedEvent) error {
@@ -43,12 +53,11 @@ func (s *GamePartyWriter) HandleInstanceCreated(evt game.InstanceCreatedEvent) e
 	}
 
 	for index, value := range parent.LobbyIDs {
-		fmt.Println(fmt.Sprintf("creating party for %s", value.String()))
+
 		instance, err := s.LobbySummaryRepository.Query(evt.Context(), value)
 		if err != nil {
 			return err
 		}
-		fmt.Println(fmt.Sprintf("lobby summary found for %s", instance.InstanceID.String()))
 
 		result := &game.Party{
 			SysID:     instance.InstanceID,

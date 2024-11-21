@@ -11,6 +11,7 @@ type Change interface {
 type ChangeIdentifier string
 
 const (
+	ChaneIdentifierPartyAdd          ChangeIdentifier = "party.add"
 	ChangeIdentifierPlayerAdd        ChangeIdentifier = "player.add"
 	ChangeIdentifierPlayerRemove     ChangeIdentifier = "player.remove"
 	ChangeIdentifierPlayerReady      ChangeIdentifier = "player.ready"
@@ -20,6 +21,15 @@ const (
 	ChangeIdentifierDequeueAction    ChangeIdentifier = "dequeue.action"
 	ChangeIdentifierLockAction       ChangeIdentifier = "lock.action"
 )
+
+type PartyAddChange struct {
+	PartyID   uuid.UUID
+	PartySlot int
+}
+
+func (c PartyAddChange) Identifier() ChangeIdentifier {
+	return ChaneIdentifierPartyAdd
+}
 
 type PlayerAddChange struct {
 	UserID    uuid.UUID

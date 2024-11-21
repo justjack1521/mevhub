@@ -9,13 +9,13 @@ import (
 
 type GameParticipantWriter struct {
 	EventPublisher             *mevent.Publisher
-	ParticipantReadRepository  port.LobbyParticipantReadRepository
-	ParticipantWriteRepository port.GameParticipantWriteRepository
+	LobbyParticipantRepository port.LobbyParticipantReadRepository
+	GameParticipantRepository  port.GameParticipantWriteRepository
 }
 
 func NewGameParticipantWriter(publisher *mevent.Publisher, source port.LobbyParticipantReadRepository, target port.GameParticipantWriteRepository) *GameParticipantWriter {
-	var service = &GameParticipantWriter{EventPublisher: publisher, ParticipantReadRepository: source, ParticipantWriteRepository: target}
-	publisher.Subscribe(service, game.PartyCreatedEvent{})
+	var service = &GameParticipantWriter{EventPublisher: publisher, LobbyParticipantRepository: source, GameParticipantRepository: target}
+	publisher.Subscribe(service, game.PartyCreatedEvent{}, game.PartyDeletedEvent{})
 	return service
 }
 
@@ -28,9 +28,16 @@ func (s *GameParticipantWriter) Notify(event mevent.Event) {
 	}
 }
 
+func (s *GameParticipantWriter) HandlePartyDeleted(evt game.PartyDeletedEvent) error {
+	if err := s.GameParticipantRepository.DeleteAll(evt.Context(), evt.PartyID()); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *GameParticipantWriter) HandlePartyCreated(evt game.PartyCreatedEvent) error {
 
-	participants, err := s.ParticipantReadRepository.QueryAllForLobby(evt.Context(), evt.PartyID())
+	participants, err := s.LobbyParticipantRepository.QueryAllForLobby(evt.Context(), evt.PartyID())
 	if err != nil {
 		return err
 	}
@@ -45,9 +52,11 @@ func (s *GameParticipantWriter) HandlePartyCreated(evt game.PartyCreatedEvent) e
 			BotControl: participant.BotControl,
 		}
 
-		if err := s.ParticipantWriteRepository.Create(evt.Context(), evt.PartyID(), result); err != nil {
+		if err := s.GameParticipantRepository.Create(evt.Context(), evt.PartyID(), result); err != nil {
 			return err
 		}
+
+		s.EventPublisher.Notify(game.NewParticipantCreatedEvent(evt.Context(), evt.GameID(), evt.PartyID(), participant.UserID, participant.PlayerSlot))
 
 	}
 

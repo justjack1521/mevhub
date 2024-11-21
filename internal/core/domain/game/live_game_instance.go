@@ -21,13 +21,13 @@ type LiveGameInstance struct {
 	ActionChannel      chan Action
 	ChangeChannel      chan Change
 	ErrorChannel       chan error
-	Players            map[uuid.UUID]*LivePlayer
+	Parties            map[uuid.UUID]*LiveParty
 	State              State
 	PlayerTurnDuration time.Duration
 	GameDuration       time.Duration
 	Ended              bool
 	EndedAt            time.Time
-	MaxPlayerCount     int
+	MaxPartyCount      int
 }
 
 func NewLiveGameInstance(source *Instance) *LiveGameInstance {
@@ -36,58 +36,79 @@ func NewLiveGameInstance(source *Instance) *LiveGameInstance {
 		ActionChannel:      make(chan Action),
 		ChangeChannel:      make(chan Change),
 		ErrorChannel:       make(chan error),
-		Players:            make(map[uuid.UUID]*LivePlayer),
+		Parties:            make(map[uuid.UUID]*LiveParty),
 		PlayerTurnDuration: source.Options.PlayerTurnDuration,
 		GameDuration:       source.Options.MaxRunTime,
-		MaxPlayerCount:     source.Options.MaxPlayerCount,
+		MaxPartyCount:      source.Options.MaxPartyCount,
 	}
 	game.State = NewPendingState(game)
 	return game
 }
 
 func (game *LiveGameInstance) GetPlayerCount() int {
-	return len(game.Players)
+	var total = 0
+	for _, party := range game.Parties {
+		total += party.GetPlayerCount()
+	}
+	return total
 }
 
-func (game *LiveGameInstance) PlayerExists(id uuid.UUID) bool {
-	_, exists := game.Players[id]
+func (game *LiveGameInstance) PartyExists(id uuid.UUID) bool {
+	_, exists := game.Parties[id]
 	return exists
 }
 
-func (game *LiveGameInstance) GetPlayer(id uuid.UUID) (*LivePlayer, error) {
-	player, exists := game.Players[id]
+func (game *LiveGameInstance) GetParty(id uuid.UUID) (*LiveParty, error) {
+	party, exists := game.Parties[id]
 	if exists == false {
 		return nil, ErrPlayerNotInGame
 	}
-	return player, nil
+	return party, nil
+}
+
+func (game *LiveGameInstance) PlayerExists(id uuid.UUID) bool {
+	for _, party := range game.Parties {
+		if party.PlayerExists(id) {
+			return true
+		}
+	}
+	return false
+}
+
+func (game *LiveGameInstance) GetPlayer(id uuid.UUID) (*LivePlayer, error) {
+	for _, party := range game.Parties {
+		player, err := party.GetPlayer(id)
+		if err == nil {
+			return player, nil
+		}
+	}
+	return nil, ErrPlayerNotInGame
 }
 
 func (game *LiveGameInstance) GetReadyPlayerCount() int {
-	var count int
-	for _, player := range game.Players {
-		if player.Ready {
-			count++
-		}
+	var total = 0
+	for _, party := range game.Parties {
+		total += party.GetReadyPlayerCount()
 	}
-	return count
+	return total
 }
 
 func (game *LiveGameInstance) RemovePlayer(id uuid.UUID) error {
-	if game.PlayerExists(id) == false {
-		return ErrPlayerNotInGame
+	for _, party := range game.Parties {
+		if party.PlayerExists(id) == false {
+			continue
+		}
+		return party.RemovePlayer(id)
 	}
-	delete(game.Players, id)
-	return nil
+	return ErrPlayerNotInGame
 }
 
 func (game *LiveGameInstance) GetActionLockedPlayerCount() int {
-	var count int
-	for _, player := range game.Players {
-		if player.ActionsLocked {
-			count++
-		}
+	var total = 0
+	for _, party := range game.Parties {
+		total += party.GetActionLockedPlayerCount()
 	}
-	return count
+	return total
 }
 
 func (game *LiveGameInstance) Tick() {

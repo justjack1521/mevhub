@@ -37,6 +37,7 @@ func (f *GameInstanceFactory) Create(id uuid.UUID, sources ...*lobby.Instance) (
 			MinimumPlayerLevel: sources[0].MinimumPlayerLevel,
 			MaxRunTime:         quest.Tier.TimeLimit,
 			PlayerTurnDuration: quest.Tier.PlayerTurnDuration,
+			MaxPartyCount:      quest.Tier.GameMode.MaxLobbies,
 			MaxPlayerCount:     quest.Tier.GameMode.MaxPlayers,
 		},
 		State:        game.InstanceGamePendingState,

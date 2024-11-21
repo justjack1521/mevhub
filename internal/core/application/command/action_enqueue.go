@@ -45,7 +45,7 @@ func (h *EnqueueActionCommandHandler) Handle(ctx Context, cmd *EnqueueActionComm
 	}
 
 	var request = &server.GameActionRequest{
-		InstanceID: current.LobbyID,
+		PartyID: current.LobbyID,
 		Action: &game.PlayerEnqueueAction{
 			InstanceID: current.PlayerID,
 			PlayerID:   current.PlayerID,

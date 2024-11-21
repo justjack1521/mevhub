@@ -12,6 +12,7 @@ type GameChannelServerWriter struct {
 	Server                *server.GameServerHost
 	EventPublisher        *mevent.Publisher
 	InstanceRepository    port.GameInstanceReadRepository
+	PartyRepository       port.GamePartyReadRepository
 	ParticipantRepository port.GamePlayerReadRepository
 }
 
@@ -27,6 +28,8 @@ func (w *GameChannelServerWriter) Notify(event mevent.Event) {
 		w.HandleInstanceCreated(actual)
 	case game.InstanceDeletedEvent:
 		w.HandleInstanceDelete(actual)
+	case game.PartyCreatedEvent:
+
 	case game.ParticipantCreatedEvent:
 		w.HandleParticipantCreated(actual)
 	case session.InstanceDeletedEvent:
@@ -47,26 +50,43 @@ func (w *GameChannelServerWriter) HandleInstanceDelete(event game.InstanceDelete
 	w.Server.Unregister <- event.InstanceID()
 }
 
+func (w *GameChannelServerWriter) HandlePartyCreated(event game.PartyCreatedEvent) {
+	party, err := w.PartyRepository.Query(event.Context(), event.PartyID(), event.PartyIndex())
+	if err != nil {
+		return
+	}
+	w.Server.ActionChannel <- &server.GameActionRequest{
+		GameID:  event.GameID(),
+		PartyID: event.PartyID(),
+		Action: &game.PartyAddAction{
+			PartyID:    party.SysID,
+			PartyIndex: party.Index,
+		},
+	}
+}
+
 func (w *GameChannelServerWriter) HandleParticipantCreated(event game.ParticipantCreatedEvent) {
 
-	participant, err := w.ParticipantRepository.Query(event.Context(), event.InstanceID(), event.PlayerSlot())
+	participant, err := w.ParticipantRepository.Query(event.Context(), event.PartyID(), event.PlayerSlot())
 	if err != nil {
 		return
 	}
 
 	w.Server.ActionChannel <- &server.GameActionRequest{
-		InstanceID: event.InstanceID(),
+		GameID:  event.GameID(),
+		PartyID: event.PartyID(),
 		Action: &game.PlayerAddAction{
 			UserID:    participant.UserID,
 			PlayerID:  participant.PlayerID,
 			PartySlot: participant.PlayerSlot,
+			PartyID:   event.PartyID(),
 		},
 	}
 }
 
 func (w *GameChannelServerWriter) HandleSessionDeleted(event session.InstanceDeletedEvent) {
 	w.Server.ActionChannel <- &server.GameActionRequest{
-		InstanceID: event.LobbyID(),
+		PartyID: event.LobbyID(),
 		Action: &game.PlayerRemoveAction{
 			InstanceID: event.LobbyID(),
 			UserID:     event.UserID(),
