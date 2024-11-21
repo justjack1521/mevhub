@@ -43,20 +43,26 @@ func (s *GamePartyWriter) HandleInstanceCreated(evt game.InstanceCreatedEvent) e
 	}
 
 	for index, value := range parent.LobbyIDs {
+		fmt.Println(fmt.Sprintf("creating party for %s", value.String()))
 		instance, err := s.LobbySummaryRepository.Query(evt.Context(), value)
 		if err != nil {
 			return err
 		}
+		fmt.Println(fmt.Sprintf("lobby summary found for %s", instance.InstanceID.String()))
+
 		result := &game.Party{
 			SysID:     instance.InstanceID,
 			PartyID:   instance.PartyID,
 			Index:     index,
 			PartyName: instance.LobbyComment,
 		}
+
 		if err := s.PartyRepository.Create(evt.Context(), evt.InstanceID(), result); err != nil {
 			return err
 		}
+
 		s.EventPublisher.Notify(game.NewPartyCreatedEvent(evt.Context(), result.SysID, parent.SysID))
+
 	}
 
 	return nil
