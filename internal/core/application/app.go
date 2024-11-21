@@ -5,9 +5,9 @@ import (
 	services "github.com/justjack1521/mevium/pkg/genproto/service"
 	"github.com/justjack1521/mevium/pkg/mevent"
 	"github.com/justjack1521/mevrelic"
-	"github.com/sirupsen/logrus"
 	"github.com/wagslane/go-rabbitmq"
 	"gorm.io/gorm"
+	"log/slog"
 	"mevhub/internal/adapter/cache"
 	"mevhub/internal/adapter/database"
 	"mevhub/internal/adapter/external"
@@ -59,7 +59,7 @@ type DataRepositories struct {
 }
 
 type ApplicationServices struct {
-	Logger             *logrus.Logger
+	Logger             *slog.Logger
 	EventPublisher     *mevent.Publisher
 	Redis              *redis.Client
 	RabbitMQConnection *rabbitmq.Conn
@@ -71,7 +71,7 @@ func New() *CoreApplication {
 	return &CoreApplication{}
 }
 
-func NewApplication(db *gorm.DB, client *redis.Client, logger *logrus.Logger, conn *rabbitmq.Conn, identity services.MeviusIdentityServiceClient, options ...CoreApplicationConfigurationOption) *CoreApplication {
+func NewApplication(db *gorm.DB, client *redis.Client, logger *slog.Logger, conn *rabbitmq.Conn, identity services.MeviusIdentityServiceClient, options ...CoreApplicationConfigurationOption) *CoreApplication {
 	var application = New().BuildServices(client, conn, logger, identity).BuildRepos(db, client).BuildDataRepos(db, client, identity).BuildSubApps()
 	for _, opt := range options {
 		opt(application)
@@ -79,7 +79,7 @@ func NewApplication(db *gorm.DB, client *redis.Client, logger *logrus.Logger, co
 	return application
 }
 
-func (a *CoreApplication) BuildServices(client *redis.Client, mq *rabbitmq.Conn, logger *logrus.Logger, identity services.MeviusIdentityServiceClient) *CoreApplication {
+func (a *CoreApplication) BuildServices(client *redis.Client, mq *rabbitmq.Conn, logger *slog.Logger, identity services.MeviusIdentityServiceClient) *CoreApplication {
 	publisher := mevent.NewPublisher()
 	a.Services = ApplicationServices{
 		Logger:             logger,
@@ -129,9 +129,6 @@ type CoreApplicationConfigurationOption func(c *CoreApplication) *CoreApplicatio
 func ApplicationWithNewRelic(relic *mevrelic.NewRelic) CoreApplicationConfigurationOption {
 	return func(c *CoreApplication) *CoreApplication {
 		c.Services.NewRelic = relic
-		if c.Services.Logger != nil {
-			c.Services.NewRelic.Attach(c.Services.Logger)
-		}
 		return c
 	}
 }

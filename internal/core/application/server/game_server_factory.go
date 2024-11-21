@@ -3,6 +3,7 @@ package server
 import (
 	uuid "github.com/satori/go.uuid"
 	"github.com/sirupsen/logrus"
+	"log/slog"
 	"mevhub/internal/core/domain/game"
 )
 
@@ -31,7 +32,7 @@ func (f *GameServerFactory) Create(instance *game.Instance, notifier Notificatio
 
 type GameServerFactoryBuildAction func(svr *GameServer)
 
-func GameServerFactoryLoggingBuildAction(logger *logrus.Logger) GameServerFactoryBuildAction {
+func GameServerFactoryLoggingBuildAction(logger *slog.Logger) GameServerFactoryBuildAction {
 	return func(svr *GameServer) {
 		svr.ErrorHandler = NewErrorLoggingDecorator(logger, svr.ErrorHandler)
 	}

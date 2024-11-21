@@ -9,8 +9,10 @@ import (
 	"github.com/justjack1521/mevrelic"
 	"github.com/justjack1521/mevrpc"
 	"github.com/newrelic/go-agent/v3/integrations/nrgrpc"
+	slogrus "github.com/samber/slog-logrus/v2"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
+	"log/slog"
 	"math/rand"
 	"mevhub/internal/adapter/database"
 	"mevhub/internal/adapter/handler/rpc"
@@ -26,8 +28,12 @@ func main() {
 	rand.Seed(time.Now().Unix())
 
 	var logger = logrus.New()
+	var slogger = slog.New(slogrus.Option{Level: slog.LevelDebug, Logger: logger}.NewLogrusHandler())
 
-	var application = NewApplication(context.Background(), logger)
+	var app = NewApplication(context.Background(), slogger)
+	if app.Services.NewRelic != nil {
+		app.Services.NewRelic.Attach(logger)
+	}
 
 	defer func() {
 		if r := recover(); r != nil {
@@ -35,31 +41,29 @@ func main() {
 			os.Exit(1)
 			return
 		}
-		if err := application.Shutdown(); err != nil {
+		if err := app.Shutdown(); err != nil {
 			fmt.Println(err)
 		}
 	}()
 
-	var interceptions []grpc.UnaryServerInterceptor
-	if application.Services.NewRelic != nil && application.Services.NewRelic.Application != nil {
-		interceptions = append(interceptions, nrgrpc.UnaryServerInterceptor(application.Services.NewRelic.Application))
-	}
-	interceptions = append(interceptions, mevrpc.IdentityExtractionUnaryServerInterceptor)
-
 	options := []grpc.ServerOption{
-		grpc.ChainUnaryInterceptor(interceptions...),
+		//grpc.Creds(configuration.Certificates.NewTransportCredentials()),
+		grpc.ChainUnaryInterceptor(
+			nrgrpc.UnaryServerInterceptor(app.Services.NewRelic.Application),
+			mevrpc.IdentityExtractionUnaryServerInterceptor,
+		),
 	}
 
-	application.Start()
+	app.Start()
 
 	server.RunGRPCServerWithOptions("50555", func(svr *grpc.Server) {
-		svc := rpc.NewMultiGrpcServer(application)
+		svc := rpc.NewMultiGrpcServer(app)
 		services.RegisterMeviusMultiServiceServer(svr, svc)
 	}, options...)
 
 }
 
-func NewApplication(ctx context.Context, logger *logrus.Logger) *application.CoreApplication {
+func NewApplication(ctx context.Context, logger *slog.Logger) *application.CoreApplication {
 
 	db, err := database.NewPostgresConnection()
 	if err != nil {

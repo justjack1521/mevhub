@@ -2,8 +2,8 @@ package server
 
 import (
 	uuid "github.com/satori/go.uuid"
-	"github.com/sirupsen/logrus"
 	"github.com/wagslane/go-rabbitmq"
+	"log/slog"
 	"mevhub/internal/core/domain/game"
 	"reflect"
 	"sync"
@@ -19,13 +19,13 @@ type GameServerHost struct {
 	Unregister chan uuid.UUID
 
 	connection *rabbitmq.Conn
-	logger     *logrus.Logger
+	logger     *slog.Logger
 
 	ActionChannel     chan *GameActionRequest
 	GameServerFactory *GameServerFactory
 }
 
-func NewGameServerHost(conn *rabbitmq.Conn, logger *logrus.Logger, factory *GameServerFactory) *GameServerHost {
+func NewGameServerHost(conn *rabbitmq.Conn, logger *slog.Logger, factory *GameServerFactory) *GameServerHost {
 	var server = &GameServerHost{
 		connection:        conn,
 		logger:            logger,
@@ -75,7 +75,7 @@ func (h *GameServerHost) tick(t time.Time) {
 func (h *GameServerHost) register(channel *GameServer) {
 	h.games[channel.InstanceID] = channel
 	channel.Start()
-	h.logger.WithFields(logrus.Fields{"count": len(h.games)}).Info("game server registered")
+	h.logger.With(slog.Int("count", len(h.games))).Info("game server registered")
 }
 
 func (h *GameServerHost) unregister(id uuid.UUID) {
@@ -85,7 +85,7 @@ func (h *GameServerHost) unregister(id uuid.UUID) {
 		close(channel.game.ErrorChannel)
 	}
 	delete(h.games, id)
-	h.logger.WithFields(logrus.Fields{"count": len(h.games)}).Info("game server unregistered")
+	h.logger.With(slog.Int("count", len(h.games))).Info("game server unregistered")
 }
 
 func (h *GameServerHost) action(request *GameActionRequest) {
@@ -97,17 +97,21 @@ func (h *GameServerHost) action(request *GameActionRequest) {
 	instance, exists := h.games[request.InstanceID]
 
 	if exists == false {
-		h.logger.WithFields(logrus.Fields{
-			"instance.id": request.InstanceID,
-			"action.type": reflect.TypeOf(request.Action),
-		}).Info("game server action orphaned")
+		h.logger.With(
+			slog.String("instance.id", request.InstanceID.String()),
+			slog.Group("action",
+				slog.String("action.type", reflect.TypeOf(request.Action).String()),
+			),
+		).Info("game server action orphaned")
 		return
 	}
 
 	instance.game.ActionChannel <- request.Action
-	h.logger.WithFields(logrus.Fields{
-		"instance.id": request.InstanceID,
-		"action.type": reflect.TypeOf(request.Action),
-	}).Info("game server action received")
+	h.logger.With(
+		slog.String("instance.id", request.InstanceID.String()),
+		slog.Group("action",
+			slog.String("action.type", reflect.TypeOf(request.Action).String()),
+		),
+	).Info("game server action received")
 
 }

@@ -1,8 +1,7 @@
 package server
 
 import (
-	"fmt"
-	"github.com/sirupsen/logrus"
+	"log/slog"
 )
 
 type ErrorHandler interface {
@@ -17,17 +16,15 @@ func (d ErrorHandlerDefault) Handle(svr *GameServer, err error) {
 }
 
 type ErrorHandlerWithLogging struct {
-	logger *logrus.Logger
+	logger *slog.Logger
 	next   ErrorHandler
 }
 
-func NewErrorLoggingDecorator(logger *logrus.Logger, next ErrorHandler) *ErrorHandlerWithLogging {
+func NewErrorLoggingDecorator(logger *slog.Logger, next ErrorHandler) *ErrorHandlerWithLogging {
 	return &ErrorHandlerWithLogging{logger: logger, next: next}
 }
 
 func (d ErrorHandlerWithLogging) Handle(svr *GameServer, err error) {
-	d.logger.WithFields(logrus.Fields{
-		"instance.id": "test",
-	}).Error(fmt.Errorf("game server error: %w", err))
+	d.logger.With("error", err.Error()).Error("game server error")
 	d.next.Handle(svr, err)
 }
