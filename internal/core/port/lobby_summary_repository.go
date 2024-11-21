@@ -11,6 +11,15 @@ type LobbySummaryReadRepository interface {
 	Query(ctx context.Context, id uuid.UUID) (lobby.Summary, error)
 }
 
+var (
+	ErrFailedCreateLobbySummary = func(summary lobby.Summary, err error) error {
+		return fmt.Errorf("failed to create summary for lobby: %s: %w", summary.InstanceID, err)
+	}
+	ErrFailedDeleteLobbySummary = func(id uuid.UUID, err error) error {
+		return fmt.Errorf("failed to delete summary for lobby: %s: %w", id, err)
+	}
+)
+
 type LobbySummaryWriteRepository interface {
 	Create(ctx context.Context, summary lobby.Summary) error
 	Delete(ctx context.Context, id uuid.UUID) error
