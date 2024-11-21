@@ -80,7 +80,7 @@ func NewApplication(db *gorm.DB, client *redis.Client, logger *slog.Logger, conn
 }
 
 func (a *CoreApplication) BuildServices(client *redis.Client, mq *rabbitmq.Conn, logger *slog.Logger, identity services.MeviusIdentityServiceClient) *CoreApplication {
-	publisher := mevent.NewPublisher()
+	publisher := mevent.NewPublisher(mevent.PublisherWithLogger(logger))
 	a.Services = ApplicationServices{
 		Logger:             logger,
 		EventPublisher:     publisher,
