@@ -24,6 +24,7 @@ func NewGamePartyWriter(publisher *mevent.Publisher, games port.GameInstanceRead
 func (s *GamePartyWriter) Notify(event mevent.Event) {
 	switch actual := event.(type) {
 	case game.InstanceCreatedEvent:
+		fmt.Println("party writer received event")
 		if err := s.HandleInstanceCreated(actual); err != nil {
 			fmt.Println(err)
 		}
