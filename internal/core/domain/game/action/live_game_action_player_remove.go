@@ -1,8 +1,9 @@
-package game
+package action
 
 import (
 	"fmt"
 	uuid "github.com/satori/go.uuid"
+	"mevhub/internal/core/domain/game"
 )
 
 var (
@@ -22,7 +23,7 @@ func NewPlayerRemoveAction(instanceID uuid.UUID, partyID uuid.UUID, userID uuid.
 	return &PlayerRemoveAction{GameID: instanceID, PartyID: partyID, UserID: userID, PlayerID: playerID}
 }
 
-func (a *PlayerRemoveAction) Perform(game *LiveGameInstance) error {
+func (a *PlayerRemoveAction) Perform(game *game.LiveGameInstance) error {
 
 	party, err := game.GetParty(a.PartyID)
 	if err != nil {

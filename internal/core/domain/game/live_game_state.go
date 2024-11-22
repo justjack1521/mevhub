@@ -5,7 +5,7 @@ import (
 )
 
 const (
-	pendingStateMaxWaitDuration = time.Minute * 1
+	PendingStateMaxWaitDuration = time.Minute * 1
 )
 
 type State interface {

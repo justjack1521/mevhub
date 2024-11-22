@@ -5,6 +5,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"log/slog"
 	"mevhub/internal/core/domain/game"
+	"mevhub/internal/core/domain/game/action"
 )
 
 type GameServerFactory struct {
@@ -24,9 +25,10 @@ func (f *GameServerFactory) Create(instance *game.Instance, notifier Notificatio
 		logger:       logrus.New(),
 		ErrorHandler: ErrorHandlerDefault{},
 	}
-	for _, action := range f.actions {
-		action(svr)
+	for _, a := range f.actions {
+		a(svr)
 	}
+	svr.game.State = action.NewPendingState(svr.game)
 	return svr
 }
 

@@ -2,7 +2,7 @@ package command
 
 import (
 	"mevhub/internal/core/application/server"
-	"mevhub/internal/core/domain/game"
+	"mevhub/internal/core/domain/game/action"
 	"mevhub/internal/core/port"
 )
 
@@ -37,7 +37,7 @@ func (h *ReadyPlayerCommandHandler) Handle(ctx Context, cmd *ReadyPlayerCommand)
 	var request = &server.GameActionRequest{
 		GameID:  current.GameID,
 		PartyID: current.LobbyID,
-		Action:  game.NewPlayerReadyAction(current.GameID, current.LobbyID, current.PlayerID),
+		Action:  action.NewPlayerReadyAction(current.GameID, current.LobbyID, current.PlayerID),
 	}
 
 	h.GameServerHost.ActionChannel <- request

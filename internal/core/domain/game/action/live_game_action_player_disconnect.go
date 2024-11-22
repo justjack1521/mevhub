@@ -1,8 +1,9 @@
-package game
+package action
 
 import (
 	"fmt"
 	uuid "github.com/satori/go.uuid"
+	"mevhub/internal/core/domain/game"
 	"time"
 )
 
@@ -23,7 +24,7 @@ func NewPlayerDisconnectAction(instanceID uuid.UUID, partyID uuid.UUID, playerID
 	return &PlayerDisconnectAction{InstanceID: instanceID, PartyID: partyID, PlayerID: playerID, DisconnectTime: disconnectTime}
 }
 
-func (a *PlayerDisconnectAction) Perform(game *LiveGameInstance) error {
+func (a *PlayerDisconnectAction) Perform(game *game.LiveGameInstance) error {
 
 	party, err := game.GetParty(a.PartyID)
 	if err != nil {

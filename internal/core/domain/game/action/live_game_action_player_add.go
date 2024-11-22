@@ -1,8 +1,9 @@
-package game
+package action
 
 import (
 	"fmt"
 	uuid "github.com/satori/go.uuid"
+	"mevhub/internal/core/domain/game"
 )
 
 var (
@@ -22,49 +23,49 @@ func NewPlayerAddAction(userID uuid.UUID, playerID uuid.UUID, partyID uuid.UUID,
 	return &PlayerAddAction{UserID: userID, PlayerID: playerID, PartyID: partyID, PartySlot: partySlot}
 }
 
-func (a *PlayerAddAction) validate(game *LiveGameInstance) error {
+func (a *PlayerAddAction) validate(instance *game.LiveGameInstance) error {
 
-	party, err := game.GetParty(a.PartyID)
+	party, err := instance.GetParty(a.PartyID)
 	if err != nil {
 		return err
 	}
 
 	if party.GetPlayerCount() == party.MaxPlayerCount {
-		return ErrPlayerGameFull
+		return game.ErrPlayerGameFull
 	}
 
 	if uuid.Equal(a.UserID, uuid.Nil) {
-		return ErrUserIDNil
+		return game.ErrUserIDNil
 	}
 
 	if uuid.Equal(a.PlayerID, uuid.Nil) {
-		return ErrPlayerIDNil
+		return game.ErrPlayerIDNil
 	}
 
 	if _, exists := party.Players[a.PlayerID]; exists {
-		return ErrPlayerAlreadyInGame
+		return game.ErrPlayerAlreadyInGame
 	}
 	return nil
 }
 
-func (a *PlayerAddAction) Perform(game *LiveGameInstance) error {
+func (a *PlayerAddAction) Perform(instance *game.LiveGameInstance) error {
 
-	if err := a.validate(game); err != nil {
+	if err := a.validate(instance); err != nil {
 		return ErrFailedAddPlayerToGame(a.PlayerID, err)
 	}
 
-	party, err := game.GetParty(a.PartyID)
+	party, err := instance.GetParty(a.PartyID)
 	if err != nil {
 		return err
 	}
 
-	party.Players[a.PlayerID] = &LivePlayer{
+	party.Players[a.PlayerID] = &game.LivePlayer{
 		UserID:    a.UserID,
 		PlayerID:  a.PlayerID,
 		PartySlot: a.PartySlot,
 	}
 
-	game.SendChange(NewPlayerAddChange(a.UserID, a.PlayerID, a.PartySlot))
+	instance.SendChange(NewPlayerAddChange(a.UserID, a.PlayerID, a.PartySlot))
 
 	return nil
 

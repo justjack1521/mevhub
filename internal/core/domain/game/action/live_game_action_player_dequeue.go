@@ -1,8 +1,9 @@
-package game
+package action
 
 import (
 	"fmt"
 	uuid "github.com/satori/go.uuid"
+	"mevhub/internal/core/domain/game"
 )
 
 var (
@@ -21,7 +22,7 @@ func NewPlayerDequeueAction(instanceID uuid.UUID, partyID uuid.UUID, playerID uu
 	return &PlayerDequeueAction{InstanceID: instanceID, PartyID: partyID, PlayerID: playerID}
 }
 
-func (a *PlayerDequeueAction) Perform(game *LiveGameInstance) error {
+func (a *PlayerDequeueAction) Perform(game *game.LiveGameInstance) error {
 
 	party, err := game.GetParty(a.PartyID)
 	if err != nil {

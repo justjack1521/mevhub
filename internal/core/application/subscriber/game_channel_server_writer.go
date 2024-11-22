@@ -4,6 +4,7 @@ import (
 	"github.com/justjack1521/mevium/pkg/mevent"
 	"mevhub/internal/core/application/server"
 	"mevhub/internal/core/domain/game"
+	"mevhub/internal/core/domain/game/action"
 	"mevhub/internal/core/domain/session"
 	"mevhub/internal/core/port"
 )
@@ -58,7 +59,7 @@ func (w *GameChannelServerWriter) HandlePartyCreated(event game.PartyCreatedEven
 	w.Server.ActionChannel <- &server.GameActionRequest{
 		GameID:  event.GameID(),
 		PartyID: event.PartyID(),
-		Action:  game.NewPartyAddAction(party.SysID, party.Index),
+		Action:  action.NewPartyAddAction(party.SysID, party.Index),
 	}
 }
 
@@ -72,7 +73,7 @@ func (w *GameChannelServerWriter) HandleParticipantCreated(event game.Participan
 	w.Server.ActionChannel <- &server.GameActionRequest{
 		GameID:  event.GameID(),
 		PartyID: event.PartyID(),
-		Action:  game.NewPlayerAddAction(participant.UserID, participant.PlayerID, event.PartyID(), participant.PlayerSlot),
+		Action:  action.NewPlayerAddAction(participant.UserID, participant.PlayerID, event.PartyID(), participant.PlayerSlot),
 	}
 }
 
@@ -80,6 +81,6 @@ func (w *GameChannelServerWriter) HandleSessionDeleted(event session.InstanceDel
 	w.Server.ActionChannel <- &server.GameActionRequest{
 		GameID:  event.GameID(),
 		PartyID: event.LobbyID(),
-		Action:  game.NewPlayerRemoveAction(event.GameID(), event.LobbyID(), event.UserID(), event.PlayerID()),
+		Action:  action.NewPlayerRemoveAction(event.GameID(), event.LobbyID(), event.UserID(), event.PlayerID()),
 	}
 }

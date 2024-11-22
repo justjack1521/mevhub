@@ -4,6 +4,7 @@ import (
 	uuid "github.com/satori/go.uuid"
 	"mevhub/internal/core/application/server"
 	"mevhub/internal/core/domain/game"
+	"mevhub/internal/core/domain/game/action"
 	"mevhub/internal/core/port"
 )
 
@@ -47,7 +48,7 @@ func (h *EnqueueActionCommandHandler) Handle(ctx Context, cmd *EnqueueActionComm
 	var request = &server.GameActionRequest{
 		GameID:  current.GameID,
 		PartyID: current.LobbyID,
-		Action:  game.NewPlayerEnqueueAction(current.GameID, current.LobbyID, current.PlayerID, cmd.Target, cmd.PlayerActionType, cmd.SlotIndex, cmd.ElementID),
+		Action:  action.NewPlayerEnqueueAction(current.GameID, current.LobbyID, current.PlayerID, cmd.Target, cmd.PlayerActionType, cmd.SlotIndex, cmd.ElementID),
 	}
 
 	h.GameServerHost.ActionChannel <- request

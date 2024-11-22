@@ -7,6 +7,7 @@ import (
 	uuid "github.com/satori/go.uuid"
 	"github.com/sirupsen/logrus"
 	"mevhub/internal/core/domain/game"
+	"mevhub/internal/core/domain/game/action"
 	"reflect"
 	"sync"
 	"time"
@@ -60,25 +61,25 @@ func (s *GameServer) WatchChanges() {
 		}).Info("game server change received")
 
 		switch actual := change.(type) {
-		case game.PlayerAddChange:
+		case action.PlayerAddChange:
 			s.HandlePlayerAddChange(actual)
-		case game.PlayerRemoveChange:
+		case action.PlayerRemoveChange:
 			s.HandlePlayerRemoveChange(actual)
-		case game.PlayerReadyChange:
+		case action.PlayerReadyChange:
 			s.HandlePlayerReadyChange(actual)
-		case game.PlayerEnqueueActionChange:
+		case action.PlayerEnqueueActionChange:
 			s.HandlePlayerEnqueueActionChange(actual)
-		case game.PlayerDequeueActionChange:
+		case action.PlayerDequeueActionChange:
 			s.HandlePlayerDequeueActionChange(actual)
-		case game.PlayerLockActionChange:
+		case action.PlayerLockActionChange:
 			s.HandlePlayerLockActionChange(actual)
-		case game.StateChange:
+		case action.StateChange:
 			s.HandleGameStateChange(actual)
 		}
 	}
 }
 
-func (s *GameServer) HandlePlayerRemoveChange(change game.PlayerRemoveChange) {
+func (s *GameServer) HandlePlayerRemoveChange(change action.PlayerRemoveChange) {
 	delete(s.clients, change.PlayerID)
 	var notification = &protomulti.GamePlayerRemoveNotification{
 		GameId:      s.InstanceID.String(),
@@ -88,7 +89,7 @@ func (s *GameServer) HandlePlayerRemoveChange(change game.PlayerRemoveChange) {
 	s.Publish(protomulti.MultiGameNotificationType_GAME_NOTIFY_PLAYER_REMOVE, notification)
 }
 
-func (s *GameServer) HandleGameStateChange(change game.StateChange) {
+func (s *GameServer) HandleGameStateChange(change action.StateChange) {
 
 	s.logger.WithFields(logrus.Fields{
 		"instance.id": s.InstanceID.String(),
@@ -96,18 +97,18 @@ func (s *GameServer) HandleGameStateChange(change game.StateChange) {
 	}).Info("game server state change")
 
 	switch actual := change.State.(type) {
-	case *game.EnemyTurnState:
+	case *action.EnemyTurnState:
 		s.HandleEnemyTurnStateChange(actual)
-	case *game.EndGameState:
+	case *action.EndGameState:
 		s.HandleEndGameStateChange(actual)
 	}
 }
 
-func (s *GameServer) HandleEndGameStateChange(change *game.EndGameState) {
+func (s *GameServer) HandleEndGameStateChange(change *action.EndGameState) {
 
 }
 
-func (s *GameServer) HandleEnemyTurnStateChange(change *game.EnemyTurnState) {
+func (s *GameServer) HandleEnemyTurnStateChange(change *action.EnemyTurnState) {
 
 	var queues = make([]*protomulti.ProtoGamePartyActionQueue, len(change.QueuedActions))
 
@@ -140,7 +141,7 @@ func (s *GameServer) HandleEnemyTurnStateChange(change *game.EnemyTurnState) {
 	s.Publish(protomulti.MultiGameNotificationType_GAME_NOTIFY_QUEUE_CONFIRM, message)
 }
 
-func (s *GameServer) HandlePlayerEnqueueActionChange(change game.PlayerEnqueueActionChange) {
+func (s *GameServer) HandlePlayerEnqueueActionChange(change action.PlayerEnqueueActionChange) {
 	var message = &protomulti.GameEnqueueActionNotification{
 		GameId:      change.InstanceID.String(),
 		PartyIndex:  int32(change.PartyIndex),
@@ -153,7 +154,7 @@ func (s *GameServer) HandlePlayerEnqueueActionChange(change game.PlayerEnqueueAc
 	s.Publish(protomulti.MultiGameNotificationType_GAME_NOTIFY_ENQUEUE_ACTION, message)
 }
 
-func (s *GameServer) HandlePlayerDequeueActionChange(change game.PlayerDequeueActionChange) {
+func (s *GameServer) HandlePlayerDequeueActionChange(change action.PlayerDequeueActionChange) {
 	var message = &protomulti.GameDequeueActionNotification{
 		GameId:      change.InstanceID.String(),
 		PartyIndex:  int32(change.PartyIndex),
@@ -162,7 +163,7 @@ func (s *GameServer) HandlePlayerDequeueActionChange(change game.PlayerDequeueAc
 	s.Publish(protomulti.MultiGameNotificationType_GAME_NOTIFY_DEQUEUE_ACTION, message)
 }
 
-func (s *GameServer) HandlePlayerLockActionChange(change game.PlayerLockActionChange) {
+func (s *GameServer) HandlePlayerLockActionChange(change action.PlayerLockActionChange) {
 	var message = &protomulti.GameLockActionNotification{
 		GameId:          change.InstanceID.String(),
 		PartyIndex:      int32(change.PartyIndex),
@@ -172,14 +173,14 @@ func (s *GameServer) HandlePlayerLockActionChange(change game.PlayerLockActionCh
 	s.Publish(protomulti.MultiGameNotificationType_GAME_NOTIFY_LOCK_ACTION, message)
 }
 
-func (s *GameServer) HandlePlayerAddChange(change game.PlayerAddChange) {
+func (s *GameServer) HandlePlayerAddChange(change action.PlayerAddChange) {
 	s.clients[change.PlayerID] = &PlayerChannel{
 		UserID:   change.UserID,
 		PlayerID: change.PlayerID,
 	}
 }
 
-func (s *GameServer) HandlePlayerReadyChange(change game.PlayerReadyChange) {
+func (s *GameServer) HandlePlayerReadyChange(change action.PlayerReadyChange) {
 	var message = &protomulti.GamePlayerReadyNotification{
 		GameId:      change.InstanceID.String(),
 		PartyIndex:  int32(change.PartyIndex),

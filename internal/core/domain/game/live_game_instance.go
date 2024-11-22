@@ -49,7 +49,6 @@ func NewLiveGameInstance(source *Instance) *LiveGameInstance {
 			PlayerTurnDuration: source.Options.PlayerTurnDuration,
 		},
 	}
-	game.State = NewPendingState(game)
 	return game
 }
 

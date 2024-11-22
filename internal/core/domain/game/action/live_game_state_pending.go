@@ -1,6 +1,7 @@
-package game
+package action
 
 import (
+	"mevhub/internal/core/domain/game"
 	"time"
 )
 
@@ -17,19 +18,19 @@ func (s *PendingState) Expired(t time.Time) bool {
 	return difference > s.MaxWaitDuration
 }
 
-func NewPendingState(game *LiveGameInstance) *PendingState {
-	for _, party := range game.Parties {
+func NewPendingState(instance *game.LiveGameInstance) *PendingState {
+	for _, party := range instance.Parties {
 		for _, player := range party.Players {
 			player.Ready = false
 		}
 	}
 	return &PendingState{
 		StartTime:       time.Now().UTC(),
-		MaxWaitDuration: pendingStateMaxWaitDuration,
+		MaxWaitDuration: game.PendingStateMaxWaitDuration,
 	}
 }
 
-func (s *PendingState) Update(game *LiveGameInstance, t time.Time) {
+func (s *PendingState) Update(game *game.LiveGameInstance, t time.Time) {
 
 	var expired = s.Expired(t)
 

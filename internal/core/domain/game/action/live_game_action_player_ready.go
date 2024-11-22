@@ -1,8 +1,9 @@
-package game
+package action
 
 import (
 	"fmt"
 	uuid "github.com/satori/go.uuid"
+	"mevhub/internal/core/domain/game"
 )
 
 var (
@@ -21,7 +22,7 @@ func NewPlayerReadyAction(gameID uuid.UUID, partyID uuid.UUID, playerID uuid.UUI
 	return &PlayerReadyAction{GameID: gameID, PartyID: partyID, PlayerID: playerID}
 }
 
-func (a *PlayerReadyAction) Perform(game *LiveGameInstance) error {
+func (a *PlayerReadyAction) Perform(game *game.LiveGameInstance) error {
 
 	party, err := game.GetParty(a.PartyID)
 	if err != nil {

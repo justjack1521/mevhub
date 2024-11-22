@@ -1,8 +1,9 @@
-package game
+package action
 
 import (
 	"fmt"
 	uuid "github.com/satori/go.uuid"
+	"mevhub/internal/core/domain/game"
 )
 
 var (
@@ -16,18 +17,18 @@ type PlayerEnqueueAction struct {
 	PartyID    uuid.UUID
 	PlayerID   uuid.UUID
 	Target     int
-	ActionType PlayerActionType
+	ActionType game.PlayerActionType
 	SlotIndex  int
 	ElementID  uuid.UUID
 }
 
-func NewPlayerEnqueueAction(instanceID, partyID, playerID uuid.UUID, target int, actionType PlayerActionType, slotIndex int, elementID uuid.UUID) *PlayerEnqueueAction {
+func NewPlayerEnqueueAction(instanceID, partyID, playerID uuid.UUID, target int, actionType game.PlayerActionType, slotIndex int, elementID uuid.UUID) *PlayerEnqueueAction {
 	return &PlayerEnqueueAction{InstanceID: instanceID, PartyID: partyID, PlayerID: playerID, Target: target, ActionType: actionType, SlotIndex: slotIndex, ElementID: elementID}
 }
 
-func (a *PlayerEnqueueAction) Perform(game *LiveGameInstance) error {
+func (a *PlayerEnqueueAction) Perform(instance *game.LiveGameInstance) error {
 
-	party, err := game.GetParty(a.PartyID)
+	party, err := instance.GetParty(a.PartyID)
 	if err != nil {
 		return err
 	}
@@ -37,7 +38,7 @@ func (a *PlayerEnqueueAction) Perform(game *LiveGameInstance) error {
 		return ErrFailedEnqueueAction(a.PlayerID, err)
 	}
 
-	var action = &PlayerAction{
+	var action = &game.PlayerAction{
 		Target:     a.Target,
 		ActionType: a.ActionType,
 		SlotIndex:  a.SlotIndex,
@@ -48,7 +49,7 @@ func (a *PlayerEnqueueAction) Perform(game *LiveGameInstance) error {
 		return ErrFailedEnqueueAction(a.PlayerID, err)
 	}
 
-	game.SendChange(NewPlayerEnqueueActionChange(game.InstanceID, party.PartyIndex, player.PartySlot, a.ActionType, a.SlotIndex, a.Target, a.ElementID))
+	instance.SendChange(NewPlayerEnqueueActionChange(instance.InstanceID, party.PartyIndex, player.PartySlot, a.ActionType, a.SlotIndex, a.Target, a.ElementID))
 
 	return nil
 

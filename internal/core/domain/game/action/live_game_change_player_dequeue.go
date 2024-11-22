@@ -1,6 +1,9 @@
-package game
+package action
 
-import uuid "github.com/satori/go.uuid"
+import (
+	uuid "github.com/satori/go.uuid"
+	"mevhub/internal/core/domain/game"
+)
 
 type PlayerDequeueActionChange struct {
 	InstanceID uuid.UUID
@@ -12,6 +15,6 @@ func NewPlayerDequeueActionChange(instanceID uuid.UUID, partyIndex int, partySlo
 	return &PlayerDequeueActionChange{InstanceID: instanceID, PartyIndex: partyIndex, PartySlot: partySlot}
 }
 
-func (c PlayerDequeueActionChange) Identifier() ChangeIdentifier {
-	return ChangeIdentifierDequeueAction
+func (c PlayerDequeueActionChange) Identifier() game.ChangeIdentifier {
+	return game.ChangeIdentifierDequeueAction
 }

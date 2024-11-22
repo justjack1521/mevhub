@@ -1,6 +1,9 @@
-package game
+package action
 
-import uuid "github.com/satori/go.uuid"
+import (
+	uuid "github.com/satori/go.uuid"
+	"mevhub/internal/core/domain/game"
+)
 
 type PlayerAddChange struct {
 	UserID    uuid.UUID
@@ -12,6 +15,6 @@ func NewPlayerAddChange(userID uuid.UUID, playerID uuid.UUID, partySlot int) *Pl
 	return &PlayerAddChange{UserID: userID, PlayerID: playerID, PartySlot: partySlot}
 }
 
-func (c PlayerAddChange) Identifier() ChangeIdentifier {
-	return ChangeIdentifierPlayerAdd
+func (c PlayerAddChange) Identifier() game.ChangeIdentifier {
+	return game.ChangeIdentifierPlayerAdd
 }

@@ -1,13 +1,16 @@
-package game
+package action
 
-import "time"
+import (
+	"mevhub/internal/core/domain/game"
+	"time"
+)
 
 type PlayerTurnState struct {
 	StartTime    time.Time
 	TurnDuration time.Duration
 }
 
-func NewPlayerTurnState(game *LiveGameInstance) *PlayerTurnState {
+func NewPlayerTurnState(game *game.LiveGameInstance) *PlayerTurnState {
 	for _, party := range game.Parties {
 		for _, player := range party.Players {
 			player.ActionsLocked = false
@@ -27,7 +30,7 @@ func (s *PlayerTurnState) Expired(t time.Time) bool {
 	return difference > s.TurnDuration
 }
 
-func (s *PlayerTurnState) Update(game *LiveGameInstance, t time.Time) {
+func (s *PlayerTurnState) Update(game *game.LiveGameInstance, t time.Time) {
 
 	var ready = game.GetActionLockedPlayerCount() == game.GetPlayerCount()
 	var expired = s.Expired(t)

@@ -1,9 +1,10 @@
-package game
+package action
 
 import (
 	"errors"
 	"fmt"
 	uuid "github.com/satori/go.uuid"
+	"mevhub/internal/core/domain/game"
 )
 
 var (
@@ -23,7 +24,7 @@ func NewPlayerLockAction(instanceID uuid.UUID, partyID uuid.UUID, playerID uuid.
 	return &PlayerLockAction{InstanceID: instanceID, PartyID: partyID, PlayerID: playerID}
 }
 
-func (a *PlayerLockAction) Perform(game *LiveGameInstance) error {
+func (a *PlayerLockAction) Perform(game *game.LiveGameInstance) error {
 
 	party, err := game.GetParty(a.PartyID)
 	if err != nil {
