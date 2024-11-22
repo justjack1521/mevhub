@@ -16,30 +16,38 @@ var (
 	}
 )
 
-type LiveGameInstance struct {
-	InstanceID         uuid.UUID
-	ActionChannel      chan Action
-	ChangeChannel      chan Change
-	ErrorChannel       chan error
-	Parties            map[uuid.UUID]*LiveParty
-	State              State
+type PartyInstanceOptions struct {
+	MaxPlayerCount     int
 	PlayerTurnDuration time.Duration
-	GameDuration       time.Duration
-	Ended              bool
-	EndedAt            time.Time
-	MaxPartyCount      int
+}
+
+type LiveGameInstance struct {
+	InstanceID    uuid.UUID
+	ActionChannel chan Action
+	ChangeChannel chan Change
+	ErrorChannel  chan error
+	Parties       map[uuid.UUID]*LiveParty
+	State         State
+	GameDuration  time.Duration
+	Ended         bool
+	EndedAt       time.Time
+	MaxPartyCount int
+	PartyOptions  PartyInstanceOptions
 }
 
 func NewLiveGameInstance(source *Instance) *LiveGameInstance {
 	var game = &LiveGameInstance{
-		InstanceID:         source.SysID,
-		ActionChannel:      make(chan Action),
-		ChangeChannel:      make(chan Change),
-		ErrorChannel:       make(chan error),
-		Parties:            make(map[uuid.UUID]*LiveParty),
-		PlayerTurnDuration: source.Options.PlayerTurnDuration,
-		GameDuration:       source.Options.MaxRunTime,
-		MaxPartyCount:      source.Options.MaxPartyCount,
+		InstanceID:    source.SysID,
+		ActionChannel: make(chan Action),
+		ChangeChannel: make(chan Change),
+		ErrorChannel:  make(chan error),
+		Parties:       make(map[uuid.UUID]*LiveParty),
+		GameDuration:  source.Options.MaxRunTime,
+		MaxPartyCount: source.Options.MaxPartyCount,
+		PartyOptions: PartyInstanceOptions{
+			MaxPlayerCount:     source.Options.MaxPlayerCount,
+			PlayerTurnDuration: source.Options.PlayerTurnDuration,
+		},
 	}
 	game.State = NewPendingState(game)
 	return game

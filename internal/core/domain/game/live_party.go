@@ -6,11 +6,12 @@ import (
 )
 
 type LiveParty struct {
-	PartyID        uuid.UUID
-	PartyIndex     int
-	Players        map[uuid.UUID]*LivePlayer
-	MaxPlayerCount int
-	LastAction     time.Time
+	PartyID            uuid.UUID
+	PartyIndex         int
+	Players            map[uuid.UUID]*LivePlayer
+	MaxPlayerCount     int
+	PlayerTurnDuration time.Duration
+	LastAction         time.Time
 }
 
 func (x *LiveParty) GetPlayerCount() int {

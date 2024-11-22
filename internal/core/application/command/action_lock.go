@@ -35,11 +35,9 @@ func (h *LockActionCommandHandler) Handle(ctx Context, cmd *LockActionCommand) e
 	}
 
 	var request = &server.GameActionRequest{
+		GameID:  current.GameID,
 		PartyID: current.LobbyID,
-		Action: &game.PlayerLockAction{
-			InstanceID: current.LobbyID,
-			PlayerID:   current.PlayerID,
-		},
+		Action:  game.NewPlayerLockAction(current.GameID, current.LobbyID, current.PlayerID),
 	}
 
 	h.GameServerHost.ActionChannel <- request

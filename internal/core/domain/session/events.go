@@ -51,12 +51,13 @@ func (e InstanceCreatedEvent) PlayerID() uuid.UUID {
 type InstanceDeletedEvent struct {
 	ctx    context.Context
 	lobby  uuid.UUID
+	gameID uuid.UUID
 	user   uuid.UUID
 	player uuid.UUID
 }
 
-func NewInstanceDeletedEvent(ctx context.Context, id uuid.UUID, user uuid.UUID, player uuid.UUID) InstanceDeletedEvent {
-	return InstanceDeletedEvent{ctx: ctx, lobby: id, user: user, player: player}
+func NewInstanceDeletedEvent(ctx context.Context, id uuid.UUID, gameID uuid.UUID, user uuid.UUID, player uuid.UUID) InstanceDeletedEvent {
+	return InstanceDeletedEvent{ctx: ctx, lobby: id, gameID: gameID, user: user, player: player}
 }
 
 func (e InstanceDeletedEvent) Name() string {
@@ -78,6 +79,10 @@ func (e InstanceDeletedEvent) Context() context.Context {
 
 func (e InstanceDeletedEvent) LobbyID() uuid.UUID {
 	return e.lobby
+}
+
+func (e InstanceDeletedEvent) GameID() uuid.UUID {
+	return e.gameID
 }
 
 func (e InstanceDeletedEvent) UserID() uuid.UUID {

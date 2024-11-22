@@ -58,10 +58,7 @@ func (w *GameChannelServerWriter) HandlePartyCreated(event game.PartyCreatedEven
 	w.Server.ActionChannel <- &server.GameActionRequest{
 		GameID:  event.GameID(),
 		PartyID: event.PartyID(),
-		Action: &game.PartyAddAction{
-			PartyID:    party.SysID,
-			PartyIndex: party.Index,
-		},
+		Action:  game.NewPartyAddAction(party.SysID, party.Index),
 	}
 }
 
@@ -75,22 +72,14 @@ func (w *GameChannelServerWriter) HandleParticipantCreated(event game.Participan
 	w.Server.ActionChannel <- &server.GameActionRequest{
 		GameID:  event.GameID(),
 		PartyID: event.PartyID(),
-		Action: &game.PlayerAddAction{
-			UserID:    participant.UserID,
-			PlayerID:  participant.PlayerID,
-			PartySlot: participant.PlayerSlot,
-			PartyID:   event.PartyID(),
-		},
+		Action:  game.NewPlayerAddAction(participant.UserID, participant.PlayerID, event.PartyID(), participant.PlayerSlot),
 	}
 }
 
 func (w *GameChannelServerWriter) HandleSessionDeleted(event session.InstanceDeletedEvent) {
 	w.Server.ActionChannel <- &server.GameActionRequest{
+		GameID:  event.GameID(),
 		PartyID: event.LobbyID(),
-		Action: &game.PlayerRemoveAction{
-			InstanceID: event.LobbyID(),
-			UserID:     event.UserID(),
-			PlayerID:   event.PlayerID(),
-		},
+		Action:  game.NewPlayerRemoveAction(event.GameID(), event.LobbyID(), event.UserID(), event.PlayerID()),
 	}
 }

@@ -70,7 +70,7 @@ func (s *GamePartyWriter) HandleInstanceCreated(evt game.InstanceCreatedEvent) e
 			return err
 		}
 
-		s.EventPublisher.Notify(game.NewPartyCreatedEvent(evt.Context(), result.SysID, parent.SysID))
+		s.EventPublisher.Notify(game.NewPartyCreatedEvent(evt.Context(), result.SysID, parent.SysID, result.Index))
 
 	}
 

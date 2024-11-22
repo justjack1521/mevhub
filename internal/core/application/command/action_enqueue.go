@@ -45,15 +45,9 @@ func (h *EnqueueActionCommandHandler) Handle(ctx Context, cmd *EnqueueActionComm
 	}
 
 	var request = &server.GameActionRequest{
+		GameID:  current.GameID,
 		PartyID: current.LobbyID,
-		Action: &game.PlayerEnqueueAction{
-			InstanceID: current.PlayerID,
-			PlayerID:   current.PlayerID,
-			ActionType: cmd.PlayerActionType,
-			SlotIndex:  cmd.SlotIndex,
-			Target:     cmd.Target,
-			ElementID:  cmd.ElementID,
-		},
+		Action:  game.NewPlayerEnqueueAction(current.GameID, current.LobbyID, current.PlayerID, cmd.Target, cmd.PlayerActionType, cmd.SlotIndex, cmd.ElementID),
 	}
 
 	h.GameServerHost.ActionChannel <- request

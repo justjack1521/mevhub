@@ -82,6 +82,7 @@ func (s *GameServer) HandlePlayerRemoveChange(change game.PlayerRemoveChange) {
 	delete(s.clients, change.PlayerID)
 	var notification = &protomulti.GamePlayerRemoveNotification{
 		GameId:      s.InstanceID.String(),
+		PartyIndex:  int32(change.PartyIndex),
 		PlayerIndex: int32(change.PartySlot),
 	}
 	s.Publish(protomulti.MultiGameNotificationType_GAME_NOTIFY_PLAYER_REMOVE, notification)
@@ -107,24 +108,34 @@ func (s *GameServer) HandleEndGameStateChange(change *game.EndGameState) {
 }
 
 func (s *GameServer) HandleEnemyTurnStateChange(change *game.EnemyTurnState) {
-	var queues = make([]*protomulti.ProtoGamePlayerActionQueue, len(change.QueuedActions))
-	for i, queued := range change.QueuedActions {
-		var queue = &protomulti.ProtoGamePlayerActionQueue{
-			PlayerId: queued.PlayerID.String(),
-			Actions:  make([]*protomulti.ProtoGameAction, len(queued.Actions)),
+
+	var queues = make([]*protomulti.ProtoGamePartyActionQueue, len(change.QueuedActions))
+
+	for index, queued := range change.QueuedActions {
+		var p = &protomulti.ProtoGamePartyActionQueue{
+			PartyIndex:        int32(index),
+			PlayerActionQueue: make([]*protomulti.ProtoGamePlayerActionQueue, len(queued)),
 		}
-		for j, action := range queued.Actions {
-			queue.Actions[j] = &protomulti.ProtoGameAction{
-				Action:    protomulti.GamePlayerActionType(action.ActionType),
-				Target:    int32(action.Target),
-				SlotIndex: int32(action.SlotIndex),
-				ElementId: action.ElementID.String(),
+		for i, q := range queued {
+			var player = &protomulti.ProtoGamePlayerActionQueue{
+				PlayerId: q.PlayerID.String(),
+				Actions:  make([]*protomulti.ProtoGameAction, len(q.Actions)),
 			}
+			for k, a := range q.Actions {
+				var action = &protomulti.ProtoGameAction{
+					Action:    protomulti.GamePlayerActionType(a.ActionType),
+					Target:    int32(a.Target),
+					SlotIndex: int32(a.SlotIndex),
+					ElementId: a.ElementID.String(),
+				}
+				player.Actions[k] = action
+			}
+			p.PlayerActionQueue[i] = player
 		}
-		queues[i] = queue
 	}
+
 	var message = &protomulti.GameActionQueueConfirmNotification{
-		PlayerActionQueue: queues,
+		PartyActionQueues: queues,
 	}
 	s.Publish(protomulti.MultiGameNotificationType_GAME_NOTIFY_QUEUE_CONFIRM, message)
 }
@@ -132,6 +143,7 @@ func (s *GameServer) HandleEnemyTurnStateChange(change *game.EnemyTurnState) {
 func (s *GameServer) HandlePlayerEnqueueActionChange(change game.PlayerEnqueueActionChange) {
 	var message = &protomulti.GameEnqueueActionNotification{
 		GameId:      change.InstanceID.String(),
+		PartyIndex:  int32(change.PartyIndex),
 		PlayerIndex: int32(change.PartySlot),
 		Action:      protomulti.GamePlayerActionType(change.ActionType),
 		SlotIndex:   int32(change.SlotIndex),
@@ -144,6 +156,7 @@ func (s *GameServer) HandlePlayerEnqueueActionChange(change game.PlayerEnqueueAc
 func (s *GameServer) HandlePlayerDequeueActionChange(change game.PlayerDequeueActionChange) {
 	var message = &protomulti.GameDequeueActionNotification{
 		GameId:      change.InstanceID.String(),
+		PartyIndex:  int32(change.PartyIndex),
 		PlayerIndex: int32(change.PartySlot),
 	}
 	s.Publish(protomulti.MultiGameNotificationType_GAME_NOTIFY_DEQUEUE_ACTION, message)
@@ -152,6 +165,7 @@ func (s *GameServer) HandlePlayerDequeueActionChange(change game.PlayerDequeueAc
 func (s *GameServer) HandlePlayerLockActionChange(change game.PlayerLockActionChange) {
 	var message = &protomulti.GameLockActionNotification{
 		GameId:          change.InstanceID.String(),
+		PartyIndex:      int32(change.PartyIndex),
 		PlayerIndex:     int32(change.PartySlot),
 		ActionLockIndex: int32(change.ActionLockIndex),
 	}
@@ -168,6 +182,7 @@ func (s *GameServer) HandlePlayerAddChange(change game.PlayerAddChange) {
 func (s *GameServer) HandlePlayerReadyChange(change game.PlayerReadyChange) {
 	var message = &protomulti.GamePlayerReadyNotification{
 		GameId:      change.InstanceID.String(),
+		PartyIndex:  int32(change.PartyIndex),
 		PlayerIndex: int32(change.PartySlot),
 	}
 	s.Publish(protomulti.MultiGameNotificationType_GAME_NOTIFY_PLAYER_READY, message)
