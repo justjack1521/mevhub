@@ -178,7 +178,7 @@ func (s *SessionLobbyWriter) HandlePlayerDisconnected(event player.DisconnectedE
 		return err
 	}
 
-	s.EventPublisher.Notify(session.NewInstanceDeletedEvent(event.Context(), instance.LobbyID, instance.UserID, instance.PlayerID))
+	s.EventPublisher.Notify(session.NewInstanceDeletedEvent(event.Context(), instance.LobbyID, instance.GameID, instance.UserID, instance.PlayerID))
 
 	return nil
 

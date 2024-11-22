@@ -56,8 +56,8 @@ type InstanceDeletedEvent struct {
 	player uuid.UUID
 }
 
-func NewInstanceDeletedEvent(ctx context.Context, id uuid.UUID, gameID uuid.UUID, user uuid.UUID, player uuid.UUID) InstanceDeletedEvent {
-	return InstanceDeletedEvent{ctx: ctx, lobby: id, gameID: gameID, user: user, player: player}
+func NewInstanceDeletedEvent(ctx context.Context, lobbyID uuid.UUID, gameID uuid.UUID, user uuid.UUID, player uuid.UUID) InstanceDeletedEvent {
+	return InstanceDeletedEvent{ctx: ctx, lobby: lobbyID, gameID: gameID, user: user, player: player}
 }
 
 func (e InstanceDeletedEvent) Name() string {
