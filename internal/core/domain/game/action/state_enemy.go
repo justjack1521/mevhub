@@ -27,14 +27,14 @@ func NewEnemyTurnState(instance *game.LiveGameInstance) *EnemyTurnState {
 	return state
 }
 
-func (s *EnemyTurnState) Update(game *game.LiveGameInstance, t time.Time) {
+func (s *EnemyTurnState) Update(instance *game.LiveGameInstance, t time.Time) {
 
-	if game.GetPlayerCount() == 0 {
+	if instance.GetPlayerCount() == 0 {
 		return
 	}
 
-	if game.GetReadyPlayerCount() == game.GetPlayerCount() {
-		game.ActionChannel <- NewStateChangeAction(game.InstanceID, NewPlayerTurnState(game))
+	if instance.GetReadyPlayerCount() == instance.GetPlayerCount() {
+		instance.ActionChannel <- NewStateChangeAction(instance.InstanceID, NewPlayerTurnState(instance))
 	}
 
 }

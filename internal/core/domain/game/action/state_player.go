@@ -30,28 +30,28 @@ func (s *PlayerTurnState) Expired(t time.Time) bool {
 	return difference > s.TurnDuration
 }
 
-func (s *PlayerTurnState) Update(game *game.LiveGameInstance, t time.Time) {
+func (s *PlayerTurnState) Update(instance *game.LiveGameInstance, t time.Time) {
 
-	var ready = game.GetActionLockedPlayerCount() == game.GetPlayerCount()
+	var ready = instance.GetActionLockedPlayerCount() == instance.GetPlayerCount()
 	var expired = s.Expired(t)
 
 	if ready || expired {
 
 		if expired {
 
-			for _, party := range game.Parties {
+			for _, party := range instance.Parties {
 				for _, player := range party.Players {
 					if player.ActionsLocked == false {
 						player.ActionLockIndex = party.GetActionLockedPlayerCount()
 						player.ActionsLocked = true
-						game.SendChange(NewPlayerLockActionChange(game.InstanceID, party.PartyIndex, player.PartySlot, player.ActionLockIndex))
+						instance.SendChange(NewPlayerLockActionChange(instance.InstanceID, party.PartyIndex, player.PartySlot, player.ActionLockIndex))
 					}
 				}
 			}
 
 		}
 
-		game.ActionChannel <- NewStateChangeAction(game.InstanceID, NewEnemyTurnState(game))
+		instance.ActionChannel <- NewStateChangeAction(instance.InstanceID, NewEnemyTurnState(instance))
 
 	}
 

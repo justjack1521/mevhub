@@ -23,23 +23,23 @@ func NewPlayerRemoveAction(instanceID uuid.UUID, partyID uuid.UUID, userID uuid.
 	return &PlayerRemoveAction{GameID: instanceID, PartyID: partyID, UserID: userID, PlayerID: playerID}
 }
 
-func (a *PlayerRemoveAction) Perform(game *game.LiveGameInstance) error {
+func (a *PlayerRemoveAction) Perform(instance *game.LiveGameInstance) error {
 
-	party, err := game.GetParty(a.PartyID)
+	party, err := instance.GetParty(a.PartyID)
 	if err != nil {
 		return ErrFailedRemovePlayer(a.PlayerID, err)
 	}
 
-	player, err := party.GetPlayer(a.PlayerID)
+	player, err := instance.GetPlayer(a.PlayerID)
 	if err != nil {
 		return ErrFailedRemovePlayer(a.PlayerID, err)
 	}
 
-	if err := game.RemovePlayer(a.PlayerID); err != nil {
+	if err := instance.RemovePlayer(a.PlayerID); err != nil {
 		return ErrFailedRemovePlayer(a.PlayerID, err)
 	}
 
-	game.ChangeChannel <- NewPlayerRemoveChange(player.UserID, player.PlayerID, party.PartyIndex, player.PartySlot)
+	instance.ChangeChannel <- NewPlayerRemoveChange(player.UserID, player.PlayerID, party.PartyIndex, player.PartySlot)
 
 	return nil
 

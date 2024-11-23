@@ -26,6 +26,7 @@ func NewGamePartyRepository(client *redis.Client) *GamePartyRepository {
 }
 
 func (r *GamePartyRepository) Create(ctx context.Context, id uuid.UUID, party *game.Party) error {
+
 	var result = &dto.GamePartyRedis{
 		SysID:     party.SysID.String(),
 		PartyID:   party.PartyID,
@@ -40,6 +41,7 @@ func (r *GamePartyRepository) Create(ctx context.Context, id uuid.UUID, party *g
 	}
 
 	r.client.Expire(ctx, key, gamePartyTTL)
+
 	return nil
 }
 

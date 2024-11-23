@@ -30,20 +30,20 @@ func NewPendingState(instance *game.LiveGameInstance) *PendingState {
 	}
 }
 
-func (s *PendingState) Update(game *game.LiveGameInstance, t time.Time) {
+func (s *PendingState) Update(instance *game.LiveGameInstance, t time.Time) {
 
 	var expired = s.Expired(t)
 
 	if expired {
-		game.ActionChannel <- NewStateChangeAction(game.InstanceID, NewEndGameState(game))
+		instance.ActionChannel <- NewStateChangeAction(instance.InstanceID, NewEndGameState(instance))
 		return
 	}
 
-	if game.GetPlayerCount() == 0 {
+	if instance.GetPlayerCount() == 0 {
 		return
 	}
 
-	if game.GetReadyPlayerCount() == game.GetPlayerCount() {
-		game.ActionChannel <- NewStateChangeAction(game.InstanceID, NewPlayerTurnState(game))
+	if instance.GetReadyPlayerCount() == instance.GetPlayerCount() {
+		instance.ActionChannel <- NewStateChangeAction(instance.InstanceID, NewPlayerTurnState(instance))
 	}
 }

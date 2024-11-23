@@ -22,9 +22,9 @@ func NewPlayerDequeueAction(instanceID uuid.UUID, partyID uuid.UUID, playerID uu
 	return &PlayerDequeueAction{InstanceID: instanceID, PartyID: partyID, PlayerID: playerID}
 }
 
-func (a *PlayerDequeueAction) Perform(game *game.LiveGameInstance) error {
+func (a *PlayerDequeueAction) Perform(instance *game.LiveGameInstance) error {
 
-	party, err := game.GetParty(a.PartyID)
+	party, err := instance.GetParty(a.PartyID)
 	if err != nil {
 		return err
 	}
@@ -38,7 +38,7 @@ func (a *PlayerDequeueAction) Perform(game *game.LiveGameInstance) error {
 		return ErrFailedDequeueAction(a.PlayerID, err)
 	}
 
-	game.SendChange(NewPlayerDequeueActionChange(a.InstanceID, party.PartyIndex, player.PartySlot))
+	instance.SendChange(NewPlayerDequeueActionChange(a.InstanceID, party.PartyIndex, player.PartySlot))
 
 	return nil
 

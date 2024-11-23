@@ -24,9 +24,9 @@ func NewPlayerLockAction(instanceID uuid.UUID, partyID uuid.UUID, playerID uuid.
 	return &PlayerLockAction{InstanceID: instanceID, PartyID: partyID, PlayerID: playerID}
 }
 
-func (a *PlayerLockAction) Perform(game *game.LiveGameInstance) error {
+func (a *PlayerLockAction) Perform(instance *game.LiveGameInstance) error {
 
-	party, err := game.GetParty(a.PartyID)
+	party, err := instance.GetParty(a.PartyID)
 	if err != nil {
 		return err
 	}
@@ -40,10 +40,10 @@ func (a *PlayerLockAction) Perform(game *game.LiveGameInstance) error {
 		return ErrFailedLockAction(a.PlayerID, ErrPlayerUnableToLockAction)
 	}
 
-	player.ActionLockIndex = game.GetActionLockedPlayerCount()
+	player.ActionLockIndex = instance.GetActionLockedPlayerCount()
 	player.ActionsLocked = true
 
-	game.SendChange(NewPlayerLockActionChange(a.InstanceID, party.PartyIndex, player.PartySlot, player.ActionLockIndex))
+	instance.SendChange(NewPlayerLockActionChange(a.InstanceID, party.PartyIndex, player.PartySlot, player.ActionLockIndex))
 
 	return nil
 

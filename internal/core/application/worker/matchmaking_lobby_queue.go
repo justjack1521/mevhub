@@ -72,9 +72,11 @@ func (w *LobbyMatchmakingQueueWorker) findMatch(quest uuid.UUID) error {
 	for _, queued := range lobbies {
 		found, err := w.repository.FindMatch(w.ctx, w.mode, queued, 5)
 		if err != nil {
+			fmt.Println(err)
 			continue
 		}
 		if found.Zero() {
+			fmt.Println(err)
 			continue
 		}
 		if err := w.dispatcher.Dispatch(w.ctx, w.mode, quest, []match.LobbyQueueEntry{queued, found}); err != nil {

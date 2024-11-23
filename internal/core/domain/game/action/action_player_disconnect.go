@@ -24,9 +24,9 @@ func NewPlayerDisconnectAction(instanceID uuid.UUID, partyID uuid.UUID, playerID
 	return &PlayerDisconnectAction{InstanceID: instanceID, PartyID: partyID, PlayerID: playerID, DisconnectTime: disconnectTime}
 }
 
-func (a *PlayerDisconnectAction) Perform(game *game.LiveGameInstance) error {
+func (a *PlayerDisconnectAction) Perform(instance *game.LiveGameInstance) error {
 
-	party, err := game.GetParty(a.PartyID)
+	party, err := instance.GetParty(a.PartyID)
 	if err != nil {
 		return err
 	}

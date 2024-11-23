@@ -17,12 +17,11 @@ func NewStateChangeAction(instanceID uuid.UUID, state game.State) *StateChangeAc
 	return &StateChangeAction{InstanceID: instanceID, State: state}
 }
 
-func (a *StateChangeAction) Perform(game *game.LiveGameInstance) error {
+func (a *StateChangeAction) Perform(instance *game.LiveGameInstance) error {
 
 	fmt.Println("Change state to", reflect.TypeOf(a.State), " at ", time.Now().UTC().String())
-	game.State = a.State
-
-	game.SendChange(NewStateChange(a.InstanceID, a.State))
+	instance.State = a.State
+	instance.SendChange(NewStateChange(a.InstanceID, a.State))
 
 	return nil
 

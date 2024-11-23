@@ -22,9 +22,9 @@ func NewPlayerReadyAction(gameID uuid.UUID, partyID uuid.UUID, playerID uuid.UUI
 	return &PlayerReadyAction{GameID: gameID, PartyID: partyID, PlayerID: playerID}
 }
 
-func (a *PlayerReadyAction) Perform(game *game.LiveGameInstance) error {
+func (a *PlayerReadyAction) Perform(instance *game.LiveGameInstance) error {
 
-	party, err := game.GetParty(a.PartyID)
+	party, err := instance.GetParty(a.PartyID)
 	if err != nil {
 		return ErrFailedReadyPlayer(a.PlayerID, err)
 	}
@@ -36,7 +36,7 @@ func (a *PlayerReadyAction) Perform(game *game.LiveGameInstance) error {
 
 	player.Ready = true
 
-	game.SendChange(NewPlayerReadyChange(a.GameID, party.PartyIndex, player.PartySlot))
+	instance.SendChange(NewPlayerReadyChange(a.GameID, party.PartyIndex, player.PartySlot))
 	return nil
 
 }

@@ -3,7 +3,6 @@ package game
 import (
 	"context"
 	uuid "github.com/satori/go.uuid"
-	"github.com/sirupsen/logrus"
 )
 
 type InstanceCreatedEvent struct {
@@ -17,13 +16,6 @@ func NewInstanceCreatedEvent(ctx context.Context, id uuid.UUID) InstanceCreatedE
 
 func (e InstanceCreatedEvent) Name() string {
 	return "game.instance.created"
-}
-
-func (e InstanceCreatedEvent) ToLogFields() logrus.Fields {
-	return logrus.Fields{
-		"event.name":  e.Name(),
-		"instance.id": e.id,
-	}
 }
 
 func (e InstanceCreatedEvent) Context() context.Context {
