@@ -28,6 +28,13 @@ func NewLobbyMatchmakingQueueWorker(ctx context.Context, mode game.ModeIdentifie
 
 func (w *LobbyMatchmakingQueueWorker) Run() {
 
+	defer func() {
+		if r := recover(); r != nil {
+			fmt.Printf("Recovered from panic: %v\n", r)
+			go w.Run()
+		}
+	}()
+
 	var findTicker = time.NewTicker(matchmakingLobbyQueueWorkerFindInterval)
 	defer findTicker.Stop()
 
@@ -56,7 +63,7 @@ func (w *LobbyMatchmakingQueueWorker) findMatches() error {
 	}
 	for _, active := range actives {
 		if err := w.findMatch(active); err != nil {
-			fmt.Println(err)
+			return err
 		}
 	}
 	return nil
