@@ -3,7 +3,7 @@ package lobby
 import (
 	"context"
 	uuid "github.com/satori/go.uuid"
-	"github.com/sirupsen/logrus"
+	"log/slog"
 )
 
 type InstanceReadyEvent struct {
@@ -12,18 +12,18 @@ type InstanceReadyEvent struct {
 	questID uuid.UUID
 }
 
-func NewInstanceReadyEvent(ctx context.Context, id, quest uuid.UUID) InstanceReadyEvent {
-	return InstanceReadyEvent{ctx: ctx, id: id, questID: quest}
+func NewInstanceReadyEvent(ctx context.Context, id, questID uuid.UUID) InstanceReadyEvent {
+	return InstanceReadyEvent{ctx: ctx, id: id, questID: questID}
 }
 
 func (e InstanceReadyEvent) Name() string {
 	return "lobby.instance.ready"
 }
 
-func (e InstanceReadyEvent) ToLogFields() logrus.Fields {
-	return logrus.Fields{
-		"event.name": e.Name(),
-		"lobby.id":   e.id,
+func (e InstanceReadyEvent) ToSlogFields() []slog.Attr {
+	return []slog.Attr{
+		slog.String("instance.id", e.id.String()),
+		slog.String("quest.id", e.questID.String()),
 	}
 }
 

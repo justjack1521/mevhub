@@ -3,7 +3,7 @@ package lobby
 import (
 	"context"
 	uuid "github.com/satori/go.uuid"
-	"github.com/sirupsen/logrus"
+	"log/slog"
 )
 
 type InstanceDeletedEvent struct {
@@ -20,11 +20,10 @@ func (e InstanceDeletedEvent) Name() string {
 	return "lobby.instance.deleted"
 }
 
-func (e InstanceDeletedEvent) ToLogFields() logrus.Fields {
-	return logrus.Fields{
-		"event.name": e.Name(),
-		"lobby.id":   e.id,
-		"quest.id":   e.questID,
+func (e InstanceDeletedEvent) ToSlogFields() []slog.Attr {
+	return []slog.Attr{
+		slog.String("instance.id", e.id.String()),
+		slog.String("quest.id", e.questID.String()),
 	}
 }
 

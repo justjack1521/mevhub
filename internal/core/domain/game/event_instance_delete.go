@@ -4,6 +4,7 @@ import (
 	"context"
 	uuid "github.com/satori/go.uuid"
 	"github.com/sirupsen/logrus"
+	"log/slog"
 )
 
 type InstanceDeletedEvent struct {
@@ -32,4 +33,10 @@ func (e InstanceDeletedEvent) Context() context.Context {
 
 func (e InstanceDeletedEvent) InstanceID() uuid.UUID {
 	return e.id
+}
+
+func (e InstanceDeletedEvent) ToSlogFields() []slog.Attr {
+	return []slog.Attr{
+		slog.String("instance.id", e.id.String()),
+	}
 }

@@ -3,32 +3,30 @@ package lobby
 import (
 	"context"
 	uuid "github.com/satori/go.uuid"
-	"github.com/sirupsen/logrus"
+	"log/slog"
 )
 
 type InstanceCreatedEvent struct {
 	ctx     context.Context
 	id      uuid.UUID
-	quest   uuid.UUID
+	questID uuid.UUID
 	party   string
 	comment string
 	min     int
 }
 
-func NewInstanceCreatedEvent(ctx context.Context, id, quest uuid.UUID, party, comment string, min int) InstanceCreatedEvent {
-	return InstanceCreatedEvent{ctx: ctx, id: id, quest: quest, party: party, comment: comment, min: min}
+func NewInstanceCreatedEvent(ctx context.Context, id, questID uuid.UUID, party, comment string, min int) InstanceCreatedEvent {
+	return InstanceCreatedEvent{ctx: ctx, id: id, questID: questID, party: party, comment: comment, min: min}
 }
 
 func (e InstanceCreatedEvent) Name() string {
 	return "lobby.instance.created"
 }
 
-func (e InstanceCreatedEvent) ToLogFields() logrus.Fields {
-	return logrus.Fields{
-		"event.name": e.Name(),
-		"lobby.id":   e.id,
-		"quest.id":   e.quest,
-		"min.level":  e.min,
+func (e InstanceCreatedEvent) ToSlogFields() []slog.Attr {
+	return []slog.Attr{
+		slog.String("instance.id", e.id.String()),
+		slog.String("quest.id", e.questID.String()),
 	}
 }
 
@@ -41,7 +39,7 @@ func (e InstanceCreatedEvent) LobbyID() uuid.UUID {
 }
 
 func (e InstanceCreatedEvent) QuestID() uuid.UUID {
-	return e.quest
+	return e.questID
 }
 
 func (e InstanceCreatedEvent) PartyID() string {

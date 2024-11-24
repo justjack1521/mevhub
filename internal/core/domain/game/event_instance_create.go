@@ -3,6 +3,7 @@ package game
 import (
 	"context"
 	uuid "github.com/satori/go.uuid"
+	"log/slog"
 )
 
 type InstanceCreatedEvent struct {
@@ -24,4 +25,10 @@ func (e InstanceCreatedEvent) Context() context.Context {
 
 func (e InstanceCreatedEvent) InstanceID() uuid.UUID {
 	return e.id
+}
+
+func (e InstanceCreatedEvent) ToSlogFields() []slog.Attr {
+	return []slog.Attr{
+		slog.String("instance.id", e.id.String()),
+	}
 }
