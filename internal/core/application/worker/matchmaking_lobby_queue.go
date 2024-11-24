@@ -62,6 +62,7 @@ func (w *LobbyMatchmakingQueueWorker) findMatches() error {
 		return err
 	}
 	for _, active := range actives {
+		fmt.Println(fmt.Sprintf("finding matches for quest: %s", active.String()))
 		if err := w.findMatch(active); err != nil {
 			return err
 		}
@@ -76,28 +77,43 @@ func (w *LobbyMatchmakingQueueWorker) findMatch(quest uuid.UUID) error {
 		return err
 	}
 
+	fmt.Println(fmt.Sprintf("%d queued lobbies found", len(lobbies)))
+
 	for _, queued := range lobbies {
+
 		found, err := w.repository.FindMatch(w.ctx, w.mode, queued, 5)
 		if err != nil {
 			fmt.Println(err)
 			continue
 		}
 		if found.Zero() {
-			fmt.Println(err)
+			fmt.Println(fmt.Sprintf("found lobby for %s is empty, skipping", queued.LobbyID))
 			continue
 		}
+
+		fmt.Println(fmt.Sprintf("found lobby for %s: %s", queued.LobbyID, found.LobbyID))
+
 		if err := w.dispatcher.Dispatch(w.ctx, w.mode, quest, []match.LobbyQueueEntry{queued, found}); err != nil {
 			fmt.Println(err)
 			continue
 		}
+
+		fmt.Println(fmt.Sprintf("dispatch lobby match for %s and %s", queued.LobbyID, found.LobbyID))
+
 		if err := w.repository.RemoveLobbyFromQueue(w.ctx, w.mode, quest, queued.LobbyID); err != nil {
 			fmt.Println(err)
 			continue
 		}
+
+		fmt.Println(fmt.Sprintf("removed lobby %s from queue", queued.LobbyID))
+
 		if err := w.repository.RemoveLobbyFromQueue(w.ctx, w.mode, quest, found.LobbyID); err != nil {
 			fmt.Println(err)
 			continue
 		}
+
+		fmt.Println(fmt.Sprintf("removed lobby %s from queue", found.LobbyID))
+
 	}
 
 	return nil
