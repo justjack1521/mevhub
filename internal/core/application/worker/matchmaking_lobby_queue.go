@@ -72,6 +72,9 @@ func (w *LobbyMatchmakingQueueWorker) findMatches() error {
 
 func (w *LobbyMatchmakingQueueWorker) findMatch(quest uuid.UUID) error {
 
+	fmt.Println("find match started")
+	defer fmt.Println("find match ended")
+
 	lobbies, err := w.repository.GetQueuedLobbies(w.ctx, w.mode, quest)
 	if err != nil {
 		return err

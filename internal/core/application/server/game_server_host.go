@@ -30,9 +30,9 @@ func NewGameServerHost(conn *rabbitmq.Conn, logger *slog.Logger, factory *GameSe
 		connection:        conn,
 		logger:            logger,
 		games:             make(map[uuid.UUID]*GameServer),
-		Register:          make(chan *GameServer),
-		Unregister:        make(chan uuid.UUID),
-		ActionChannel:     make(chan *GameActionRequest),
+		Register:          make(chan *GameServer, 5),
+		Unregister:        make(chan uuid.UUID, 5),
+		ActionChannel:     make(chan *GameActionRequest, 5),
 		GameServerFactory: factory,
 	}
 	return server

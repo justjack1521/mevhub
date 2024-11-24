@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"github.com/justjack1521/mevium/pkg/mevent"
 	uuid "github.com/satori/go.uuid"
 	"mevhub/internal/core/application/factory"
@@ -24,6 +25,9 @@ func NewLobbyMatchmakingDispatcher(publisher *mevent.Publisher, quests port.Ques
 }
 
 func (d *LobbyMatchmakingDispatcher) Dispatch(ctx context.Context, mode game.ModeIdentifier, q uuid.UUID, lobbies match.LobbyQueueEntryCollection) error {
+
+	fmt.Println("dispatch started")
+	defer fmt.Println("dispatch ended")
 
 	quest, err := d.QuestRepository.QueryByID(q)
 	if err != nil {

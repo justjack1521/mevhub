@@ -38,9 +38,9 @@ type LiveGameInstance struct {
 func NewLiveGameInstance(source *Instance) *LiveGameInstance {
 	var game = &LiveGameInstance{
 		InstanceID:    source.SysID,
-		ActionChannel: make(chan Action),
-		ChangeChannel: make(chan Change),
-		ErrorChannel:  make(chan error),
+		ActionChannel: make(chan Action, 5),
+		ChangeChannel: make(chan Change, 5),
+		ErrorChannel:  make(chan error, 5),
 		Parties:       make(map[uuid.UUID]*LiveParty),
 		GameDuration:  source.Options.MaxRunTime,
 		MaxPartyCount: source.Options.MaxPartyCount,
