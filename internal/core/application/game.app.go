@@ -37,7 +37,8 @@ type GameApplicationTranslators struct {
 
 func NewGameApplication(core *CoreApplication) *GameApplication {
 
-	var svr = server.NewGameServerHost(core.Services.RabbitMQConnection, core.Services.Logger, server.NewGameServerFactory([]server.GameServerFactoryBuildAction{
+	var svr = server.NewGameServerHost(core.Services.Logger, server.NewGameServerFactory([]server.GameServerFactoryBuildAction{
+		server.GameServerFactoryPublisherBuildAction(server.NewGameServerRabbitMQNotifier(core.Services.RabbitMQConnection)),
 		server.GameServerFactoryLoggingBuildAction(core.Services.Logger),
 	}))
 	go svr.Run()

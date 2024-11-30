@@ -2,7 +2,6 @@ package server
 
 import (
 	uuid "github.com/satori/go.uuid"
-	"github.com/sirupsen/logrus"
 	"log/slog"
 	"mevhub/internal/core/domain/game"
 	"mevhub/internal/core/domain/game/action"
@@ -16,14 +15,13 @@ func NewGameServerFactory(actions []GameServerFactoryBuildAction) *GameServerFac
 	return &GameServerFactory{actions: actions}
 }
 
-func (f *GameServerFactory) Create(instance *game.Instance, notifier NotificationPublisher) *GameServer {
+func (f *GameServerFactory) Create(instance *game.Instance) *GameServer {
 	var svr = &GameServer{
-		InstanceID:   instance.SysID,
-		game:         game.NewLiveGameInstance(instance),
-		clients:      make(map[uuid.UUID]*PlayerChannel),
-		publisher:    notifier,
-		logger:       logrus.New(),
-		ErrorHandler: ErrorHandlerDefault{},
+		InstanceID:    instance.SysID,
+		game:          game.NewLiveGameInstance(instance),
+		clients:       make(map[uuid.UUID]*PlayerChannel),
+		ChangeHandler: NewChangeHandlerDefault(),
+		ErrorHandler:  NewErrorHandlerDefault(),
 	}
 	for _, a := range f.actions {
 		a(svr)
@@ -33,6 +31,12 @@ func (f *GameServerFactory) Create(instance *game.Instance, notifier Notificatio
 }
 
 type GameServerFactoryBuildAction func(svr *GameServer)
+
+func GameServerFactoryPublisherBuildAction(publisher NotificationPublisher) GameServerFactoryBuildAction {
+	return func(svr *GameServer) {
+		svr.ChangeHandler = NewChangeHandlerPublisher(publisher, svr.ChangeHandler)
+	}
+}
 
 func GameServerFactoryLoggingBuildAction(logger *slog.Logger) GameServerFactoryBuildAction {
 	return func(svr *GameServer) {

@@ -2,7 +2,6 @@ package server
 
 import (
 	uuid "github.com/satori/go.uuid"
-	"github.com/wagslane/go-rabbitmq"
 	"log/slog"
 	"mevhub/internal/core/domain/game"
 	"reflect"
@@ -18,16 +17,14 @@ type GameServerHost struct {
 	Register   chan *GameServer
 	Unregister chan uuid.UUID
 
-	connection *rabbitmq.Conn
-	logger     *slog.Logger
+	logger *slog.Logger
 
 	ActionChannel     chan *GameActionRequest
 	GameServerFactory *GameServerFactory
 }
 
-func NewGameServerHost(conn *rabbitmq.Conn, logger *slog.Logger, factory *GameServerFactory) *GameServerHost {
+func NewGameServerHost(logger *slog.Logger, factory *GameServerFactory) *GameServerHost {
 	var server = &GameServerHost{
-		connection:        conn,
 		logger:            logger,
 		games:             make(map[uuid.UUID]*GameServer),
 		Register:          make(chan *GameServer, 5),
@@ -61,7 +58,7 @@ func (h *GameServerHost) Run() {
 }
 
 func (h *GameServerHost) NewLiveGameChannel(instance *game.Instance) *GameServer {
-	return h.GameServerFactory.Create(instance, NewGameServerRabbitMQNotifier(h.connection))
+	return h.GameServerFactory.Create(instance)
 }
 
 func (h *GameServerHost) tick(t time.Time) {
