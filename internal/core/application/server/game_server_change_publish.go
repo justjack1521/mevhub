@@ -4,17 +4,37 @@ import (
 	"context"
 	"github.com/justjack1521/mevium/pkg/genproto/protocommon"
 	"github.com/justjack1521/mevium/pkg/genproto/protomulti"
+	"mevhub/internal/adapter/translate"
 	"mevhub/internal/core/domain/game"
 	"mevhub/internal/core/domain/game/action"
 )
 
+type changeMarshaller struct {
+	playerRemove  translate.GamePlayerRemoveChangeMarshaller
+	playerReady   translate.GamePlayerReadyChangeMarshaller
+	playerLock    translate.GamePlayerLockActionChangeMarshaller
+	playerEnqueue translate.GamePlayerEnqueueActionChangeMarshaller
+	playerDequeue translate.GamePlayerDequeueActionChangeMarshaller
+}
+
 type ChangeHandlerPublisher struct {
-	handler   ChangeHandler
-	publisher NotificationPublisher
+	handler    ChangeHandler
+	publisher  NotificationPublisher
+	marshaller changeMarshaller
 }
 
 func NewChangeHandlerPublisher(publisher NotificationPublisher, handler ChangeHandler) *ChangeHandlerPublisher {
-	return &ChangeHandlerPublisher{publisher: publisher, handler: handler}
+	return &ChangeHandlerPublisher{
+		publisher: publisher,
+		handler:   handler,
+		marshaller: changeMarshaller{
+			playerRemove:  translate.NewGamePlayerRemoveChangeMarshaller(),
+			playerReady:   translate.NewGamePlayerReadyChangeMarshaller(),
+			playerLock:    translate.NewGamePlayerLockActionChangeMarshaller(),
+			playerEnqueue: translate.NewGamePlayerEnqueueActionChangeMarshaller(),
+			playerDequeue: translate.NewGamePlayerDequeueActionChangeMarshaller(),
+		},
+	}
 }
 
 func (c *ChangeHandlerPublisher) Handle(svr *GameServer, change game.Change) error {
@@ -65,13 +85,13 @@ func (c *ChangeHandlerPublisher) HandleEnemyTurnStateChange(svr *GameServer, cha
 				Actions:  make([]*protomulti.ProtoGameAction, len(q.Actions)),
 			}
 			for k, a := range q.Actions {
-				var action = &protomulti.ProtoGameAction{
+				var act = &protomulti.ProtoGameAction{
 					Action:    protomulti.GamePlayerActionType(a.ActionType),
 					Target:    int32(a.Target),
 					SlotIndex: int32(a.SlotIndex),
 					ElementId: a.ElementID.String(),
 				}
-				player.Actions[k] = action
+				player.Actions[k] = act
 			}
 			p.PlayerActionQueue[i] = player
 		}
@@ -84,33 +104,25 @@ func (c *ChangeHandlerPublisher) HandleEnemyTurnStateChange(svr *GameServer, cha
 }
 
 func (c *ChangeHandlerPublisher) HandlePlayerLockActionChange(svr *GameServer, change action.PlayerLockActionChange) error {
-	var message = &protomulti.GameLockActionNotification{
-		GameId:          change.InstanceID.String(),
-		PartyIndex:      int32(change.PartyIndex),
-		PlayerIndex:     int32(change.PartySlot),
-		ActionLockIndex: int32(change.ActionLockIndex),
+	message, err := c.marshaller.playerLock.Marshall(change)
+	if err != nil {
+		return err
 	}
 	return c.publish(svr, protomulti.MultiGameNotificationType_GAME_NOTIFY_LOCK_ACTION, message)
 }
 
 func (c *ChangeHandlerPublisher) HandlePlayerDequeueActionChange(svr *GameServer, change action.PlayerDequeueActionChange) error {
-	var message = &protomulti.GameDequeueActionNotification{
-		GameId:      change.InstanceID.String(),
-		PartyIndex:  int32(change.PartyIndex),
-		PlayerIndex: int32(change.PartySlot),
+	message, err := c.marshaller.playerDequeue.Marshall(change)
+	if err != nil {
+		return err
 	}
 	return c.publish(svr, protomulti.MultiGameNotificationType_GAME_NOTIFY_DEQUEUE_ACTION, message)
 }
 
 func (c *ChangeHandlerPublisher) HandlePlayerEnqueueActionChange(svr *GameServer, change action.PlayerEnqueueActionChange) error {
-	var message = &protomulti.GameEnqueueActionNotification{
-		GameId:      change.InstanceID.String(),
-		PartyIndex:  int32(change.PartyIndex),
-		PlayerIndex: int32(change.PartySlot),
-		Action:      protomulti.GamePlayerActionType(change.ActionType),
-		SlotIndex:   int32(change.SlotIndex),
-		Target:      int32(change.Target),
-		ElementId:   change.ElementID.String(),
+	message, err := c.marshaller.playerEnqueue.Marshall(change)
+	if err != nil {
+		return err
 	}
 	return c.publish(svr, protomulti.MultiGameNotificationType_GAME_NOTIFY_ENQUEUE_ACTION, message)
 }
@@ -120,19 +132,17 @@ func (c *ChangeHandlerPublisher) HandlePlayerAddChange(svr *GameServer, change a
 }
 
 func (c *ChangeHandlerPublisher) HandlePlayerRemoveChange(svr *GameServer, change action.PlayerRemoveChange) error {
-	var notification = &protomulti.GamePlayerRemoveNotification{
-		GameId:      svr.InstanceID.String(),
-		PartyIndex:  int32(change.PartyIndex),
-		PlayerIndex: int32(change.PartySlot),
+	message, err := c.marshaller.playerRemove.Marshall(change)
+	if err != nil {
+		return err
 	}
-	return c.publish(svr, protomulti.MultiGameNotificationType_GAME_NOTIFY_PLAYER_REMOVE, notification)
+	return c.publish(svr, protomulti.MultiGameNotificationType_GAME_NOTIFY_PLAYER_REMOVE, message)
 }
 
 func (c *ChangeHandlerPublisher) HandlePlayerReadyChange(svr *GameServer, change action.PlayerReadyChange) error {
-	var message = &protomulti.GamePlayerReadyNotification{
-		GameId:      change.InstanceID.String(),
-		PartyIndex:  int32(change.PartyIndex),
-		PlayerIndex: int32(change.PartySlot),
+	message, err := c.marshaller.playerReady.Marshall(change)
+	if err != nil {
+		return err
 	}
 	return c.publish(svr, protomulti.MultiGameNotificationType_GAME_NOTIFY_PLAYER_READY, message)
 }

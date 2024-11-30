@@ -39,7 +39,7 @@ func (a *PlayerRemoveAction) Perform(instance *game.LiveGameInstance) error {
 		return ErrFailedRemovePlayer(a.PlayerID, err)
 	}
 
-	instance.ChangeChannel <- NewPlayerRemoveChange(player.UserID, player.PlayerID, party.PartyIndex, player.PartySlot)
+	instance.ChangeChannel <- NewPlayerRemoveChange(instance.InstanceID, player.UserID, player.PlayerID, party.PartyIndex, player.PartySlot)
 
 	return nil
 
