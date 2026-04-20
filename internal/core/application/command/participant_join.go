@@ -1,10 +1,11 @@
 package command
 
 import (
-	"github.com/justjack1521/mevium/pkg/mevent"
-	uuid "github.com/satori/go.uuid"
 	"mevhub/internal/core/domain/lobby"
 	"mevhub/internal/core/port"
+
+	"github.com/justjack1521/mevium/pkg/mevent"
+	uuid "github.com/satori/go.uuid"
 )
 
 type ParticipantJoinCommand struct {
@@ -32,16 +33,25 @@ func NewParticipantJoinCommand(id uuid.UUID, deck, slot int, stamina, invite boo
 
 type ParticipantJoinCommandHandler struct {
 	EventPublisher        *mevent.Publisher
+	SessionRepository     port.SessionInstanceReadRepository
 	InstanceRepository    port.LobbyInstanceReadRepository
 	ParticipantFactory    lobby.ParticipantFactory
 	ParticipantRepository port.LobbyParticipantRepository
 }
 
-func NewParticipantJoinCommandHandler(publishes *mevent.Publisher, instances port.LobbyInstanceReadRepository, participants port.LobbyParticipantRepository) *ParticipantJoinCommandHandler {
-	return &ParticipantJoinCommandHandler{EventPublisher: publishes, InstanceRepository: instances, ParticipantRepository: participants, ParticipantFactory: lobby.ParticipantFactory{}}
+func NewParticipantJoinCommandHandler(publishes *mevent.Publisher, sessions port.SessionInstanceReadRepository, instances port.LobbyInstanceReadRepository, participants port.LobbyParticipantRepository) *ParticipantJoinCommandHandler {
+	return &ParticipantJoinCommandHandler{EventPublisher: publishes, SessionRepository: sessions, InstanceRepository: instances, ParticipantRepository: participants, ParticipantFactory: lobby.ParticipantFactory{}}
 }
 
 func (h *ParticipantJoinCommandHandler) Handle(ctx Context, cmd *ParticipantJoinCommand) error {
+
+	current, err := h.SessionRepository.QueryByID(ctx, ctx.UserID())
+	if err != nil {
+		return err
+	}
+	if !current.CanJoinLobby() {
+		return lobby.ErrPlayerAlreadyInLobby(current.LobbyID)
+	}
 
 	instance, err := h.InstanceRepository.QueryByID(ctx, cmd.LobbyID)
 	if err != nil {
@@ -51,6 +61,10 @@ func (h *ParticipantJoinCommandHandler) Handle(ctx Context, cmd *ParticipantJoin
 	participant, err := h.ParticipantRepository.QueryParticipantForLobby(ctx, instance.SysID, cmd.SlotIndex)
 	if err != nil {
 		return err
+	}
+
+	if participant.HasPlayer() {
+		return lobby.ErrPlayerSlotAlreadyTaken(cmd.SlotIndex)
 	}
 
 	var options = lobby.ParticipantJoinOptions{

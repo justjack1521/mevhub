@@ -3,6 +3,7 @@ package lobby
 import (
 	"errors"
 	"fmt"
+
 	uuid "github.com/satori/go.uuid"
 )
 
@@ -12,6 +13,9 @@ var (
 	}
 	ErrInvalidParticipantDeckIndex = func(index int) error {
 		return fmt.Errorf("participant deck index %d must be non-negative", index)
+	}
+	ErrPlayerSlotAlreadyTaken = func(index int) error {
+		return fmt.Errorf("participant slot %d already taken", index)
 	}
 )
 

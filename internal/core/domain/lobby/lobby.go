@@ -3,8 +3,9 @@ package lobby
 import (
 	"errors"
 	"fmt"
-	uuid "github.com/satori/go.uuid"
 	"time"
+
+	uuid "github.com/satori/go.uuid"
 )
 
 var (
@@ -123,6 +124,9 @@ var (
 	ErrHostCannotJoinOwnLobby = errors.New("host cannot join own lobby")
 	ErrPlayerSlotInviteOnly   = func(index int) error {
 		return fmt.Errorf("player slot %d is invite only", index)
+	}
+	ErrPlayerAlreadyInLobby = func(id uuid.UUID) error {
+		return fmt.Errorf("player is already in lobby %d", id)
 	}
 )
 

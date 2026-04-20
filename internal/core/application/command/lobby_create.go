@@ -2,11 +2,12 @@ package command
 
 import (
 	"fmt"
-	"github.com/justjack1521/mevium/pkg/mevent"
-	uuid "github.com/satori/go.uuid"
 	"math/rand"
 	"mevhub/internal/core/domain/lobby"
 	"mevhub/internal/core/port"
+
+	"github.com/justjack1521/mevium/pkg/mevent"
+	uuid "github.com/satori/go.uuid"
 )
 
 type LobbyCreateCommand struct {
@@ -42,14 +43,16 @@ func NewLobbyCreateCommand(quest uuid.UUID, deck int, comment string, options Cr
 type LobbyCreateCommandHandler struct {
 	EventPublisher        *mevent.Publisher
 	InstanceRepository    port.LobbyInstanceWriteRepository
+	SessionRepository     port.SessionInstanceReadRepository
 	QuestRepository       port.QuestRepository
 	ParticipantFactory    lobby.ParticipantFactory
 	ParticipantRepository port.LobbyParticipantWriteRepository
 }
 
-func NewLobbyCreateCommandHandler(publisher *mevent.Publisher, instances port.LobbyInstanceWriteRepository, quests port.QuestRepository, participants port.LobbyParticipantWriteRepository) *LobbyCreateCommandHandler {
+func NewLobbyCreateCommandHandler(publisher *mevent.Publisher, sessions port.SessionInstanceReadRepository, instances port.LobbyInstanceWriteRepository, quests port.QuestRepository, participants port.LobbyParticipantWriteRepository) *LobbyCreateCommandHandler {
 	return &LobbyCreateCommandHandler{
 		EventPublisher:        publisher,
+		SessionRepository:     sessions,
 		InstanceRepository:    instances,
 		QuestRepository:       quests,
 		ParticipantFactory:    lobby.ParticipantFactory{},
@@ -58,6 +61,15 @@ func NewLobbyCreateCommandHandler(publisher *mevent.Publisher, instances port.Lo
 }
 
 func (h *LobbyCreateCommandHandler) Handle(ctx Context, cmd *LobbyCreateCommand) error {
+
+	current, err := h.SessionRepository.QueryByID(ctx, ctx.UserID())
+	if err != nil {
+		return err
+	}
+
+	if current.CanJoinLobby() == false {
+		return lobby.ErrPlayerAlreadyInLobby(current.LobbyID)
+	}
 
 	quest, err := h.QuestRepository.QueryByID(cmd.QuestID)
 	if err != nil {

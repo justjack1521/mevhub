@@ -147,7 +147,7 @@ func (a *LobbyApplication) NewSessionEndCommandHandler(core *CoreApplication) Se
 }
 
 func (a *LobbyApplication) NewLobbyCreateCommandHandler(core *CoreApplication) LobbyCreateCommandHandler {
-	var actual = command.NewLobbyCreateCommandHandler(core.Services.EventPublisher, core.data.Lobbies, core.repositories.Quests, core.data.LobbyParticipants)
+	var actual = command.NewLobbyCreateCommandHandler(core.Services.EventPublisher, core.data.Sessions, core.data.Lobbies, core.repositories.Quests, core.data.LobbyParticipants)
 	return decorator.NewStandardCommandDecorator[command.Context, *command.LobbyCreateCommand](core.Services.EventPublisher, actual)
 }
 
@@ -172,7 +172,7 @@ func (a *LobbyApplication) NewLobbyReadyCommandHandler(core *CoreApplication) Lo
 }
 
 func (a *LobbyApplication) NewParticipantJoinCommandHandler(core *CoreApplication) ParticipantJoinCommandHandler {
-	var actual = command.NewParticipantJoinCommandHandler(core.Services.EventPublisher, core.data.Lobbies, core.data.LobbyParticipants)
+	var actual = command.NewParticipantJoinCommandHandler(core.Services.EventPublisher, core.data.Sessions, core.data.Lobbies, core.data.LobbyParticipants)
 	return decorator.NewStandardCommandDecorator[command.Context, *command.ParticipantJoinCommand](core.Services.EventPublisher, actual)
 }
 
