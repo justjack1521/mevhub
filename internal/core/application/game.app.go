@@ -68,6 +68,7 @@ func NewGameApplication(core *CoreApplication) *GameApplication {
 		subscriber.NewGameChannelServerWriter(svr, core.Services.EventPublisher, core.data.Games, core.data.GamePlayers),
 		subscriber.NewGamePartyWriter(core.Services.EventPublisher, core.data.Games, core.data.LobbySummaries, core.data.GameParties),
 		subscriber.NewGameParticipantWriter(core.Services.EventPublisher, core.data.LobbyParticipants, core.data.GameParticipants),
+		subscriber.NewGameLoadoutEvictionSubscriber(core.Services.EventPublisher, core.data.GamePlayerLoadouts),
 	}
 
 	return application

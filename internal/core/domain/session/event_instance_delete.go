@@ -2,20 +2,22 @@ package session
 
 import (
 	"context"
-	uuid "github.com/satori/go.uuid"
 	"log/slog"
+
+	uuid "github.com/satori/go.uuid"
 )
 
 type InstanceDeletedEvent struct {
-	ctx      context.Context
-	userID   uuid.UUID
-	playerID uuid.UUID
-	lobbyID  uuid.UUID
-	gameID   uuid.UUID
+	ctx       context.Context
+	userID    uuid.UUID
+	playerID  uuid.UUID
+	lobbyID   uuid.UUID
+	gameID    uuid.UUID
+	deckIndex int
 }
 
-func NewInstanceDeletedEvent(ctx context.Context, userID, playerID, lobbyID, gameID uuid.UUID) InstanceDeletedEvent {
-	return InstanceDeletedEvent{ctx: ctx, userID: userID, playerID: playerID, lobbyID: lobbyID, gameID: gameID}
+func NewInstanceDeletedEvent(ctx context.Context, userID, playerID, lobbyID, gameID uuid.UUID, deckIndex int) InstanceDeletedEvent {
+	return InstanceDeletedEvent{ctx: ctx, userID: userID, playerID: playerID, lobbyID: lobbyID, gameID: gameID, deckIndex: deckIndex}
 }
 
 func (e InstanceDeletedEvent) Name() string {
@@ -42,11 +44,16 @@ func (e InstanceDeletedEvent) GameID() uuid.UUID {
 	return e.gameID
 }
 
+func (e InstanceDeletedEvent) DeckIndex() int {
+	return e.deckIndex
+}
+
 func (e InstanceDeletedEvent) ToSlogFields() []slog.Attr {
 	return []slog.Attr{
 		slog.String("user.id", e.userID.String()),
 		slog.String("player.id", e.playerID.String()),
 		slog.String("lobby.id", e.lobbyID.String()),
 		slog.String("game.id", e.gameID.String()),
+		slog.Int("deck.index", e.deckIndex),
 	}
 }

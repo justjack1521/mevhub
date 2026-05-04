@@ -1,12 +1,6 @@
 package application
 
 import (
-	"github.com/go-redis/redis/v8"
-	services "github.com/justjack1521/mevium/pkg/genproto/service"
-	"github.com/justjack1521/mevium/pkg/mevent"
-	"github.com/justjack1521/mevrelic"
-	"github.com/wagslane/go-rabbitmq"
-	"gorm.io/gorm"
 	"log/slog"
 	"mevhub/internal/adapter/cache"
 	"mevhub/internal/adapter/database"
@@ -14,6 +8,13 @@ import (
 	"mevhub/internal/adapter/memory"
 	"mevhub/internal/adapter/serial"
 	"mevhub/internal/core/port"
+
+	"github.com/go-redis/redis/v8"
+	services "github.com/justjack1521/mevium/pkg/genproto/service"
+	"github.com/justjack1521/mevium/pkg/mevent"
+	"github.com/justjack1521/mevrelic"
+	"github.com/wagslane/go-rabbitmq"
+	"gorm.io/gorm"
 )
 
 type CoreApplication struct {
@@ -55,7 +56,7 @@ type DataRepositories struct {
 	GameParties          port.GamePartyRepository
 	GameParticipants     port.GameParticipantRepository
 	GamePlayers          port.GamePlayerRepository
-	GamePlayerLoadouts   port.GamePlayerLoadoutReadRepository
+	GamePlayerLoadouts   port.GamePlayerLoadoutRepository
 }
 
 type ApplicationServices struct {
@@ -112,7 +113,7 @@ func (a *CoreApplication) BuildDataRepos(db *gorm.DB, client *redis.Client, iden
 		GameParties:          memory.NewGamePartyRepository(client),
 		GameParticipants:     memory.NewGameParticipantRepository(client),
 		GamePlayers:          memory.NewGamePlayerRepository(client, serial.NewGamePlayerJSONSerialiser()),
-		GamePlayerLoadouts:   external.NewGamePlayerLoadoutRepository(identity),
+		GamePlayerLoadouts:   cache.NewGamePlayerLoadoutRepository(external.NewGamePlayerLoadoutRepository(identity), memory.NewGamePlayerLoadoutRepository(client, serial.NewGamePlayerLoadoutJSONSerialiser())),
 	}
 	return a
 }

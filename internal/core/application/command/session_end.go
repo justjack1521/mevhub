@@ -1,9 +1,10 @@
 package command
 
 import (
-	"github.com/justjack1521/mevium/pkg/mevent"
 	"mevhub/internal/core/domain/session"
 	"mevhub/internal/core/port"
+
+	"github.com/justjack1521/mevium/pkg/mevent"
 )
 
 type SessionEndCommand struct {
@@ -19,18 +20,18 @@ func NewSessionEndCommand() *SessionEndCommand {
 }
 
 type SessionEndCommandHandler struct {
-	EventPublisher         *mevent.Publisher
-	SessionReadRepository  port.SessionInstanceReadRepository
-	SessionWriteRepository port.SessionInstanceWriteRepository
+	EventPublisher *mevent.Publisher
+	read           port.SessionInstanceReadRepository
+	write          port.SessionInstanceWriteRepository
 }
 
 func NewSessionEndCommandHandler(publisher *mevent.Publisher, read port.SessionInstanceReadRepository, write port.SessionInstanceWriteRepository) *SessionEndCommandHandler {
-	return &SessionEndCommandHandler{EventPublisher: publisher, SessionReadRepository: read, SessionWriteRepository: write}
+	return &SessionEndCommandHandler{EventPublisher: publisher, read: read, write: write}
 }
 
 func (h *SessionEndCommandHandler) Handle(ctx Context, cmd *SessionEndCommand) error {
 
-	exists, err := h.SessionReadRepository.Exists(ctx, ctx.UserID())
+	exists, err := h.read.Exists(ctx, ctx.UserID())
 	if err != nil {
 		return err
 	}
@@ -39,16 +40,16 @@ func (h *SessionEndCommandHandler) Handle(ctx Context, cmd *SessionEndCommand) e
 		return nil
 	}
 
-	instance, err := h.SessionReadRepository.QueryByID(ctx, ctx.UserID())
+	instance, err := h.read.QueryByID(ctx, ctx.UserID())
 	if err != nil {
 		return err
 	}
 
-	if err := h.SessionWriteRepository.Delete(ctx, instance); err != nil {
+	if err := h.write.Delete(ctx, instance); err != nil {
 		return err
 	}
 
-	cmd.QueueEvent(session.NewInstanceDeletedEvent(ctx, instance.UserID, instance.PlayerID, instance.LobbyID, instance.GameID))
+	cmd.QueueEvent(session.NewInstanceDeletedEvent(ctx, instance.UserID, instance.PlayerID, instance.LobbyID, instance.GameID, instance.DeckIndex))
 
 	return nil
 

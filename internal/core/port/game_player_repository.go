@@ -2,8 +2,9 @@ package port
 
 import (
 	"context"
-	uuid "github.com/satori/go.uuid"
 	"mevhub/internal/core/domain/game"
+
+	uuid "github.com/satori/go.uuid"
 )
 
 type GamePlayerReadRepository interface {
@@ -22,4 +23,14 @@ type GamePlayerRepository interface {
 
 type GamePlayerLoadoutReadRepository interface {
 	Query(ctx context.Context, player uuid.UUID, index int) (game.PlayerLoadout, error)
+}
+
+type GamePlayerLoadoutWriteRepository interface {
+	Create(ctx context.Context, player uuid.UUID, index int, loadout game.PlayerLoadout) error
+	Delete(ctx context.Context, player uuid.UUID, index int) error
+}
+
+type GamePlayerLoadoutRepository interface {
+	GamePlayerLoadoutReadRepository
+	GamePlayerLoadoutWriteRepository
 }
