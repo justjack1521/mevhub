@@ -119,7 +119,7 @@ func (h *LobbyCreateCommandHandler) Handle(ctx Context, cmd *LobbyCreateCommand)
 			player = ctx.PlayerID()
 		}
 
-		participant, err := h.ParticipantFactory.Create(user, player, instance, opts.SlotRestrictions[0], part)
+		participant, err := h.ParticipantFactory.Create(user, player, instance, opts.SlotRestrictions[i], part)
 		if err != nil {
 			return err
 		}

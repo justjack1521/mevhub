@@ -2,13 +2,14 @@ package memory
 
 import (
 	"context"
-	"github.com/go-redis/redis/v8"
-	uuid "github.com/satori/go.uuid"
 	"mevhub/internal/adapter/memory/dto"
 	"mevhub/internal/core/domain/lobby"
 	"mevhub/internal/core/port"
 	"strconv"
 	"strings"
+
+	"github.com/go-redis/redis/v8"
+	uuid "github.com/satori/go.uuid"
 )
 
 const lobbyParticipantKey = "lobby_participant"
@@ -95,17 +96,24 @@ func (r *LobbyParticipantRepository) QueryAllForLobby(ctx context.Context, id uu
 	if err != nil {
 		return nil, port.ErrFailedQueryAllParticipantsForLobby(id, err)
 	}
-	var participants = make([]*lobby.Participant, len(keys))
-	for index, key := range keys {
+	var participants = make([]*lobby.Participant, 0, len(keys))
+	for _, key := range keys {
 		var cmd = r.client.HGetAll(ctx, key)
 		if cmd.Err() != nil {
-			return nil, port.ErrFailedQueryAllParticipantsForLobby(id, port.ErrFailedQueryParticipant(index, err))
+			return nil, port.ErrFailedQueryAllParticipantsForLobby(id, cmd.Err())
 		}
-		var result = &dto.LobbyParticipantRedis{}
-		if err := cmd.Scan(result); err != nil {
-			return nil, port.ErrFailedQueryAllParticipantsForLobby(id, port.ErrFailedQueryParticipant(index, err))
+		result, err := cmd.Result()
+		if err != nil {
+			return nil, port.ErrFailedQueryAllParticipantsForLobby(id, err)
 		}
-		participants[index] = result.ToEntity()
+		if len(result) == 0 {
+			continue
+		}
+		var p = &dto.LobbyParticipantRedis{}
+		if err := cmd.Scan(p); err != nil {
+			return nil, port.ErrFailedQueryAllParticipantsForLobby(id, err)
+		}
+		participants = append(participants, p.ToEntity())
 	}
 	return participants, nil
 }
