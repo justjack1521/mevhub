@@ -2,9 +2,10 @@ package subscriber
 
 import (
 	"fmt"
-	"github.com/justjack1521/mevium/pkg/mevent"
 	"mevhub/internal/core/domain/game"
 	"mevhub/internal/core/port"
+
+	"github.com/justjack1521/mevium/pkg/mevent"
 )
 
 type GameParticipantWriter struct {
@@ -23,6 +24,10 @@ func (s *GameParticipantWriter) Notify(event mevent.Event) {
 	switch actual := event.(type) {
 	case game.PartyCreatedEvent:
 		if err := s.HandlePartyCreated(actual); err != nil {
+			fmt.Println(err)
+		}
+	case game.PartyDeletedEvent:
+		if err := s.HandlePartyDeleted(actual); err != nil {
 			fmt.Println(err)
 		}
 	}

@@ -2,13 +2,14 @@ package memory
 
 import (
 	"context"
-	"github.com/go-redis/redis/v8"
-	uuid "github.com/satori/go.uuid"
 	"mevhub/internal/adapter/memory/dto"
 	"mevhub/internal/core/domain/game"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/go-redis/redis/v8"
+	uuid "github.com/satori/go.uuid"
 )
 
 const (
@@ -48,13 +49,24 @@ func (r *GameParticipantRepository) QueryAll(ctx context.Context, party uuid.UUI
 	if err != nil {
 		return nil, err
 	}
-	var participants = make([]*game.Participant, len(keys))
-	for index, key := range keys {
-		participant, err := r.query(ctx, key)
+	var participants = make([]*game.Participant, 0, len(keys))
+	for _, key := range keys {
+		var cmd = r.client.HGetAll(ctx, key)
+		if cmd.Err() != nil {
+			return nil, cmd.Err()
+		}
+		result, err := cmd.Result()
 		if err != nil {
 			return nil, err
 		}
-		participants[index] = participant
+		if len(result) == 0 {
+			continue
+		}
+		var p = &dto.GameParticipantRedis{}
+		if err := cmd.Scan(p); err != nil {
+			return nil, err
+		}
+		participants = append(participants, p.ToEntity())
 	}
 	return participants, nil
 }
