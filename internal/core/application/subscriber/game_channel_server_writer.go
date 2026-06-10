@@ -1,13 +1,14 @@
 package subscriber
 
 import (
-	"github.com/justjack1521/mevium/pkg/mevent"
-	uuid "github.com/satori/go.uuid"
 	"mevhub/internal/core/application/server"
 	"mevhub/internal/core/domain/game"
 	"mevhub/internal/core/domain/game/action"
 	"mevhub/internal/core/domain/session"
 	"mevhub/internal/core/port"
+
+	"github.com/justjack1521/mevium/pkg/mevent"
+	uuid "github.com/satori/go.uuid"
 )
 
 type GameChannelServerWriter struct {
@@ -18,7 +19,7 @@ type GameChannelServerWriter struct {
 	ParticipantRepository port.GamePlayerReadRepository
 }
 
-func NewGameChannelServerWriter(server *server.GameServerHost, publisher *mevent.Publisher, instances port.GameInstanceRepository, participants port.GamePlayerReadRepository) *GameChannelServerWriter {
+func NewGameChannelServerWriter(server *server.GameServerHost, publisher *mevent.Publisher, instances port.GameInstanceRepository, party port.GamePartyReadRepository, participants port.GamePlayerReadRepository) *GameChannelServerWriter {
 	var writer = &GameChannelServerWriter{Server: server, EventPublisher: publisher, InstanceRepository: instances, ParticipantRepository: participants}
 	publisher.Subscribe(writer, game.InstanceCreatedEvent{}, game.InstanceDeletedEvent{}, game.PartyCreatedEvent{}, game.ParticipantCreatedEvent{}, session.InstanceDeletedEvent{})
 	return writer
