@@ -170,6 +170,7 @@ func (r *LobbyParticipantRepository) ParticipantToTransfer(participant *lobby.Pa
 		UseStamina:      participant.UseStamina,
 		FromInvite:      participant.FromInvite,
 		Ready:           participant.Ready,
+		BotControl:      participant.BotControl,
 	}
 	return result, nil
 }

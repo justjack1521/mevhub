@@ -1,10 +1,10 @@
 package command
 
 import (
-	"github.com/justjack1521/mevium/pkg/mevent"
 	"mevhub/internal/core/domain/game"
-	"mevhub/internal/core/domain/lobby"
+	"mevhub/internal/core/domain/match"
 	"mevhub/internal/core/port"
+	"time"
 )
 
 type LobbyReadyCommand struct {
@@ -20,15 +20,33 @@ func NewLobbyReadyCommand() *LobbyReadyCommand {
 }
 
 type LobbyReadyCommandHandler struct {
-	EventPublisher             *mevent.Publisher
 	SessionRepository          port.SessionInstanceReadRepository
 	InstanceRepository         port.LobbyInstanceRepository
 	QuestRepository            port.QuestRepository
 	LobbyPlayerQueueRepository port.MatchLobbyPlayerQueueWriteRepository
+	LobbyQueueRepository       port.MatchLobbyQueueWriteRepository
+	ParticipantRepository      port.LobbyParticipantReadRepository
+	PlayerSummaryRepository    port.LobbyPlayerSummaryReadRepository
 }
 
-func NewLobbyReadyCommandHandler(publisher *mevent.Publisher, sessions port.SessionInstanceReadRepository, lobbies port.LobbyInstanceRepository, quests port.QuestRepository, queues port.MatchLobbyPlayerQueueWriteRepository) *LobbyReadyCommandHandler {
-	return &LobbyReadyCommandHandler{EventPublisher: publisher, SessionRepository: sessions, InstanceRepository: lobbies, QuestRepository: quests, LobbyPlayerQueueRepository: queues}
+func NewLobbyReadyCommandHandler(
+	sessions port.SessionInstanceReadRepository,
+	lobbies port.LobbyInstanceRepository,
+	quests port.QuestRepository,
+	playerQueue port.MatchLobbyPlayerQueueWriteRepository,
+	lobbyQueue port.MatchLobbyQueueWriteRepository,
+	participants port.LobbyParticipantReadRepository,
+	players port.LobbyPlayerSummaryReadRepository,
+) *LobbyReadyCommandHandler {
+	return &LobbyReadyCommandHandler{
+		SessionRepository:          sessions,
+		InstanceRepository:         lobbies,
+		QuestRepository:            quests,
+		LobbyPlayerQueueRepository: playerQueue,
+		LobbyQueueRepository:       lobbyQueue,
+		ParticipantRepository:      participants,
+		PlayerSummaryRepository:    players,
+	}
 }
 
 func (h *LobbyReadyCommandHandler) Handle(ctx Context, cmd *LobbyReadyCommand) error {
@@ -48,13 +66,47 @@ func (h *LobbyReadyCommandHandler) Handle(ctx Context, cmd *LobbyReadyCommand) e
 		return err
 	}
 
-	if quest.Tier.GameMode.FulfillMethod == game.FulfillMethodMatch {
-		if err := h.LobbyPlayerQueueRepository.RemoveLobbyFromQueue(ctx, quest.Tier.GameMode.ModeIdentifier, instance.QuestID, instance.SysID); err != nil {
-			return err
-		}
+	if quest.Tier.GameMode.FulfillMethod != game.FulfillMethodMatch {
+		return nil
 	}
 
-	h.EventPublisher.Notify(lobby.NewInstanceReadyEvent(ctx, instance.SysID, instance.QuestID))
+	if err := h.LobbyPlayerQueueRepository.RemoveLobbyFromQueue(ctx, quest.Tier.GameMode.ModeIdentifier, instance.QuestID, instance.SysID); err != nil {
+		return err
+	}
+
+	participants, err := h.ParticipantRepository.QueryAllForLobby(ctx, instance.SysID)
+	if err != nil {
+		return err
+	}
+
+	var sum, count int
+	for _, participant := range participants {
+		if !participant.HasPlayer() {
+			continue
+		}
+		summary, err := h.PlayerSummaryRepository.Query(ctx, participant.PlayerID)
+		if err != nil {
+			return err
+		}
+		sum += summary.Loadout.CalculateDeckLevel()
+		count++
+	}
+
+	var average int
+	if count > 0 {
+		average = sum / count
+	}
+
+	var entry = match.LobbyQueueEntry{
+		LobbyID:      instance.SysID,
+		QuestID:      instance.QuestID,
+		AverageLevel: average,
+		JoinedAt:     time.Now().UTC(),
+	}
+
+	if err := h.LobbyQueueRepository.AddLobbyToQueue(ctx, quest.Tier.GameMode.ModeIdentifier, entry); err != nil {
+		return err
+	}
 
 	return nil
 

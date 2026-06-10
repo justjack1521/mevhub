@@ -3,8 +3,11 @@ package command
 import (
 	"fmt"
 	"math/rand"
+	"mevhub/internal/core/domain/game"
 	"mevhub/internal/core/domain/lobby"
+	"mevhub/internal/core/domain/match"
 	"mevhub/internal/core/port"
+	"time"
 
 	"github.com/justjack1521/mevium/pkg/mevent"
 	uuid "github.com/satori/go.uuid"
@@ -41,22 +44,46 @@ func NewLobbyCreateCommand(quest uuid.UUID, deck int, comment string, options Cr
 }
 
 type LobbyCreateCommandHandler struct {
-	EventPublisher        *mevent.Publisher
-	InstanceRepository    port.LobbyInstanceWriteRepository
-	SessionRepository     port.SessionInstanceReadRepository
-	QuestRepository       port.QuestRepository
-	ParticipantFactory    lobby.ParticipantFactory
-	ParticipantRepository port.LobbyParticipantWriteRepository
+	EventPublisher          *mevent.Publisher
+	SessionRepository       port.SessionInstanceRepository
+	InstanceRepository      port.LobbyInstanceWriteRepository
+	QuestRepository         port.QuestRepository
+	ParticipantFactory      lobby.ParticipantFactory
+	ParticipantRepository   port.LobbyParticipantWriteRepository
+	SummaryRepository       port.LobbySummaryWriteRepository
+	SearchRepository        port.LobbySearchWriteRepository
+	PlayerQueueRepository   port.MatchLobbyPlayerQueueWriteRepository
+	PlayerSummaryRepository port.LobbyPlayerSummaryReadRepository
+	ListenerRepository      lobby.NotificationListenerWriteRepository
+	ChannelOpener           port.LobbyNotificationChannelOpener
 }
 
-func NewLobbyCreateCommandHandler(publisher *mevent.Publisher, sessions port.SessionInstanceReadRepository, instances port.LobbyInstanceWriteRepository, quests port.QuestRepository, participants port.LobbyParticipantWriteRepository) *LobbyCreateCommandHandler {
+func NewLobbyCreateCommandHandler(
+	publisher *mevent.Publisher,
+	sessions port.SessionInstanceRepository,
+	instances port.LobbyInstanceWriteRepository,
+	quests port.QuestRepository,
+	participants port.LobbyParticipantWriteRepository,
+	summaries port.LobbySummaryWriteRepository,
+	search port.LobbySearchWriteRepository,
+	playerQueue port.MatchLobbyPlayerQueueWriteRepository,
+	playerSummaries port.LobbyPlayerSummaryReadRepository,
+	listeners lobby.NotificationListenerWriteRepository,
+	channelOpener port.LobbyNotificationChannelOpener,
+) *LobbyCreateCommandHandler {
 	return &LobbyCreateCommandHandler{
-		EventPublisher:        publisher,
-		SessionRepository:     sessions,
-		InstanceRepository:    instances,
-		QuestRepository:       quests,
-		ParticipantFactory:    lobby.ParticipantFactory{},
-		ParticipantRepository: participants,
+		EventPublisher:          publisher,
+		SessionRepository:       sessions,
+		InstanceRepository:      instances,
+		QuestRepository:         quests,
+		ParticipantFactory:      lobby.ParticipantFactory{},
+		ParticipantRepository:   participants,
+		SummaryRepository:       summaries,
+		SearchRepository:        search,
+		PlayerQueueRepository:   playerQueue,
+		PlayerSummaryRepository: playerSummaries,
+		ListenerRepository:      listeners,
+		ChannelOpener:           channelOpener,
 	}
 }
 
@@ -98,7 +125,54 @@ func (h *LobbyCreateCommandHandler) Handle(ctx Context, cmd *LobbyCreateCommand)
 		return err
 	}
 
-	cmd.QueueEvent(lobby.NewInstanceCreatedEvent(ctx, instance.SysID, cmd.QuestID, cmd.PartyID, cmd.Comment, instance.MinimumPlayerLevel))
+	var summary = lobby.Summary{
+		InstanceID:         instance.SysID,
+		QuestID:            quest.SysID,
+		PartyID:            cmd.PartyID,
+		LobbyComment:       cmd.Comment,
+		MinimumPlayerLevel: instance.MinimumPlayerLevel,
+	}
+	if err := h.SummaryRepository.Create(ctx, summary); err != nil {
+		return err
+	}
+
+	if quest.Tier.GameMode.FulfillMethod == game.FulfillMethodSearch {
+		var categories = make([]uuid.UUID, len(quest.Categories))
+		for i, category := range quest.Categories {
+			if category.Zero() {
+				continue
+			}
+			categories[i] = category.SysID
+		}
+		var search = lobby.SearchEntry{
+			InstanceID:         instance.SysID,
+			ModeIdentifier:     string(quest.Tier.GameMode.ModeIdentifier),
+			Level:              quest.Tier.StarLevel,
+			MinimumPlayerLevel: instance.MinimumPlayerLevel,
+			Categories:         categories,
+		}
+		if err := h.SearchRepository.Create(ctx, search); err != nil {
+			return err
+		}
+	}
+
+	if quest.Tier.GameMode.FulfillMethod == game.FulfillMethodMatch {
+		hostSummary, err := h.PlayerSummaryRepository.Query(ctx, ctx.PlayerID())
+		if err != nil {
+			return err
+		}
+		var entry = match.LobbyQueueEntry{
+			LobbyID:      instance.SysID,
+			QuestID:      instance.QuestID,
+			AverageLevel: hostSummary.Loadout.CalculateDeckLevel(),
+			JoinedAt:     time.Now().UTC(),
+		}
+		if err := h.PlayerQueueRepository.AddLobbyToQueue(ctx, quest.Tier.GameMode.ModeIdentifier, entry); err != nil {
+			return err
+		}
+	}
+
+	h.ChannelOpener.Open(ctx, instance.SysID)
 
 	for i := 0; i < instance.PlayerSlotCount; i++ {
 
@@ -129,6 +203,16 @@ func (h *LobbyCreateCommandHandler) Handle(ctx Context, cmd *LobbyCreateCommand)
 		}
 
 		if uuid.Equal(player, uuid.Nil) == false {
+			current.LobbyID = participant.LobbyID
+			current.PartySlot = participant.PlayerSlot
+			if err := h.SessionRepository.Update(ctx, current); err != nil {
+				return err
+			}
+
+			if err := h.ListenerRepository.CreateListener(ctx, instance.SysID, ctx.UserID()); err != nil {
+				return err
+			}
+
 			cmd.QueueEvent(lobby.NewParticipantCreatedEvent(ctx, participant.UserID, participant.PlayerID, participant.LobbyID, participant.DeckIndex, participant.PlayerSlot))
 		}
 

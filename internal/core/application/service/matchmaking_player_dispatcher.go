@@ -30,6 +30,10 @@ func (s PlayerMatchmakingDispatcher) Dispatch(ctx context.Context, mode game.Mod
 		return false, err
 	}
 
+	if !sesh.CanJoinLobby() {
+		return false, nil
+	}
+
 	instance, err := s.LobbyInstanceRepository.QueryByID(ctx, entry.LobbyID)
 	if err != nil {
 		return false, err

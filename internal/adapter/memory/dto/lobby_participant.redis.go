@@ -18,6 +18,7 @@ type LobbyParticipantRedis struct {
 	UseStamina      bool   `redis:"UseStamina"`
 	FromInvite      bool   `redis:"FromInvite"`
 	Ready           bool   `redis:"Ready"`
+	BotControl      bool   `redis:"BotControl"`
 }
 
 func (x *LobbyParticipantRedis) ToEntity() *lobby.Participant {
@@ -34,6 +35,7 @@ func (x *LobbyParticipantRedis) ToEntity() *lobby.Participant {
 		UseStamina:      x.UseStamina,
 		FromInvite:      x.FromInvite,
 		Ready:           x.Ready,
+		BotControl:      x.BotControl,
 	}
 }
 
@@ -51,5 +53,6 @@ func (x *LobbyParticipantRedis) ToMapStringInterface() map[string]interface{} {
 		"UseStamina":      x.UseStamina,
 		"FromInvite":      x.FromInvite,
 		"Ready":           x.Ready,
+		"BotControl":      x.BotControl,
 	}
 }

@@ -13,6 +13,7 @@ import (
 	"mevhub/internal/core/application/worker"
 	"mevhub/internal/core/domain/game"
 	"mevhub/internal/core/domain/lobby"
+	"mevhub/internal/core/port"
 	"mevhub/internal/decorator"
 )
 
@@ -39,6 +40,7 @@ type LobbyApplicationCommands struct {
 	LobbyStart         LobbyStartCommandHandler
 	LobbyStamp         LobbyStampCommandHandler
 	ParticipantJoin    ParticipantJoinCommandHandler
+	ParticipantLeave   ParticipantLeaveCommandHandler
 	ParticipantReady   ParticipantReadyCommandHandler
 	ParticipantUnready ParticipantUnreadyCommandHandler
 	ParticipantFind    ParticipantFindCommandHandler
@@ -61,16 +63,18 @@ func NewLobbyApplication(core *CoreApplication) *LobbyApplication {
 		SearchLobby:  application.NewSearchLobbyQueryHandler(core),
 		SearchPlayer: application.NewSearchPlayerQueryHandler(core),
 	}
+	var channeler = subscriber.NewLobbyNotificationChanneler(core.Services.EventPublisher, core.Services.Redis, core.Services.RabbitMQConnection, memory.NewLobbyChannelRepository(core.Services.Redis))
 	application.Commands = &LobbyApplicationCommands{
 		SessionCreate:      application.NewSessionCreateCommandHandler(core),
 		SessionEnd:         application.NewSessionEndCommandHandler(core),
-		LobbyCreate:        application.NewLobbyCreateCommandHandler(core),
+		LobbyCreate:        application.NewLobbyCreateCommandHandler(core, channeler),
 		LobbyCancel:        application.NewLobbyCancelCommandHandler(core),
 		LobbyReady:         application.NewLobbyReadyCommandHandler(core),
 		LobbyStart:         application.NewLobbyStartCommandHandler(core),
 		LobbyStamp:         application.NewLobbyStampCommandHandler(core),
 		ParticipantWatch:   application.NewParticipantWatchCommandHandler(core),
 		ParticipantJoin:    application.NewParticipantJoinCommandHandler(core),
+		ParticipantLeave:   application.NewParticipantLeaveCommandHandler(core),
 		ParticipantReady:   application.NewParticipantReadyCommandHandler(core),
 		ParticipantUnready: application.NewParticipantUnreadyCommandHandler(core),
 		ParticipantFind:    application.NewParticipantFindCommandHandler(core),
@@ -81,16 +85,14 @@ func NewLobbyApplication(core *CoreApplication) *LobbyApplication {
 		LobbyPlayer:     translate.NewLobbyPlayerSummaryTranslator(),
 	}
 	application.subscribers = []ApplicationSubscriber{
-		subscriber.NewLobbyNotificationChanneler(core.Services.EventPublisher, core.Services.Redis, core.Services.RabbitMQConnection, memory.NewLobbyChannelRepository(core.Services.Redis)),
-		subscriber.NewLobbySummaryWriter(core.Services.EventPublisher, core.repositories.Quests, core.data.LobbySummaries),
-		subscriber.NewLobbySearchWriter(core.Services.EventPublisher, core.data.Lobbies, core.data.LobbySearch, core.repositories.Quests),
-		subscriber.NewLobbyQueueWriter(core.Services.EventPublisher, core.data.Lobbies, core.repositories.Quests, core.data.MatchLobbyQueue, core.data.LobbyParticipants),
-		subscriber.NewLobbyPlayerQueueWriter(core.Services.EventPublisher, core.data.MatchPlayerQueue, core.repositories.Quests, core.data.LobbyParticipants, core.data.LobbyPlayerSummaries),
+		channeler,
+		subscriber.NewLobbySummaryWriter(core.Services.EventPublisher, core.data.LobbySummaries),
+		subscriber.NewLobbyQueueWriter(core.Services.EventPublisher, core.data.Lobbies, core.repositories.Quests, core.data.MatchLobbyQueue),
+		subscriber.NewLobbyPlayerQueueWriter(core.Services.EventPublisher, core.data.MatchPlayerQueue, core.repositories.Quests),
 		subscriber.NewLobbyChannelEventNotifier(core.Services.EventPublisher, core.data.LobbyPlayerSummaries, application.Translators.LobbyPlayer),
 		subscriber.NewLobbyClientNotifier(core.Services.EventPublisher, core.Services.Redis),
 		subscriber.NewSessionLobbyWriter(core.Services.EventPublisher, core.data.Sessions),
-		subscriber.NewLobbyInstanceWriter(core.Services.EventPublisher, core.data.Lobbies),
-		subscriber.NewLobbyParticipantWriter(core.Services.EventPublisher, core.data.LobbyParticipants),
+		subscriber.NewLobbyInstanceWriter(core.Services.EventPublisher, core.data.Lobbies, core.data.LobbyParticipants),
 	}
 
 	var lobbyDispatcher = service.NewLobbyMatchmakingDispatcher(core.Services.EventPublisher, core.repositories.Quests, core.data.Lobbies, core.data.Games, factory.NewGameInstanceFactory(core.repositories.Quests))
@@ -146,8 +148,20 @@ func (a *LobbyApplication) NewSessionEndCommandHandler(core *CoreApplication) Se
 	return decorator.NewStandardCommandDecorator[command.Context, *command.SessionEndCommand](core.Services.EventPublisher, actual)
 }
 
-func (a *LobbyApplication) NewLobbyCreateCommandHandler(core *CoreApplication) LobbyCreateCommandHandler {
-	var actual = command.NewLobbyCreateCommandHandler(core.Services.EventPublisher, core.data.Sessions, core.data.Lobbies, core.repositories.Quests, core.data.LobbyParticipants)
+func (a *LobbyApplication) NewLobbyCreateCommandHandler(core *CoreApplication, channelOpener port.LobbyNotificationChannelOpener) LobbyCreateCommandHandler {
+	var actual = command.NewLobbyCreateCommandHandler(
+		core.Services.EventPublisher,
+		core.data.Sessions,
+		core.data.Lobbies,
+		core.repositories.Quests,
+		core.data.LobbyParticipants,
+		core.data.LobbySummaries,
+		core.data.LobbySearch,
+		core.data.MatchPlayerQueue,
+		core.data.LobbyPlayerSummaries,
+		memory.NewLobbyChannelRepository(core.Services.Redis),
+		channelOpener,
+	)
 	return decorator.NewStandardCommandDecorator[command.Context, *command.LobbyCreateCommand](core.Services.EventPublisher, actual)
 }
 
@@ -157,7 +171,7 @@ func (a *LobbyApplication) NewLobbyCancelCommandHandler(core *CoreApplication) L
 }
 
 func (a *LobbyApplication) NewLobbyStartCommandHandler(core *CoreApplication) LobbyStartCommandHandler {
-	var actual = command.NewLobbyStartCommandHandler(core.data.Sessions, core.data.Lobbies, core.data.Games, factory.NewGameInstanceFactory(core.repositories.Quests))
+	var actual = command.NewLobbyStartCommandHandler(core.data.Sessions, core.data.Lobbies, core.data.LobbyParticipants, core.data.Games, factory.NewGameInstanceFactory(core.repositories.Quests))
 	return decorator.NewStandardCommandDecorator[command.Context, *command.LobbyStartCommand](core.Services.EventPublisher, actual)
 }
 
@@ -167,17 +181,17 @@ func (a *LobbyApplication) NewParticipantFindCommandHandler(core *CoreApplicatio
 }
 
 func (a *LobbyApplication) NewLobbyReadyCommandHandler(core *CoreApplication) LobbyReadyCommandHandler {
-	var actual = command.NewLobbyReadyCommandHandler(core.Services.EventPublisher, core.data.Sessions, core.data.Lobbies, core.repositories.Quests, core.data.MatchPlayerQueue)
+	var actual = command.NewLobbyReadyCommandHandler(core.data.Sessions, core.data.Lobbies, core.repositories.Quests, core.data.MatchPlayerQueue, core.data.MatchLobbyQueue, core.data.LobbyParticipants, core.data.LobbyPlayerSummaries)
 	return decorator.NewStandardCommandDecorator[command.Context, *command.LobbyReadyCommand](core.Services.EventPublisher, actual)
 }
 
 func (a *LobbyApplication) NewParticipantJoinCommandHandler(core *CoreApplication) ParticipantJoinCommandHandler {
-	var actual = command.NewParticipantJoinCommandHandler(core.Services.EventPublisher, core.data.Sessions, core.data.Lobbies, core.data.LobbyParticipants)
+	var actual = command.NewParticipantJoinCommandHandler(core.Services.EventPublisher, core.data.Sessions, core.data.Lobbies, core.data.LobbyParticipants, memory.NewLobbyChannelRepository(core.Services.Redis))
 	return decorator.NewStandardCommandDecorator[command.Context, *command.ParticipantJoinCommand](core.Services.EventPublisher, actual)
 }
 
 func (a *LobbyApplication) NewParticipantLeaveCommandHandler(core *CoreApplication) ParticipantLeaveCommandHandler {
-	var actual = command.NewParticipantLeaveCommandHandler(core.Services.EventPublisher, core.data.Sessions, core.data.LobbyParticipants)
+	var actual = command.NewParticipantLeaveCommandHandler(core.Services.EventPublisher, core.data.Sessions, core.data.LobbyParticipants, memory.NewLobbyChannelRepository(core.Services.Redis))
 	return decorator.NewStandardCommandDecorator[command.Context, *command.ParticipantLeaveCommand](core.Services.EventPublisher, actual)
 }
 

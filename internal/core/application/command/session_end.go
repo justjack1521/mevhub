@@ -49,7 +49,7 @@ func (h *SessionEndCommandHandler) Handle(ctx Context, cmd *SessionEndCommand) e
 		return err
 	}
 
-	cmd.QueueEvent(session.NewInstanceDeletedEvent(ctx, instance.UserID, instance.PlayerID, instance.LobbyID, instance.GameID, instance.DeckIndex))
+	cmd.QueueEvent(session.NewInstanceDeletedEvent(ctx, instance.UserID, instance.PlayerID, instance.LobbyID, instance.GameID, instance.PartySlot, instance.DeckIndex))
 
 	return nil
 

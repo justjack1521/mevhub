@@ -2,6 +2,7 @@ package subscriber
 
 import (
 	"github.com/justjack1521/mevium/pkg/mevent"
+	uuid "github.com/satori/go.uuid"
 	"mevhub/internal/core/application/server"
 	"mevhub/internal/core/domain/game"
 	"mevhub/internal/core/domain/game/action"
@@ -19,7 +20,7 @@ type GameChannelServerWriter struct {
 
 func NewGameChannelServerWriter(server *server.GameServerHost, publisher *mevent.Publisher, instances port.GameInstanceRepository, participants port.GamePlayerReadRepository) *GameChannelServerWriter {
 	var writer = &GameChannelServerWriter{Server: server, EventPublisher: publisher, InstanceRepository: instances, ParticipantRepository: participants}
-	publisher.Subscribe(writer, game.InstanceCreatedEvent{}, game.InstanceDeletedEvent{}, game.ParticipantCreatedEvent{}, session.InstanceDeletedEvent{})
+	publisher.Subscribe(writer, game.InstanceCreatedEvent{}, game.InstanceDeletedEvent{}, game.PartyCreatedEvent{}, game.ParticipantCreatedEvent{}, session.InstanceDeletedEvent{})
 	return writer
 }
 
@@ -30,7 +31,7 @@ func (w *GameChannelServerWriter) Notify(event mevent.Event) {
 	case game.InstanceDeletedEvent:
 		w.HandleInstanceDelete(actual)
 	case game.PartyCreatedEvent:
-
+		w.HandlePartyCreated(actual)
 	case game.ParticipantCreatedEvent:
 		w.HandleParticipantCreated(actual)
 	case session.InstanceDeletedEvent:
@@ -78,6 +79,9 @@ func (w *GameChannelServerWriter) HandleParticipantCreated(event game.Participan
 }
 
 func (w *GameChannelServerWriter) HandleSessionDeleted(event session.InstanceDeletedEvent) {
+	if uuid.Equal(event.GameID(), uuid.Nil) {
+		return
+	}
 	w.Server.ActionChannel <- &server.GameActionRequest{
 		GameID:  event.GameID(),
 		PartyID: event.LobbyID(),

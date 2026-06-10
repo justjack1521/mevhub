@@ -33,14 +33,15 @@ func NewParticipantJoinCommand(id uuid.UUID, deck, slot int, stamina, invite boo
 
 type ParticipantJoinCommandHandler struct {
 	EventPublisher        *mevent.Publisher
-	SessionRepository     port.SessionInstanceReadRepository
+	SessionRepository     port.SessionInstanceRepository
 	InstanceRepository    port.LobbyInstanceReadRepository
 	ParticipantFactory    lobby.ParticipantFactory
 	ParticipantRepository port.LobbyParticipantRepository
+	ListenerRepository    lobby.NotificationListenerWriteRepository
 }
 
-func NewParticipantJoinCommandHandler(publishes *mevent.Publisher, sessions port.SessionInstanceReadRepository, instances port.LobbyInstanceReadRepository, participants port.LobbyParticipantRepository) *ParticipantJoinCommandHandler {
-	return &ParticipantJoinCommandHandler{EventPublisher: publishes, SessionRepository: sessions, InstanceRepository: instances, ParticipantRepository: participants, ParticipantFactory: lobby.ParticipantFactory{}}
+func NewParticipantJoinCommandHandler(publishes *mevent.Publisher, sessions port.SessionInstanceRepository, instances port.LobbyInstanceReadRepository, participants port.LobbyParticipantRepository, listeners lobby.NotificationListenerWriteRepository) *ParticipantJoinCommandHandler {
+	return &ParticipantJoinCommandHandler{EventPublisher: publishes, SessionRepository: sessions, InstanceRepository: instances, ParticipantRepository: participants, ParticipantFactory: lobby.ParticipantFactory{}, ListenerRepository: listeners}
 }
 
 func (h *ParticipantJoinCommandHandler) Handle(ctx Context, cmd *ParticipantJoinCommand) error {
@@ -80,6 +81,16 @@ func (h *ParticipantJoinCommandHandler) Handle(ctx Context, cmd *ParticipantJoin
 	}
 
 	if err := h.ParticipantRepository.Create(ctx, participant); err != nil {
+		return err
+	}
+
+	current.LobbyID = participant.LobbyID
+	current.PartySlot = participant.PlayerSlot
+	if err := h.SessionRepository.Update(ctx, current); err != nil {
+		return err
+	}
+
+	if err := h.ListenerRepository.CreateListener(ctx, participant.LobbyID, ctx.UserID()); err != nil {
 		return err
 	}
 

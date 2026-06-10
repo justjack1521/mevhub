@@ -25,7 +25,7 @@ type ClientNotification interface {
 
 func NewLobbyChannelEventNotifier(publisher *mevent.Publisher, summary port.LobbyPlayerSummaryReadRepository, translator translate.LobbyPlayerSummaryTranslator) *LobbyChannelEventNotifier {
 	var subscriber = &LobbyChannelEventNotifier{EventPublisher: publisher, PlayerSummaryRepository: summary, PlayerSummaryTranslator: translator}
-	publisher.Subscribe(subscriber, lobby.ParticipantCreatedEvent{}, lobby.ParticipantDeletedEvent{}, lobby.ParticipantReadyEvent{}, lobby.ParticipantUnreadyEvent{}, lobby.InstanceStartedEvent{}, game.InstanceReadyEvent{})
+	publisher.Subscribe(subscriber, lobby.ParticipantCreatedEvent{}, lobby.ParticipantDeletedEvent{}, lobby.ParticipantReadyEvent{}, lobby.ParticipantUnreadyEvent{}, lobby.ParticipantDeckChangeEvent{}, lobby.InstanceStartedEvent{}, game.InstanceReadyEvent{})
 	return subscriber
 }
 

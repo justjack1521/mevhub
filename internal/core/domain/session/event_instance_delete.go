@@ -13,11 +13,12 @@ type InstanceDeletedEvent struct {
 	playerID  uuid.UUID
 	lobbyID   uuid.UUID
 	gameID    uuid.UUID
+	partySlot int
 	deckIndex int
 }
 
-func NewInstanceDeletedEvent(ctx context.Context, userID, playerID, lobbyID, gameID uuid.UUID, deckIndex int) InstanceDeletedEvent {
-	return InstanceDeletedEvent{ctx: ctx, userID: userID, playerID: playerID, lobbyID: lobbyID, gameID: gameID, deckIndex: deckIndex}
+func NewInstanceDeletedEvent(ctx context.Context, userID, playerID, lobbyID, gameID uuid.UUID, partySlot, deckIndex int) InstanceDeletedEvent {
+	return InstanceDeletedEvent{ctx: ctx, userID: userID, playerID: playerID, lobbyID: lobbyID, gameID: gameID, partySlot: partySlot, deckIndex: deckIndex}
 }
 
 func (e InstanceDeletedEvent) Name() string {
@@ -42,6 +43,10 @@ func (e InstanceDeletedEvent) LobbyID() uuid.UUID {
 
 func (e InstanceDeletedEvent) GameID() uuid.UUID {
 	return e.gameID
+}
+
+func (e InstanceDeletedEvent) PartySlot() int {
+	return e.partySlot
 }
 
 func (e InstanceDeletedEvent) DeckIndex() int {

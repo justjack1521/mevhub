@@ -35,10 +35,8 @@ func NewLobbyNotificationChanneler(publisher *mevent.Publisher, client *redis.Cl
 	var channels = []mevent.Event{
 		mevent.ApplicationStartEvent{},
 		mevent.ApplicationShutdownEvent{},
-		lobby.InstanceCreatedEvent{},
 		lobby.InstanceDeletedEvent{},
 		lobby.WatcherAddedEvent{},
-		lobby.ParticipantCreatedEvent{},
 		lobby.ParticipantDeletedEvent{},
 		consumer.LobbyClientNotificationEvent{},
 	}
@@ -50,19 +48,21 @@ func (s *LobbyNotificationChanneler) Notify(event mevent.Event) {
 	switch actual := event.(type) {
 	case mevent.ApplicationStartEvent:
 		s.Start(actual)
-	case lobby.InstanceCreatedEvent:
-		s.HandleCreate(actual)
 	case lobby.InstanceDeletedEvent:
 		s.HandleDelete(actual)
 	case lobby.WatcherAddedEvent:
 		s.HandleWatcherAdd(actual)
-	case lobby.ParticipantCreatedEvent:
-		s.HandleParticipantAdd(actual)
 	case lobby.ParticipantDeletedEvent:
 		s.HandleParticipantDelete(actual)
 	case mevent.ApplicationShutdownEvent:
 		s.CloseAll(actual)
 	}
+}
+
+func (s *LobbyNotificationChanneler) Open(ctx context.Context, id uuid.UUID) {
+	var channel = s.NewLobbyInstanceNotificationChannel(ctx, id, s)
+	s.channels[id] = channel
+	go channel.run()
 }
 
 func (s *LobbyNotificationChanneler) Start(event mevent.ApplicationStartEvent) {
@@ -75,12 +75,6 @@ func (s *LobbyNotificationChanneler) CloseAll(event mevent.ApplicationShutdownEv
 	for _, channel := range s.channels {
 		channel.close(context.Background())
 	}
-}
-
-func (s *LobbyNotificationChanneler) HandleCreate(event lobby.InstanceCreatedEvent) {
-	var channel = s.NewLobbyInstanceNotificationChannel(event.Context(), event.LobbyID(), s)
-	s.channels[event.LobbyID()] = channel
-	go channel.run()
 }
 
 func (s *LobbyNotificationChanneler) HandleDelete(event lobby.InstanceDeletedEvent) {
@@ -127,16 +121,6 @@ func (s *LobbyNotificationChanneler) HandleDelete(event lobby.InstanceDeletedEve
 		}
 	}
 
-}
-
-func (s *LobbyNotificationChanneler) HandleParticipantAdd(event lobby.ParticipantCreatedEvent) {
-	channel, exists := s.channels[event.LobbyID()]
-	if exists == false || channel == nil {
-		return
-	}
-	if err := s.repository.CreateListener(event.Context(), event.LobbyID(), event.UserID()); err != nil {
-		return
-	}
 }
 
 func (s *LobbyNotificationChanneler) HandleParticipantDelete(event lobby.ParticipantDeletedEvent) {

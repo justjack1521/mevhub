@@ -49,6 +49,10 @@ func (s *GameParticipantWriter) HandlePartyCreated(evt game.PartyCreatedEvent) e
 
 	for _, participant := range participants {
 
+		if !participant.HasPlayer() {
+			continue
+		}
+
 		var result = &game.Participant{
 			UserID:     participant.UserID,
 			PlayerID:   participant.PlayerID,

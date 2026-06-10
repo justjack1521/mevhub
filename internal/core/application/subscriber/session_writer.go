@@ -3,7 +3,6 @@ package subscriber
 import (
 	"fmt"
 	"mevhub/internal/core/domain/game"
-	"mevhub/internal/core/domain/lobby"
 	"mevhub/internal/core/domain/player"
 	"mevhub/internal/core/domain/session"
 	"mevhub/internal/core/port"
@@ -19,20 +18,12 @@ type SessionLobbyWriter struct {
 
 func NewSessionLobbyWriter(publisher *mevent.Publisher, sessions port.SessionInstanceRepository) *SessionLobbyWriter {
 	var subscriber = &SessionLobbyWriter{EventPublisher: publisher, SessionRepository: sessions}
-	publisher.Subscribe(subscriber, lobby.ParticipantCreatedEvent{}, lobby.ParticipantDeletedEvent{}, game.ParticipantCreatedEvent{}, game.ParticipantDeletedEvent{}, player.DisconnectedEvent{})
+	publisher.Subscribe(subscriber, game.ParticipantCreatedEvent{}, game.ParticipantDeletedEvent{}, player.DisconnectedEvent{})
 	return subscriber
 }
 
 func (s *SessionLobbyWriter) Notify(event mevent.Event) {
 	switch actual := event.(type) {
-	case lobby.ParticipantCreatedEvent:
-		if err := s.HandleLobbyParticipantCreate(actual); err != nil {
-			fmt.Println(err)
-		}
-	case lobby.ParticipantDeletedEvent:
-		if err := s.HandleLobbyParticipantDelete(actual); err != nil {
-			fmt.Println(err)
-		}
 	case game.ParticipantCreatedEvent:
 		if err := s.HandleGameParticipantCreate(actual); err != nil {
 			fmt.Println(err)
@@ -107,58 +98,6 @@ func (s *SessionLobbyWriter) HandleGameParticipantDelete(event game.ParticipantD
 
 }
 
-func (s *SessionLobbyWriter) HandleLobbyParticipantCreate(event lobby.ParticipantCreatedEvent) error {
-
-	exists, err := s.SessionRepository.Exists(event.Context(), event.UserID())
-	if err != nil {
-		return err
-	}
-
-	if exists == false {
-		return nil
-	}
-
-	instance, err := s.SessionRepository.QueryByID(event.Context(), event.UserID())
-	if err != nil {
-		return err
-	}
-
-	instance.LobbyID = event.LobbyID()
-
-	if err := s.SessionRepository.Update(event.Context(), instance); err != nil {
-		return err
-	}
-
-	return nil
-
-}
-
-func (s *SessionLobbyWriter) HandleLobbyParticipantDelete(event lobby.ParticipantDeletedEvent) error {
-
-	exists, err := s.SessionRepository.Exists(event.Context(), event.UserID())
-	if err != nil {
-		return err
-	}
-
-	if exists == false {
-		return nil
-	}
-
-	instance, err := s.SessionRepository.QueryByID(event.Context(), event.UserID())
-	if err != nil {
-		return err
-	}
-
-	instance.LobbyID = uuid.Nil
-	instance.PartySlot = 0
-
-	if err := s.SessionRepository.Update(event.Context(), instance); err != nil {
-		return err
-	}
-	return nil
-
-}
-
 func (s *SessionLobbyWriter) HandlePlayerDisconnected(event player.DisconnectedEvent) error {
 
 	exists, err := s.SessionRepository.Exists(event.Context(), event.UserID())
@@ -179,7 +118,7 @@ func (s *SessionLobbyWriter) HandlePlayerDisconnected(event player.DisconnectedE
 		return err
 	}
 
-	s.EventPublisher.Notify(session.NewInstanceDeletedEvent(event.Context(), instance.UserID, instance.PlayerID, instance.LobbyID, instance.GameID, instance.DeckIndex))
+	s.EventPublisher.Notify(session.NewInstanceDeletedEvent(event.Context(), instance.UserID, instance.PlayerID, instance.LobbyID, instance.GameID, instance.PartySlot, instance.DeckIndex))
 
 	return nil
 

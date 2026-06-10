@@ -39,6 +39,10 @@ func (h *ParticipantReadyCommandHandler) Handle(ctx Context, cmd *ParticipantRea
 		return err
 	}
 
+	if current.LobbyID != cmd.LobbyID {
+		return nil
+	}
+
 	participant, err := h.ParticipantRepository.QueryParticipantForLobby(ctx, current.LobbyID, current.PartySlot)
 	if err != nil {
 		return err
@@ -47,6 +51,8 @@ func (h *ParticipantReadyCommandHandler) Handle(ctx Context, cmd *ParticipantRea
 	if err := participant.SetReady(ctx.PlayerID(), true); err != nil {
 		return err
 	}
+
+	var previous = participant.DeckIndex
 
 	if err := participant.SetDeckIndex(ctx.PlayerID(), cmd.DeckIndex); err != nil {
 		return err
@@ -58,7 +64,7 @@ func (h *ParticipantReadyCommandHandler) Handle(ctx Context, cmd *ParticipantRea
 
 	cmd.QueueEvent(lobby.NewParticipantReadyEvent(ctx, ctx.UserID(), current.LobbyID, participant.DeckIndex, participant.PlayerSlot))
 
-	if participant.DeckIndex != cmd.DeckIndex {
+	if previous != cmd.DeckIndex {
 		cmd.QueueEvent(lobby.NewParticipantDeckChangeEvent(ctx, ctx.UserID(), ctx.PlayerID(), current.LobbyID, cmd.DeckIndex, participant.PlayerSlot))
 	}
 

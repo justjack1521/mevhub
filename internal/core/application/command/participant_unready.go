@@ -38,6 +38,10 @@ func (h *ParticipantUnreadyCommandHandler) Handle(ctx Context, cmd *ParticipantU
 		return err
 	}
 
+	if current.LobbyID != cmd.LobbyID {
+		return nil
+	}
+
 	participant, err := h.ParticipantRepository.QueryParticipantForLobby(ctx, current.LobbyID, current.PartySlot)
 	if err != nil {
 		return err

@@ -24,14 +24,15 @@ func NewLobbyStartCommand() *LobbyStartCommand {
 }
 
 type LobbyStartCommandHandler struct {
-	SessionRepository       port.SessionInstanceReadRepository
+	SessionRepository       port.SessionInstanceRepository
 	LobbyInstanceRepository port.LobbyInstanceRepository
+	ParticipantRepository   port.LobbyParticipantReadRepository
 	GameInstanceRepository  port.GameInstanceRepository
 	GameInstanceFactory     *factory.GameInstanceFactory
 }
 
-func NewLobbyStartCommandHandler(sessions port.SessionInstanceReadRepository, lobbies port.LobbyInstanceRepository, games port.GameInstanceRepository, factory *factory.GameInstanceFactory) *LobbyStartCommandHandler {
-	return &LobbyStartCommandHandler{SessionRepository: sessions, LobbyInstanceRepository: lobbies, GameInstanceRepository: games, GameInstanceFactory: factory}
+func NewLobbyStartCommandHandler(sessions port.SessionInstanceRepository, lobbies port.LobbyInstanceRepository, participants port.LobbyParticipantReadRepository, games port.GameInstanceRepository, factory *factory.GameInstanceFactory) *LobbyStartCommandHandler {
+	return &LobbyStartCommandHandler{SessionRepository: sessions, LobbyInstanceRepository: lobbies, ParticipantRepository: participants, GameInstanceRepository: games, GameInstanceFactory: factory}
 }
 
 func (h *LobbyStartCommandHandler) Handle(ctx Context, cmd *LobbyStartCommand) error {
@@ -55,12 +56,36 @@ func (h *LobbyStartCommandHandler) Handle(ctx Context, cmd *LobbyStartCommand) e
 		return err
 	}
 
-	cmd.QueueEvent(lobby.NewInstanceStartedEvent(ctx, instance.SysID, result.SysID))
-
 	if err := h.GameInstanceRepository.Create(ctx, result); err != nil {
 		return err
 	}
 
+	participants, err := h.ParticipantRepository.QueryAllForLobby(ctx, instance.SysID)
+	if err != nil {
+		return err
+	}
+
+	for _, participant := range participants {
+		if !participant.HasPlayer() {
+			continue
+		}
+
+		session, err := h.SessionRepository.QueryByID(ctx, participant.UserID)
+		if err != nil {
+			return err
+		}
+
+		if session.LobbyID != instance.SysID {
+			continue
+		}
+
+		session.GameID = result.SysID
+		if err := h.SessionRepository.Update(ctx, session); err != nil {
+			return err
+		}
+	}
+
+	cmd.QueueEvent(lobby.NewInstanceStartedEvent(ctx, instance.SysID, result.SysID))
 	cmd.QueueEvent(game.NewInstanceCreatedEvent(ctx, result.SysID))
 
 	return nil
