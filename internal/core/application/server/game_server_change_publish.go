@@ -61,6 +61,8 @@ func (c *ChangeHandlerPublisher) Handle(svr *GameServer, change game.Change) err
 		return c.HandlePlayerLockActionChange(svr, actual)
 	case action.StateChange:
 		return c.HandleGameStateChange(svr, actual)
+	case action.HPConsensusChange:
+		return c.HandleHPConsensusChange(svr, actual)
 	}
 	return nil
 }
@@ -170,6 +172,21 @@ func (c *ChangeHandlerPublisher) HandlePlayerReadyChange(svr *GameServer, change
 		return err
 	}
 	return c.publish(svr, protomulti.MultiGameNotificationType_GAME_NOTIFY_PLAYER_READY, message)
+}
+
+func (c *ChangeHandlerPublisher) HandleHPConsensusChange(svr *GameServer, change action.HPConsensusChange) error {
+	enemies := make([]*protomulti.ProtoGameEnemyHP, len(change.Enemies))
+	for i, e := range change.Enemies {
+		enemies[i] = &protomulti.ProtoGameEnemyHP{
+			EnemyIndex: int32(e.EnemyIndex),
+			Hp:         int32(e.HP),
+		}
+	}
+	message := &protomulti.GameHPSyncNotification{
+		GameId:  svr.InstanceID.String(),
+		Enemies: enemies,
+	}
+	return c.publish(svr, protomulti.MultiGameNotificationType_GAME_NOTIFY_HP_CONSENSUS, message)
 }
 
 func (c *ChangeHandlerPublisher) publish(svr *GameServer, operation protomulti.MultiGameNotificationType, message Notification) error {

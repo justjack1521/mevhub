@@ -2,6 +2,7 @@ package memory
 
 import (
 	"context"
+	"fmt"
 	"github.com/go-redis/redis/v8"
 	uuid "github.com/satori/go.uuid"
 	"mevhub/internal/adapter/memory/dto"
@@ -71,8 +72,20 @@ func (r *GamePartyRepository) DeleteAll(ctx context.Context, id uuid.UUID) error
 }
 
 func (r *GamePartyRepository) Get(ctx context.Context, id uuid.UUID) (*game.Party, error) {
-	//TODO implement me
-	panic("implement me")
+	keys, err := r.client.Keys(ctx, r.AllPartiesKey()).Result()
+	if err != nil {
+		return nil, err
+	}
+	for _, key := range keys {
+		party, err := r.query(ctx, key)
+		if err != nil {
+			continue
+		}
+		if uuid.Equal(party.SysID, id) {
+			return party, nil
+		}
+	}
+	return nil, fmt.Errorf("game party not found: %s", id)
 }
 
 func (r *GamePartyRepository) query(ctx context.Context, key string) (*game.Party, error) {
@@ -110,6 +123,10 @@ func (r *GamePartyRepository) QueryAll(ctx context.Context, id uuid.UUID) ([]*ga
 
 func (r *GamePartyRepository) GameKey(id uuid.UUID) string {
 	return strings.Join([]string{serviceKey, gamePartyKey, id.String(), "*"}, gamePartyKeySeparator)
+}
+
+func (r *GamePartyRepository) AllPartiesKey() string {
+	return strings.Join([]string{serviceKey, gamePartyKey, "*", "*"}, gamePartyKeySeparator)
 }
 
 func (r *GamePartyRepository) Key(id uuid.UUID, slot int) string {

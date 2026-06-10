@@ -16,4 +16,5 @@ const (
 	ChangeIdentifierEnqueueAction    ChangeIdentifier = "enqueue.action"
 	ChangeIdentifierDequeueAction    ChangeIdentifier = "dequeue.action"
 	ChangeIdentifierLockAction       ChangeIdentifier = "lock.action"
+	ChangeIdentifierHPConsensus      ChangeIdentifier = "hp.consensus"
 )

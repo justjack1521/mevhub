@@ -56,6 +56,8 @@ func (s *LobbyNotificationChanneler) Notify(event mevent.Event) {
 		s.HandleParticipantDelete(actual)
 	case mevent.ApplicationShutdownEvent:
 		s.CloseAll(actual)
+	case consumer.LobbyClientNotificationEvent:
+		s.HandleLobbyClientNotification(actual)
 	}
 }
 
@@ -131,6 +133,10 @@ func (s *LobbyNotificationChanneler) HandleParticipantDelete(event lobby.Partici
 	if err := s.repository.DeleteListener(event.Context(), event.LobbyID(), event.UserID()); err != nil {
 		return
 	}
+}
+
+func (s *LobbyNotificationChanneler) HandleLobbyClientNotification(event consumer.LobbyClientNotificationEvent) {
+	s.client.Publish(event.Context(), s.Key(event.LobbyID()), event.Data())
 }
 
 func (s *LobbyNotificationChanneler) HandleWatcherAdd(event lobby.WatcherAddedEvent) {

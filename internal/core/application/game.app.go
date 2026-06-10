@@ -24,10 +24,11 @@ type GameApplicationQueries struct {
 }
 
 type GameApplicationCommands struct {
-	ReadyPlayer   ReadyPlayerCommandHandler
-	EnqueueAction EnqueueActionCommandHandler
-	DequeueAction DequeueActionCommandHandler
-	LockAction    LockActionCommandHandler
+	ReadyPlayer       ReadyPlayerCommandHandler
+	EnqueueAction     EnqueueActionCommandHandler
+	DequeueAction     DequeueActionCommandHandler
+	LockAction        LockActionCommandHandler
+	SubmitHPConsensus SubmitHPConsensusCommandHandler
 }
 
 type GameApplicationTranslators struct {
@@ -52,10 +53,11 @@ func NewGameApplication(core *CoreApplication) *GameApplication {
 	}
 
 	application.Commands = &GameApplicationCommands{
-		ReadyPlayer:   command.NewReadyPlayerCommandHandler(core.data.Sessions, svr),
-		EnqueueAction: command.NewEnqueueActionCommandHandler(core.data.Sessions, svr),
-		DequeueAction: command.NewDequeueActionCommandHandler(core.data.Sessions, svr),
-		LockAction:    command.NewLockActionCommandHandler(core.data.Sessions, svr),
+		ReadyPlayer:       command.NewReadyPlayerCommandHandler(core.data.Sessions, svr),
+		EnqueueAction:     command.NewEnqueueActionCommandHandler(core.data.Sessions, svr),
+		DequeueAction:     command.NewDequeueActionCommandHandler(core.data.Sessions, svr),
+		LockAction:        command.NewLockActionCommandHandler(core.data.Sessions, svr),
+		SubmitHPConsensus: command.NewSubmitHPConsensusCommandHandler(core.data.Sessions, svr),
 	}
 
 	application.Translators = &GameApplicationTranslators{
@@ -77,5 +79,6 @@ type ReadyPlayerCommandHandler decorator.CommandHandler[command.Context, *comman
 type EnqueueActionCommandHandler decorator.CommandHandler[command.Context, *command.EnqueueActionCommand]
 type DequeueActionCommandHandler decorator.CommandHandler[command.Context, *command.DequeueActionCommand]
 type LockActionCommandHandler decorator.CommandHandler[command.Context, *command.LockActionCommand]
+type SubmitHPConsensusCommandHandler decorator.CommandHandler[command.Context, *command.SubmitHPConsensusCommand]
 
 type GameSummaryQueryHandler decorator.QueryHandler[query.Context, query.GameSummaryQuery, game.Summary]
