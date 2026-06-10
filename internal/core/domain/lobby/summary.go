@@ -16,9 +16,10 @@ type Summary struct {
 }
 
 type PlayerSlotSummary struct {
-	PartySlot     int
-	Ready         bool
-	PlayerSummary PlayerSummary
+	PartySlot       int
+	Ready           bool
+	RoleRestriction uuid.UUID
+	PlayerSummary   PlayerSummary
 }
 
 type PlayerSummary struct {

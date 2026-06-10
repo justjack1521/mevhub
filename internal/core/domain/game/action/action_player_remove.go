@@ -25,7 +25,7 @@ func NewPlayerRemoveAction(instanceID uuid.UUID, partyID uuid.UUID, userID uuid.
 
 func (a *PlayerRemoveAction) Perform(instance *game.LiveGameInstance) error {
 
-	party, err := instance.GetParty(a.PartyID)
+	party, err := instance.GetPartyForPlayer(a.PlayerID)
 	if err != nil {
 		return ErrFailedRemovePlayer(a.PlayerID, err)
 	}

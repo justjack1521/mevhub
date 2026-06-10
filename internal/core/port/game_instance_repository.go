@@ -11,6 +11,7 @@ type GameInstanceReadRepository interface {
 }
 type GameInstanceWriteRepository interface {
 	Create(ctx context.Context, instance *game.Instance) error
+	Delete(ctx context.Context, id uuid.UUID) error
 }
 
 type GameInstanceRepository interface {

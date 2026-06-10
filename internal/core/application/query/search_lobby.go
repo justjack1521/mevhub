@@ -1,6 +1,8 @@
 package query
 
 import (
+	uuid "github.com/satori/go.uuid"
+
 	"mevhub/internal/core/domain/lobby"
 	"mevhub/internal/core/port"
 )
@@ -19,43 +21,64 @@ func NewSearchLobbyQuery(qry lobby.SearchQuery, party string) SearchLobbyQuery {
 }
 
 type SearchLobbyQueryHandler struct {
-	InstanceRepository port.LobbyInstanceRepository
-	SearchRepository   port.LobbySearchReadRepository
-	SummaryRepository  port.LobbySummaryReadRepository
+	SearchRepository        port.LobbySearchReadRepository
+	SummaryRepository       port.LobbySearchSummaryRepository
+	PlayerSummaryRepository port.LobbyPlayerSummaryReadRepository
 }
 
-func NewSearchLobbyQueryHandler(lobbies port.LobbySearchReadRepository, summaries port.LobbySummaryReadRepository) *SearchLobbyQueryHandler {
-	return &SearchLobbyQueryHandler{SearchRepository: lobbies, SummaryRepository: summaries}
+func NewSearchLobbyQueryHandler(lobbies port.LobbySearchReadRepository, summaries port.LobbySearchSummaryRepository, players port.LobbyPlayerSummaryReadRepository) *SearchLobbyQueryHandler {
+	return &SearchLobbyQueryHandler{SearchRepository: lobbies, SummaryRepository: summaries, PlayerSummaryRepository: players}
 }
 
 func (h *SearchLobbyQueryHandler) Handle(ctx Context, qry SearchLobbyQuery) ([]lobby.Summary, error) {
 
-	var summaries = make([]lobby.Summary, 0)
-
 	if qry.party != "" {
-		instance, err := h.InstanceRepository.QueryByPartyID(ctx, qry.party)
+		summary, err := h.SummaryRepository.QueryByPartyID(ctx, qry.party)
 		if err != nil {
 			return nil, err
 		}
-		summary, err := h.SummaryRepository.Query(ctx, instance.SysID)
+		return []lobby.Summary{summary}, nil
+	}
+
+	playerSummary, err := h.PlayerSummaryRepository.Query(ctx, ctx.PlayerID())
+	var playerRole uuid.UUID
+	if err == nil {
+		playerRole = playerSummary.Loadout.JobCard.JobCardID
+	}
+
+	lobbies, err := h.SearchRepository.Query(ctx, qry.query)
+	if err != nil {
+		return nil, err
+	}
+
+	var summaries = make([]lobby.Summary, 0, len(lobbies))
+
+	for _, value := range lobbies {
+		summary, err := h.SummaryRepository.Query(ctx, value.LobbyID)
 		if err != nil {
-			return nil, err
+			continue
+		}
+		if !hasAvailableSlot(summary, playerRole) {
+			continue
 		}
 		summaries = append(summaries, summary)
-	} else {
-		lobbies, err := h.SearchRepository.Query(ctx, qry.query)
-		if err != nil {
-			return nil, err
-		}
-		for _, value := range lobbies {
-			summary, err := h.SummaryRepository.Query(ctx, value.LobbyID)
-			if err != nil {
-				continue
-			}
-			summaries = append(summaries, summary)
-		}
 	}
 
 	return summaries, nil
 
+}
+
+func hasAvailableSlot(summary lobby.Summary, playerRole uuid.UUID) bool {
+	for _, slot := range summary.Players {
+		if !uuid.Equal(slot.PlayerSummary.Identity.PlayerID, uuid.Nil) {
+			continue
+		}
+		if uuid.Equal(slot.RoleRestriction, uuid.Nil) {
+			return true
+		}
+		if uuid.Equal(slot.RoleRestriction, playerRole) {
+			return true
+		}
+	}
+	return false
 }

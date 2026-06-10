@@ -80,13 +80,20 @@ func (h *LobbyStartCommandHandler) Handle(ctx Context, cmd *LobbyStartCommand) e
 		}
 
 		session.GameID = result.SysID
+		session.LobbyID = uuid.Nil
+		session.PartySlot = 0
 		if err := h.SessionRepository.Update(ctx, session); err != nil {
 			return err
 		}
 	}
 
+	if err := h.LobbyInstanceRepository.Delete(ctx, instance); err != nil {
+		return err
+	}
+
 	cmd.QueueEvent(lobby.NewInstanceStartedEvent(ctx, instance.SysID, result.SysID))
 	cmd.QueueEvent(game.NewInstanceCreatedEvent(ctx, result.SysID))
+	cmd.QueueEvent(lobby.NewInstanceDeletedEvent(ctx, instance.SysID, instance.QuestID))
 
 	return nil
 

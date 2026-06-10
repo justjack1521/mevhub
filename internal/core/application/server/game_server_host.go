@@ -1,35 +1,37 @@
 package server
 
 import (
+	"context"
+	"github.com/justjack1521/mevium/pkg/mevent"
 	uuid "github.com/satori/go.uuid"
 	"log/slog"
 	"mevhub/internal/core/domain/game"
 	"reflect"
-	"sync"
 	"time"
 )
 
 const gameServerHostReapCheckPeriod = time.Minute * 3
 
 type GameServerHost struct {
-	mu         sync.Mutex
 	games      map[uuid.UUID]*GameServer
 	Register   chan *GameServer
 	Unregister chan uuid.UUID
 
-	logger *slog.Logger
+	logger         *slog.Logger
+	eventPublisher *mevent.Publisher
 
 	ActionChannel     chan *GameActionRequest
 	GameServerFactory *GameServerFactory
 }
 
-func NewGameServerHost(logger *slog.Logger, factory *GameServerFactory) *GameServerHost {
+func NewGameServerHost(logger *slog.Logger, factory *GameServerFactory, publisher *mevent.Publisher) *GameServerHost {
 	var server = &GameServerHost{
 		logger:            logger,
+		eventPublisher:    publisher,
 		games:             make(map[uuid.UUID]*GameServer),
 		Register:          make(chan *GameServer, 5),
 		Unregister:        make(chan uuid.UUID, 5),
-		ActionChannel:     make(chan *GameActionRequest, 5),
+		ActionChannel:     make(chan *GameActionRequest, 64),
 		GameServerFactory: factory,
 	}
 	return server
@@ -73,6 +75,7 @@ func (h *GameServerHost) register(channel *GameServer) {
 	h.games[channel.InstanceID] = channel
 	channel.Start()
 	h.logger.With(slog.Int("count", len(h.games))).Info("game server registered")
+	go h.eventPublisher.Notify(game.NewInstanceRegisteredEvent(context.Background(), channel.InstanceID))
 }
 
 func (h *GameServerHost) unregister(id uuid.UUID) {
@@ -87,15 +90,15 @@ func (h *GameServerHost) unregister(id uuid.UUID) {
 
 func (h *GameServerHost) action(request *GameActionRequest) {
 
-	if request.PartyID == uuid.Nil {
+	if request.GameID == uuid.Nil {
 		return
 	}
 
-	instance, exists := h.games[request.PartyID]
+	instance, exists := h.games[request.GameID]
 
 	if exists == false {
 		h.logger.With(
-			slog.String("instance.id", request.PartyID.String()),
+			slog.String("instance.id", request.GameID.String()),
 			slog.Group("action",
 				slog.String("action.type", reflect.TypeOf(request.Action).String()),
 			),
@@ -105,7 +108,7 @@ func (h *GameServerHost) action(request *GameActionRequest) {
 
 	instance.game.ActionChannel <- request.Action
 	h.logger.With(
-		slog.String("instance.id", request.PartyID.String()),
+		slog.String("instance.id", request.GameID.String()),
 		slog.Group("action",
 			slog.String("action.type", reflect.TypeOf(request.Action).String()),
 		),

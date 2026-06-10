@@ -38,9 +38,9 @@ type GameApplicationTranslators struct {
 func NewGameApplication(core *CoreApplication) *GameApplication {
 
 	var svr = server.NewGameServerHost(core.Services.Logger, server.NewGameServerFactory([]server.GameServerFactoryBuildAction{
-		server.GameServerFactoryPublisherBuildAction(server.NewGameServerRabbitMQNotifier(core.Services.RabbitMQConnection)),
+		server.GameServerFactoryPublisherBuildAction(server.NewGameServerRabbitMQNotifier(core.Services.RabbitMQConnection), core.Services.EventPublisher),
 		server.GameServerFactoryLoggingBuildAction(core.Services.Logger),
-	}))
+	}), core.Services.EventPublisher)
 	go svr.Run()
 
 	var application = &GameApplication{
@@ -64,8 +64,7 @@ func NewGameApplication(core *CoreApplication) *GameApplication {
 	}
 
 	application.subscribers = []ApplicationSubscriber{
-		subscriber.NewGameChannelEventNotifier(core.Services.EventPublisher),
-		subscriber.NewGameChannelServerWriter(svr, core.Services.EventPublisher, core.data.Games, core.data.GameParties, core.data.GamePlayers),
+		subscriber.NewGameChannelServerWriter(svr, core.Services.EventPublisher, core.data.Games, core.data.GameParties, core.data.GameParticipants),
 		subscriber.NewGamePartyWriter(core.Services.EventPublisher, core.data.Games, core.data.LobbySummaries, core.data.GameParties),
 		subscriber.NewGameParticipantWriter(core.Services.EventPublisher, core.data.LobbyParticipants, core.data.GameParticipants),
 		subscriber.NewGameLoadoutEvictionSubscriber(core.Services.EventPublisher, core.data.GamePlayerLoadouts),

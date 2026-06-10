@@ -24,7 +24,7 @@ func NewPlayerDequeueAction(instanceID uuid.UUID, partyID uuid.UUID, playerID uu
 
 func (a *PlayerDequeueAction) Perform(instance *game.LiveGameInstance) error {
 
-	party, err := instance.GetParty(a.PartyID)
+	party, err := instance.GetPartyForPlayer(a.PlayerID)
 	if err != nil {
 		return err
 	}

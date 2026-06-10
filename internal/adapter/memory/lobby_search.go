@@ -36,12 +36,15 @@ func (r *LobbySearchRedisRepository) Query(ctx context.Context, qry lobby.Search
 
 	for _, key := range keys {
 
+		var stop interface{} = "+inf"
+		if qry.PlayerLevel > 0 {
+			stop = qry.PlayerLevel
+		}
 		result, err := r.client.ZRangeArgs(ctx, redis.ZRangeArgs{
 			Key:     key,
-			Start:   qry.MinimumPlayerLevel,
-			Stop:    "+inf",
+			Start:   0,
+			Stop:    stop,
 			ByScore: true,
-			Rev:     true,
 		}).Result()
 
 		if err != nil {
@@ -100,7 +103,7 @@ func (r *LobbySearchRedisRepository) ZAddArgs(instance lobby.SearchEntry) redis.
 		LT:      false,
 		GT:      false,
 		Ch:      false,
-		Members: []redis.Z{{Score: 0, Member: instance.InstanceID.String()}},
+		Members: []redis.Z{{Score: float64(instance.MinimumPlayerLevel), Member: instance.InstanceID.String()}},
 	}
 }
 

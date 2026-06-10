@@ -39,14 +39,20 @@ func (s *GameServer) Start() {
 
 func (s *GameServer) WatchErrors() {
 	for {
-		err := <-s.game.ErrorChannel
+		err, ok := <-s.game.ErrorChannel
+		if !ok {
+			return
+		}
 		s.ErrorHandler.Handle(s, err)
 	}
 }
 
 func (s *GameServer) WatchChanges() {
 	for {
-		change := <-s.game.ChangeChannel
+		change, ok := <-s.game.ChangeChannel
+		if !ok {
+			return
+		}
 		if err := s.ChangeHandler.Handle(s, change); err != nil {
 			s.game.ErrorChannel <- err
 		}

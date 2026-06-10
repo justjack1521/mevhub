@@ -16,10 +16,10 @@ type SearchEntry struct {
 }
 
 type SearchQuery struct {
-	ModeIdentifier     string
-	MinimumPlayerLevel int
-	Levels             []int
-	Categories         []uuid.UUID
+	ModeIdentifier string
+	PlayerLevel    int
+	Levels         []int
+	Categories     []uuid.UUID
 }
 
 type SearchResult struct {

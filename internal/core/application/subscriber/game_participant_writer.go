@@ -10,11 +10,11 @@ import (
 
 type GameParticipantWriter struct {
 	EventPublisher             *mevent.Publisher
-	LobbyParticipantRepository port.LobbyParticipantReadRepository
-	GameParticipantRepository  port.GameParticipantWriteRepository
+	LobbyParticipantRepository port.LobbyParticipantRepository
+	GameParticipantRepository  port.GameParticipantRepository
 }
 
-func NewGameParticipantWriter(publisher *mevent.Publisher, source port.LobbyParticipantReadRepository, target port.GameParticipantWriteRepository) *GameParticipantWriter {
+func NewGameParticipantWriter(publisher *mevent.Publisher, source port.LobbyParticipantRepository, target port.GameParticipantRepository) *GameParticipantWriter {
 	var service = &GameParticipantWriter{EventPublisher: publisher, LobbyParticipantRepository: source, GameParticipantRepository: target}
 	publisher.Subscribe(service, game.PartyCreatedEvent{}, game.PartyDeletedEvent{})
 	return service
@@ -34,6 +34,13 @@ func (s *GameParticipantWriter) Notify(event mevent.Event) {
 }
 
 func (s *GameParticipantWriter) HandlePartyDeleted(evt game.PartyDeletedEvent) error {
+	participants, err := s.GameParticipantRepository.QueryAll(evt.Context(), evt.PartyID())
+	if err != nil {
+		return err
+	}
+	for _, participant := range participants {
+		s.EventPublisher.Notify(game.NewParticipantDeletedEvent(evt.Context(), evt.GameID(), evt.PartyID(), participant.UserID, participant.PlayerSlot))
+	}
 	if err := s.GameParticipantRepository.DeleteAll(evt.Context(), evt.PartyID()); err != nil {
 		return err
 	}
@@ -67,6 +74,10 @@ func (s *GameParticipantWriter) HandlePartyCreated(evt game.PartyCreatedEvent) e
 
 		s.EventPublisher.Notify(game.NewParticipantCreatedEvent(evt.Context(), evt.GameID(), evt.PartyID(), participant.UserID, participant.PlayerSlot))
 
+	}
+
+	if err := s.LobbyParticipantRepository.DeleteAllForLobby(evt.Context(), evt.PartyID()); err != nil {
+		return err
 	}
 
 	return nil

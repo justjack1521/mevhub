@@ -11,6 +11,11 @@ type LobbySummaryReadRepository interface {
 	Query(ctx context.Context, id uuid.UUID) (lobby.Summary, error)
 }
 
+type LobbySearchSummaryRepository interface {
+	Query(ctx context.Context, id uuid.UUID) (lobby.Summary, error)
+	QueryByPartyID(ctx context.Context, party string) (lobby.Summary, error)
+}
+
 var (
 	ErrFailedCreateLobbySummary = func(summary lobby.Summary, err error) error {
 		return fmt.Errorf("failed to create summary for lobby: %s: %w", summary.InstanceID, err)

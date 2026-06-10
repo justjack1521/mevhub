@@ -62,9 +62,10 @@ func (s *SummaryQueryService) Query(ctx context.Context, id uuid.UUID) (lobby.Su
 	for index, value := range participants {
 		if uuid.Equal(value.PlayerID, uuid.Nil) {
 			players[index] = lobby.PlayerSlotSummary{
-				PartySlot:     value.PlayerSlot,
-				Ready:         false,
-				PlayerSummary: lobby.PlayerSummary{},
+				PartySlot:       value.PlayerSlot,
+				Ready:           false,
+				RoleRestriction: value.RoleRestriction,
+				PlayerSummary:   lobby.PlayerSummary{},
 			}
 			continue
 		}
@@ -73,9 +74,10 @@ func (s *SummaryQueryService) Query(ctx context.Context, id uuid.UUID) (lobby.Su
 			return lobby.Summary{}, ErrFailedQueryLobbySummary(id, err)
 		}
 		players[index] = lobby.PlayerSlotSummary{
-			PartySlot:     value.PlayerSlot,
-			Ready:         value.Ready,
-			PlayerSummary: player,
+			PartySlot:       value.PlayerSlot,
+			Ready:           value.Ready,
+			RoleRestriction: value.RoleRestriction,
+			PlayerSummary:   player,
 		}
 	}
 

@@ -212,7 +212,7 @@ func (t lobbyPlayerLoadoutTranslator) Unmarshall(data *protoidentity.ProtoPlayer
 			JobCardID:      uuid.FromStringOrNil(data.JobCard.JobCardId),
 			SubJobIndex:    int(data.JobCard.SubJobIndex),
 			CrownLevel:     int(data.JobCard.CrownLevel),
-			OverBoostLevel: int(data.JobCard.SubJobIndex),
+			OverBoostLevel: int(data.JobCard.OverBoostLevel),
 		},
 		Weapon: lobby.PlayerWeaponSummary{
 			WeaponID:        uuid.FromStringOrNil(data.Weapon.WeaponId),

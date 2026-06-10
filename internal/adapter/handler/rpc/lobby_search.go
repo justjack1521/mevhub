@@ -20,10 +20,10 @@ func (g MultiGrpcServer) LobbySearch(ctx context.Context, request *protomulti.Lo
 	}
 
 	var qry = lobby.SearchQuery{
-		ModeIdentifier:     request.ModeIdentifier,
-		MinimumPlayerLevel: 0,
-		Levels:             levels,
-		Categories:         categories,
+		ModeIdentifier: request.ModeIdentifier,
+		PlayerLevel:    int(request.MinPlayerLevel),
+		Levels:         levels,
+		Categories:     categories,
 	}
 
 	results, err := g.app.SubApplications.Lobby.Queries.SearchLobby.Handle(g.NewCommandContext(ctx), query.NewSearchLobbyQuery(qry, request.PartyId))

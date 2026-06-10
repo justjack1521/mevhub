@@ -26,7 +26,7 @@ func NewPlayerLockAction(instanceID uuid.UUID, partyID uuid.UUID, playerID uuid.
 
 func (a *PlayerLockAction) Perform(instance *game.LiveGameInstance) error {
 
-	party, err := instance.GetParty(a.PartyID)
+	party, err := instance.GetPartyForPlayer(a.PlayerID)
 	if err != nil {
 		return err
 	}

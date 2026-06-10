@@ -1,6 +1,7 @@
 package subscriber
 
 import (
+	"fmt"
 	"mevhub/internal/core/application/server"
 	"mevhub/internal/core/domain/game"
 	"mevhub/internal/core/domain/game/action"
@@ -13,14 +14,13 @@ import (
 
 type GameChannelServerWriter struct {
 	Server                *server.GameServerHost
-	EventPublisher        *mevent.Publisher
-	InstanceRepository    port.GameInstanceReadRepository
+	InstanceRepository    port.GameInstanceRepository
 	PartyRepository       port.GamePartyReadRepository
-	ParticipantRepository port.GamePlayerReadRepository
+	ParticipantRepository port.GameParticipantReadRepository
 }
 
-func NewGameChannelServerWriter(server *server.GameServerHost, publisher *mevent.Publisher, instances port.GameInstanceRepository, party port.GamePartyReadRepository, participants port.GamePlayerReadRepository) *GameChannelServerWriter {
-	var writer = &GameChannelServerWriter{Server: server, EventPublisher: publisher, InstanceRepository: instances, PartyRepository: party, ParticipantRepository: participants}
+func NewGameChannelServerWriter(svr *server.GameServerHost, publisher *mevent.Publisher, instances port.GameInstanceRepository, party port.GamePartyReadRepository, participants port.GameParticipantReadRepository) *GameChannelServerWriter {
+	var writer = &GameChannelServerWriter{Server: svr, InstanceRepository: instances, PartyRepository: party, ParticipantRepository: participants}
 	publisher.Subscribe(writer, game.InstanceCreatedEvent{}, game.InstanceDeletedEvent{}, game.PartyCreatedEvent{}, game.ParticipantCreatedEvent{}, session.InstanceDeletedEvent{})
 	return writer
 }
@@ -46,15 +46,17 @@ func (w *GameChannelServerWriter) HandleInstanceCreated(event game.InstanceCreat
 		return
 	}
 	w.Server.Register <- w.Server.NewLiveGameChannel(instance)
-	w.EventPublisher.Notify(game.NewInstanceRegisteredEvent(event.Context(), event.InstanceID()))
 }
 
 func (w *GameChannelServerWriter) HandleInstanceDelete(event game.InstanceDeletedEvent) {
 	w.Server.Unregister <- event.InstanceID()
+	if err := w.InstanceRepository.Delete(event.Context(), event.InstanceID()); err != nil {
+		fmt.Println(err)
+	}
 }
 
 func (w *GameChannelServerWriter) HandlePartyCreated(event game.PartyCreatedEvent) {
-	party, err := w.PartyRepository.Query(event.Context(), event.PartyID(), event.PartyIndex())
+	party, err := w.PartyRepository.Query(event.Context(), event.GameID(), event.PartyIndex())
 	if err != nil {
 		return
 	}

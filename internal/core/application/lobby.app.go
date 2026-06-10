@@ -116,7 +116,11 @@ type SearchLobbyQueryHandler decorator.QueryHandler[query.Context, query.SearchL
 type SearchPlayerQueryHandler decorator.QueryHandler[query.Context, query.SearchPlayerQuery, lobby.PlayerSummary]
 
 func (a *LobbyApplication) NewSearchLobbyQueryHandler(core *CoreApplication) SearchLobbyQueryHandler {
-	var actual = query.NewSearchLobbyQueryHandler(core.data.LobbySearch, service.NewSummaryQueryService(core.data.Lobbies, core.data.LobbyParticipants, core.data.LobbySummaries, core.data.LobbyPlayerSummaries))
+	var actual = query.NewSearchLobbyQueryHandler(
+		core.data.LobbySearch,
+		service.NewSummaryQueryService(core.data.Lobbies, core.data.LobbyParticipants, core.data.LobbySummaries, core.data.LobbyPlayerSummaries),
+		core.data.LobbyPlayerSummaries,
+	)
 	return actual
 }
 

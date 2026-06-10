@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/justjack1521/mevium/pkg/genproto/protocommon"
 	"github.com/justjack1521/mevium/pkg/genproto/protomulti"
+	"github.com/justjack1521/mevium/pkg/mevent"
 	"mevhub/internal/adapter/translate"
 	"mevhub/internal/core/domain/game"
 	"mevhub/internal/core/domain/game/action"
@@ -18,15 +19,17 @@ type changeMarshaller struct {
 }
 
 type ChangeHandlerPublisher struct {
-	handler    ChangeHandler
-	publisher  NotificationPublisher
-	marshaller changeMarshaller
+	handler        ChangeHandler
+	publisher      NotificationPublisher
+	eventPublisher *mevent.Publisher
+	marshaller     changeMarshaller
 }
 
-func NewChangeHandlerPublisher(publisher NotificationPublisher, handler ChangeHandler) *ChangeHandlerPublisher {
+func NewChangeHandlerPublisher(publisher NotificationPublisher, eventPublisher *mevent.Publisher, handler ChangeHandler) *ChangeHandlerPublisher {
 	return &ChangeHandlerPublisher{
-		publisher: publisher,
-		handler:   handler,
+		publisher:      publisher,
+		eventPublisher: eventPublisher,
+		handler:        handler,
 		marshaller: changeMarshaller{
 			playerRemove:  translate.NewGamePlayerRemoveChangeMarshaller(),
 			playerReady:   translate.NewGamePlayerReadyChangeMarshaller(),
@@ -64,10 +67,32 @@ func (c *ChangeHandlerPublisher) Handle(svr *GameServer, change game.Change) err
 
 func (c *ChangeHandlerPublisher) HandleGameStateChange(svr *GameServer, change action.StateChange) error {
 	switch actual := change.State.(type) {
+	case *action.PlayerTurnState:
+		return c.HandlePlayerTurnStateChange(svr, actual)
 	case *action.EnemyTurnState:
 		return c.HandleEnemyTurnStateChange(svr, actual)
+	case *action.EndGameState:
+		return c.HandleEndGameStateChange(svr, actual)
 	}
 	return nil
+}
+
+func (c *ChangeHandlerPublisher) HandleEndGameStateChange(svr *GameServer, _ *action.EndGameState) error {
+	var message = &protomulti.GameEndNotification{
+		GameId: svr.InstanceID.String(),
+	}
+	if err := c.publish(svr, protomulti.MultiGameNotificationType_GAME_NOTIFY_END, message); err != nil {
+		return err
+	}
+	c.eventPublisher.Notify(game.NewInstanceDeletedEvent(context.Background(), svr.InstanceID))
+	return nil
+}
+
+func (c *ChangeHandlerPublisher) HandlePlayerTurnStateChange(svr *GameServer, _ *action.PlayerTurnState) error {
+	var message = &protomulti.GameReadyNotification{
+		GameId: svr.InstanceID.String(),
+	}
+	return c.publish(svr, protomulti.MultiGameNotificationType_GAME_NOTIFY_READY, message)
 }
 
 func (c *ChangeHandlerPublisher) HandleEnemyTurnStateChange(svr *GameServer, change *action.EnemyTurnState) error {

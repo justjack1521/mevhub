@@ -18,16 +18,12 @@ type SessionLobbyWriter struct {
 
 func NewSessionLobbyWriter(publisher *mevent.Publisher, sessions port.SessionInstanceRepository) *SessionLobbyWriter {
 	var subscriber = &SessionLobbyWriter{EventPublisher: publisher, SessionRepository: sessions}
-	publisher.Subscribe(subscriber, game.ParticipantCreatedEvent{}, game.ParticipantDeletedEvent{}, player.DisconnectedEvent{})
+	publisher.Subscribe(subscriber, game.ParticipantDeletedEvent{}, player.DisconnectedEvent{})
 	return subscriber
 }
 
 func (s *SessionLobbyWriter) Notify(event mevent.Event) {
 	switch actual := event.(type) {
-	case game.ParticipantCreatedEvent:
-		if err := s.HandleGameParticipantCreate(actual); err != nil {
-			fmt.Println(err)
-		}
 	case game.ParticipantDeletedEvent:
 		if err := s.HandleGameParticipantDelete(actual); err != nil {
 			fmt.Println(err)
@@ -37,35 +33,6 @@ func (s *SessionLobbyWriter) Notify(event mevent.Event) {
 			fmt.Println(err)
 		}
 	}
-}
-
-func (s *SessionLobbyWriter) HandleGameParticipantCreate(event game.ParticipantCreatedEvent) error {
-
-	exists, err := s.SessionRepository.Exists(event.Context(), event.UserID())
-	if err != nil {
-		return err
-	}
-
-	if exists == false {
-		return nil
-	}
-
-	instance, err := s.SessionRepository.QueryByID(event.Context(), event.UserID())
-	if err != nil {
-		return err
-	}
-
-	if instance.LobbyID != event.PartyID() {
-		return nil
-	}
-
-	instance.GameID = event.GameID()
-	if err := s.SessionRepository.Update(event.Context(), instance); err != nil {
-		return err
-	}
-
-	return nil
-
 }
 
 func (s *SessionLobbyWriter) HandleGameParticipantDelete(event game.ParticipantDeletedEvent) error {
@@ -84,7 +51,7 @@ func (s *SessionLobbyWriter) HandleGameParticipantDelete(event game.ParticipantD
 		return err
 	}
 
-	if instance.LobbyID != event.PartyID() {
+	if instance.GameID != event.GameID() {
 		return nil
 	}
 

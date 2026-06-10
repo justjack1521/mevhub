@@ -1,6 +1,7 @@
 package server
 
 import (
+	"github.com/justjack1521/mevium/pkg/mevent"
 	uuid "github.com/satori/go.uuid"
 	"log/slog"
 	"mevhub/internal/core/domain/game"
@@ -32,9 +33,9 @@ func (f *GameServerFactory) Create(instance *game.Instance) *GameServer {
 
 type GameServerFactoryBuildAction func(svr *GameServer)
 
-func GameServerFactoryPublisherBuildAction(publisher NotificationPublisher) GameServerFactoryBuildAction {
+func GameServerFactoryPublisherBuildAction(publisher NotificationPublisher, eventPublisher *mevent.Publisher) GameServerFactoryBuildAction {
 	return func(svr *GameServer) {
-		svr.ChangeHandler = NewChangeHandlerPublisher(publisher, svr.ChangeHandler)
+		svr.ChangeHandler = NewChangeHandlerPublisher(publisher, eventPublisher, svr.ChangeHandler)
 	}
 }
 

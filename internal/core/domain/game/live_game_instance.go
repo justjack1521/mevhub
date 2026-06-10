@@ -1,7 +1,6 @@
 package game
 
 import (
-	"errors"
 	"fmt"
 	uuid "github.com/satori/go.uuid"
 	"time"
@@ -93,6 +92,15 @@ func (game *LiveGameInstance) GetPlayer(id uuid.UUID) (*LivePlayer, error) {
 	return nil, ErrPlayerNotInGame
 }
 
+func (game *LiveGameInstance) GetPartyForPlayer(id uuid.UUID) (*LiveParty, error) {
+	for _, party := range game.Parties {
+		if party.PlayerExists(id) {
+			return party, nil
+		}
+	}
+	return nil, ErrPlayerNotInGame
+}
+
 func (game *LiveGameInstance) GetReadyPlayerCount() int {
 	var total = 0
 	for _, party := range game.Parties {
@@ -127,6 +135,9 @@ func (game *LiveGameInstance) Tick() {
 	for {
 		select {
 		case t := <-ticker.C:
+			if game.Ended {
+				return
+			}
 			game.State.Update(game, t)
 		}
 	}
@@ -136,15 +147,12 @@ func (game *LiveGameInstance) Tick() {
 func (game *LiveGameInstance) WatchActions() {
 	for {
 		action, ok := <-game.ActionChannel
-
-		if ok == false {
-			close(game.ErrorChannel)
+		if !ok {
+			return
 		}
-
 		if action == nil {
-			game.ErrorChannel <- ErrFailedPerformAction(game.InstanceID, errors.New("received nil action"))
+			continue
 		}
-
 		if err := action.Perform(game); err != nil {
 			game.ErrorChannel <- ErrFailedPerformAction(game.InstanceID, err)
 		}

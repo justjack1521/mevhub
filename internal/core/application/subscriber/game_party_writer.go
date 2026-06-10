@@ -12,25 +12,21 @@ type GamePartyWriter struct {
 	EventPublisher         *mevent.Publisher
 	GameInstanceRepository port.GameInstanceReadRepository
 	LobbySummaryRepository port.LobbySummaryReadRepository
-	PartyRepository        port.GamePartyWriteRepository
+	PartyRepository        port.GamePartyRepository
 }
 
-func NewGamePartyWriter(publisher *mevent.Publisher, games port.GameInstanceReadRepository, lobbies port.LobbySummaryReadRepository, parties port.GamePartyWriteRepository) *GamePartyWriter {
+func NewGamePartyWriter(publisher *mevent.Publisher, games port.GameInstanceReadRepository, lobbies port.LobbySummaryReadRepository, parties port.GamePartyRepository) *GamePartyWriter {
 	var service = &GamePartyWriter{EventPublisher: publisher, GameInstanceRepository: games, LobbySummaryRepository: lobbies, PartyRepository: parties}
-	publisher.Subscribe(service, game.InstanceCreatedEvent{}, game.InstanceDeletedEvent{})
+	publisher.Subscribe(service, game.InstanceRegisteredEvent{}, game.InstanceDeletedEvent{})
 	return service
 }
 
 func (s *GamePartyWriter) Notify(event mevent.Event) {
-	fmt.Println("Receive event")
 	switch actual := event.(type) {
-	case game.InstanceCreatedEvent:
-		fmt.Println("Receive Instance created")
-		if err := s.HandleInstanceCreated(actual); err != nil {
-			fmt.Println("Instance create failed")
+	case game.InstanceRegisteredEvent:
+		if err := s.HandleInstanceRegistered(actual); err != nil {
 			fmt.Println(err)
 		}
-		fmt.Println("Instance create success")
 	case game.InstanceDeletedEvent:
 		if err := s.HandleInstanceDeleted(actual); err != nil {
 			fmt.Println(err)
@@ -39,35 +35,35 @@ func (s *GamePartyWriter) Notify(event mevent.Event) {
 }
 
 func (s *GamePartyWriter) HandleInstanceDeleted(evt game.InstanceDeletedEvent) error {
+	parties, err := s.PartyRepository.QueryAll(evt.Context(), evt.InstanceID())
+	if err != nil {
+		return err
+	}
+	for _, party := range parties {
+		s.EventPublisher.Notify(game.NewPartyDeletedEvent(evt.Context(), party.SysID, evt.InstanceID()))
+	}
 	if err := s.PartyRepository.DeleteAll(evt.Context(), evt.InstanceID()); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (s *GamePartyWriter) HandleInstanceCreated(evt game.InstanceCreatedEvent) error {
+func (s *GamePartyWriter) HandleInstanceRegistered(evt game.InstanceRegisteredEvent) error {
 
 	parent, err := s.GameInstanceRepository.Get(evt.Context(), evt.InstanceID())
 	if err != nil {
-		fmt.Println("Failed get instance")
 		return err
 	}
 
-	fmt.Println("Got instance")
-
 	if len(parent.LobbyIDs) == 0 {
-		fmt.Println("no lobbies")
 		return errors.New("invalid number of lobbies in game")
 	}
 
 	for index, value := range parent.LobbyIDs {
-		fmt.Println("lobby id", value)
 		instance, err := s.LobbySummaryRepository.Query(evt.Context(), value)
 		if err != nil {
-			fmt.Println("no lobby", value)
 			return err
 		}
-		fmt.Println("got lobby", value)
 		result := &game.Party{
 			SysID:     instance.InstanceID,
 			PartyID:   instance.PartyID,
@@ -76,10 +72,8 @@ func (s *GamePartyWriter) HandleInstanceCreated(evt game.InstanceCreatedEvent) e
 		}
 
 		if err := s.PartyRepository.Create(evt.Context(), evt.InstanceID(), result); err != nil {
-			fmt.Println("failed create party", value)
 			return err
 		}
-		fmt.Println("create party", value)
 
 		s.EventPublisher.Notify(game.NewPartyCreatedEvent(evt.Context(), result.SysID, parent.SysID, result.Index))
 

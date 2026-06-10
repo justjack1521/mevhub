@@ -47,6 +47,10 @@ func (r *GameInstanceRepository) Create(ctx context.Context, instance *game.Inst
 	return nil
 }
 
+func (r *GameInstanceRepository) Delete(ctx context.Context, id uuid.UUID) error {
+	return r.client.Del(ctx, r.Key(id)).Err()
+}
+
 func (r *GameInstanceRepository) Key(id uuid.UUID) string {
 	return strings.Join([]string{serviceKey, gameInstanceKey, id.String()}, ":")
 }
