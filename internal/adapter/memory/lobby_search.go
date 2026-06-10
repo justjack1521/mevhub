@@ -80,6 +80,19 @@ func (r *LobbySearchRedisRepository) Create(ctx context.Context, instance lobby.
 	return nil
 }
 
+func (r *LobbySearchRedisRepository) Delete(ctx context.Context, instance lobby.SearchEntry) error {
+	var keys = r.GenerateKeysFromInstance(instance)
+	_, err := r.client.Pipelined(ctx, func(pipe redis.Pipeliner) error {
+		for _, key := range keys {
+			if err := pipe.ZRem(ctx, key, instance.InstanceID.String()).Err(); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+	return err
+}
+
 func (r *LobbySearchRedisRepository) ZAddArgs(instance lobby.SearchEntry) redis.ZAddArgs {
 	return redis.ZAddArgs{
 		NX:      true,

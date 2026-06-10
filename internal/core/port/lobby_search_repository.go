@@ -18,6 +18,7 @@ type LobbySearchReadRepository interface {
 
 type LobbySearchWriteRepository interface {
 	Create(ctx context.Context, instance lobby.SearchEntry) error
+	Delete(ctx context.Context, instance lobby.SearchEntry) error
 }
 
 type LobbySearchRepository interface {

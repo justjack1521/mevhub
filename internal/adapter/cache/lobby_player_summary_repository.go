@@ -35,3 +35,7 @@ func (r *LobbyPlayerSummaryRepository) Query(ctx context.Context, id uuid.UUID) 
 func (r *LobbyPlayerSummaryRepository) Create(ctx context.Context, player lobby.PlayerSummary) error {
 	return r.cache.Create(ctx, player)
 }
+
+func (r *LobbyPlayerSummaryRepository) Delete(ctx context.Context, id uuid.UUID) error {
+	return r.cache.Delete(ctx, id)
+}

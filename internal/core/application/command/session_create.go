@@ -19,12 +19,13 @@ func (c SessionCreateCommand) CommandName() string {
 }
 
 type SessionCreateCommandHandler struct {
-	EventPublisher    *mevent.Publisher
-	SessionRepository port.SessionInstanceWriteRepository
+	EventPublisher          *mevent.Publisher
+	SessionRepository       port.SessionInstanceWriteRepository
+	PlayerSummaryRepository port.LobbyPlayerSummaryWriteRepository
 }
 
-func NewSessionCreateCommandHandler(publisher *mevent.Publisher, sessions port.SessionInstanceWriteRepository) *SessionCreateCommandHandler {
-	return &SessionCreateCommandHandler{EventPublisher: publisher, SessionRepository: sessions}
+func NewSessionCreateCommandHandler(publisher *mevent.Publisher, sessions port.SessionInstanceWriteRepository, players port.LobbyPlayerSummaryWriteRepository) *SessionCreateCommandHandler {
+	return &SessionCreateCommandHandler{EventPublisher: publisher, SessionRepository: sessions, PlayerSummaryRepository: players}
 }
 
 func (h *SessionCreateCommandHandler) Handle(ctx Context, cmd *SessionCreateCommand) error {
@@ -35,6 +36,10 @@ func (h *SessionCreateCommandHandler) Handle(ctx Context, cmd *SessionCreateComm
 	}
 
 	if err := h.SessionRepository.Create(ctx, instance); err != nil {
+		return err
+	}
+
+	if err := h.PlayerSummaryRepository.Delete(ctx, ctx.PlayerID()); err != nil {
 		return err
 	}
 

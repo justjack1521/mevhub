@@ -48,6 +48,7 @@ var (
 
 type LobbyPlayerSummaryWriteRepository interface {
 	Create(ctx context.Context, player lobby.PlayerSummary) error
+	Delete(ctx context.Context, id uuid.UUID) error
 }
 
 type LobbyPlayerSummaryRepository interface {

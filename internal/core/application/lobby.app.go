@@ -93,6 +93,7 @@ func NewLobbyApplication(core *CoreApplication) *LobbyApplication {
 		subscriber.NewLobbyClientNotifier(core.Services.EventPublisher, core.Services.Redis),
 		subscriber.NewSessionLobbyWriter(core.Services.EventPublisher, core.data.Sessions),
 		subscriber.NewLobbyInstanceWriter(core.Services.EventPublisher, core.data.Lobbies, core.data.LobbyParticipants),
+		subscriber.NewLobbySearchWriter(core.Services.EventPublisher, core.repositories.Quests, core.data.LobbySearch),
 	}
 
 	var lobbyDispatcher = service.NewLobbyMatchmakingDispatcher(core.Services.EventPublisher, core.repositories.Quests, core.data.Lobbies, core.data.Games, factory.NewGameInstanceFactory(core.repositories.Quests))
@@ -139,7 +140,7 @@ type ParticipantFindCommandHandler decorator.CommandHandler[command.Context, *co
 type ParticipantWatchCommandHandler decorator.CommandHandler[command.Context, *command.WatchLobbyCommand]
 
 func (a *LobbyApplication) NewSessionCreateCommandHandler(core *CoreApplication) SessionCreateCommandHandler {
-	var actual = command.NewSessionCreateCommandHandler(core.Services.EventPublisher, core.data.Sessions)
+	var actual = command.NewSessionCreateCommandHandler(core.Services.EventPublisher, core.data.Sessions, core.data.LobbyPlayerSummaries)
 	return decorator.NewStandardCommandDecorator[command.Context, *command.SessionCreateCommand](core.Services.EventPublisher, actual)
 }
 

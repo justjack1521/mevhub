@@ -47,6 +47,10 @@ func (r *LobbyPlayerSummaryRepository) Create(ctx context.Context, player lobby.
 	return nil
 }
 
+func (r *LobbyPlayerSummaryRepository) Delete(ctx context.Context, id uuid.UUID) error {
+	return r.client.Del(ctx, r.Key(id)).Err()
+}
+
 func (r *LobbyPlayerSummaryRepository) Key(player uuid.UUID) string {
 	return strings.Join([]string{serviceKey, playerSummaryKey, player.String()}, ":")
 }
