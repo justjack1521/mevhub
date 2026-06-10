@@ -20,7 +20,7 @@ type GameChannelServerWriter struct {
 }
 
 func NewGameChannelServerWriter(server *server.GameServerHost, publisher *mevent.Publisher, instances port.GameInstanceRepository, party port.GamePartyReadRepository, participants port.GamePlayerReadRepository) *GameChannelServerWriter {
-	var writer = &GameChannelServerWriter{Server: server, EventPublisher: publisher, InstanceRepository: instances, ParticipantRepository: participants}
+	var writer = &GameChannelServerWriter{Server: server, EventPublisher: publisher, InstanceRepository: instances, PartyRepository: party, ParticipantRepository: participants}
 	publisher.Subscribe(writer, game.InstanceCreatedEvent{}, game.InstanceDeletedEvent{}, game.PartyCreatedEvent{}, game.ParticipantCreatedEvent{}, session.InstanceDeletedEvent{})
 	return writer
 }
