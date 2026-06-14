@@ -63,6 +63,10 @@ func (c *ChangeHandlerPublisher) Handle(svr *GameServer, change game.Change) err
 		return c.HandleGameStateChange(svr, actual)
 	case action.HPConsensusChange:
 		return c.HandleHPConsensusChange(svr, actual)
+	case *action.PlayerDisconnectChange:
+		return c.HandlePlayerDisconnectChange(svr, actual)
+	case *action.PlayerReconnectChange:
+		return c.HandlePlayerReconnectChange(svr, actual)
 	}
 	return nil
 }
@@ -155,6 +159,18 @@ func (c *ChangeHandlerPublisher) HandlePlayerEnqueueActionChange(svr *GameServer
 }
 
 func (c *ChangeHandlerPublisher) HandlePlayerAddChange(svr *GameServer, change action.PlayerAddChange) error {
+	return nil
+}
+
+// HandlePlayerDisconnectChange broadcasts a disconnect notification.
+// TODO: replace stand-in once GAME_NOTIFY_PLAYER_DISCONNECT is added to the mevium proto.
+func (c *ChangeHandlerPublisher) HandlePlayerDisconnectChange(svr *GameServer, change *action.PlayerDisconnectChange) error {
+	return nil
+}
+
+// HandlePlayerReconnectChange broadcasts a reconnect notification.
+// TODO: replace stand-in once GAME_NOTIFY_PLAYER_RECONNECT is added to the mevium proto.
+func (c *ChangeHandlerPublisher) HandlePlayerReconnectChange(svr *GameServer, change *action.PlayerReconnectChange) error {
 	return nil
 }
 

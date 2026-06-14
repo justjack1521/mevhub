@@ -11,12 +11,13 @@ var (
 )
 
 type Instance struct {
-	UserID    uuid.UUID
-	PlayerID  uuid.UUID
-	LobbyID   uuid.UUID
-	GameID    uuid.UUID
-	PartySlot int
-	DeckIndex int
+	UserID              uuid.UUID
+	PlayerID            uuid.UUID
+	LobbyID             uuid.UUID
+	GameID              uuid.UUID
+	PartySlot           int
+	DeckIndex           int
+	DisconnectSessionID uuid.UUID
 }
 
 func NewInstance(user uuid.UUID, player uuid.UUID) (*Instance, error) {

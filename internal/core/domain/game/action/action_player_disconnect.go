@@ -36,6 +36,8 @@ func (a *PlayerDisconnectAction) Perform(instance *game.LiveGameInstance) error 
 		return ErrFailedDisconnectPlayer(a.PlayerID, err)
 	}
 
+	player.Disconnected = true
 	player.DisconnectTime = a.DisconnectTime
+	instance.ChangeChannel <- NewPlayerDisconnectChange(instance.InstanceID, a.PlayerID, party.PartyIndex, player.PartySlot)
 	return nil
 }

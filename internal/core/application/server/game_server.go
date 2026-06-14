@@ -4,6 +4,7 @@ import (
 	"context"
 	uuid "github.com/satori/go.uuid"
 	"mevhub/internal/core/domain/game"
+	"mevhub/internal/core/domain/game/action"
 	"sync"
 	"time"
 )
@@ -21,13 +22,42 @@ type Notification interface {
 }
 
 type GameServer struct {
-	InstanceID    uuid.UUID
-	game          *game.LiveGameInstance
-	mu            sync.RWMutex
-	clients       map[uuid.UUID]*PlayerChannel
-	ChangeHandler ChangeHandler
-	ErrorHandler  ErrorHandler
-	errorCount    int
+	InstanceID        uuid.UUID
+	game              *game.LiveGameInstance
+	mu                sync.RWMutex
+	clients           map[uuid.UUID]*PlayerChannel
+	ChangeHandler     ChangeHandler
+	ErrorHandler      ErrorHandler
+	errorCount        int
+	stalledTransition game.Change
+}
+
+func (s *GameServer) hasDisconnectedPlayers() bool {
+	for _, ch := range s.clients {
+		if ch.DisconnectedAt != nil {
+			return true
+		}
+	}
+	return false
+}
+
+func (s *GameServer) isTurnBoundary(change game.Change) bool {
+	sc, ok := change.(*action.StateChange)
+	if !ok {
+		return false
+	}
+	_, isPlayer := sc.State.(*action.PlayerTurnState)
+	_, isEnemy := sc.State.(*action.EnemyTurnState)
+	return isPlayer || isEnemy
+}
+
+func (s *GameServer) tryUnstall() {
+	if s.stalledTransition == nil || s.hasDisconnectedPlayers() {
+		return
+	}
+	stalled := s.stalledTransition
+	s.stalledTransition = nil
+	_ = s.ChangeHandler.Handle(s, stalled)
 }
 
 func (s *GameServer) Start() {
@@ -52,6 +82,10 @@ func (s *GameServer) WatchChanges() {
 		change, ok := <-s.game.ChangeChannel
 		if !ok {
 			return
+		}
+		if s.isTurnBoundary(change) && s.hasDisconnectedPlayers() {
+			s.stalledTransition = change
+			continue
 		}
 		if err := s.ChangeHandler.Handle(s, change); err != nil {
 			s.game.ErrorChannel <- err

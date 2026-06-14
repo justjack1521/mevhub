@@ -61,20 +61,20 @@ type ConnectedEvent struct {
 	time   time.Time
 }
 
-func NewConnectedEvent(ctx context.Context, id uuid.UUID, user uuid.UUID, player uuid.UUID, time time.Time) DisconnectedEvent {
-	return DisconnectedEvent{ctx: ctx, id: id, user: user, player: player, time: time}
+func NewConnectedEvent(ctx context.Context, id uuid.UUID, user uuid.UUID, player uuid.UUID, time time.Time) ConnectedEvent {
+	return ConnectedEvent{ctx: ctx, id: id, user: user, player: player, time: time}
 }
 
 func (e ConnectedEvent) Name() string {
-	return "player.disconnect"
+	return "player.connect"
 }
 
 func (e ConnectedEvent) ToLogFields() logrus.Fields {
 	return logrus.Fields{
-		"event.name":      e.Name(),
-		"user.id":         e.user,
-		"player.id":       e.player,
-		"disconnected.at": e.time,
+		"event.name": e.Name(),
+		"user.id":    e.user,
+		"player.id":  e.player,
+		"connected.at": e.time,
 	}
 }
 

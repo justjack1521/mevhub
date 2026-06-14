@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-const gameServerHostReapCheckPeriod = time.Minute * 3
+const gameServerHostReapCheckPeriod = time.Second * 30
 
 type GameServerHost struct {
 	games      map[uuid.UUID]*GameServer
@@ -67,6 +67,14 @@ func (h *GameServerHost) tick(t time.Time) {
 	for id, instance := range h.games {
 		if instance.game.Ended {
 			h.Unregister <- id
+			continue
+		}
+		for _, ch := range instance.clients {
+			if ch.DisconnectedAt != nil && time.Since(*ch.DisconnectedAt) >= ClientTimeoutPeriod {
+				go h.eventPublisher.Notify(game.NewPlayerTimedOutEvent(
+					context.Background(), instance.InstanceID, ch.UserID, ch.PlayerID,
+				))
+			}
 		}
 	}
 }

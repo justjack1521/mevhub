@@ -7,6 +7,7 @@ import (
 	"mevhub/internal/core/domain/game/action"
 	"mevhub/internal/core/domain/session"
 	"mevhub/internal/core/port"
+	"time"
 
 	"github.com/justjack1521/mevium/pkg/mevent"
 	uuid "github.com/satori/go.uuid"
@@ -21,7 +22,7 @@ type GameChannelServerWriter struct {
 
 func NewGameChannelServerWriter(svr *server.GameServerHost, publisher *mevent.Publisher, instances port.GameInstanceRepository, party port.GamePartyReadRepository, participants port.GameParticipantReadRepository) *GameChannelServerWriter {
 	var writer = &GameChannelServerWriter{Server: svr, InstanceRepository: instances, PartyRepository: party, ParticipantRepository: participants}
-	publisher.Subscribe(writer, game.InstanceCreatedEvent{}, game.InstanceDeletedEvent{}, game.PartyCreatedEvent{}, game.ParticipantCreatedEvent{}, session.InstanceDeletedEvent{})
+	publisher.Subscribe(writer, game.InstanceCreatedEvent{}, game.InstanceDeletedEvent{}, game.PartyCreatedEvent{}, game.ParticipantCreatedEvent{}, session.InstanceDeletedEvent{}, game.PlayerDisconnectedEvent{}, game.PlayerReconnectedEvent{})
 	return writer
 }
 
@@ -37,6 +38,10 @@ func (w *GameChannelServerWriter) Notify(event mevent.Event) {
 		w.HandleParticipantCreated(actual)
 	case session.InstanceDeletedEvent:
 		w.HandleSessionDeleted(actual)
+	case game.PlayerDisconnectedEvent:
+		w.HandlePlayerDisconnected(actual)
+	case game.PlayerReconnectedEvent:
+		w.HandlePlayerReconnected(actual)
 	}
 }
 
@@ -89,5 +94,20 @@ func (w *GameChannelServerWriter) HandleSessionDeleted(event session.InstanceDel
 		GameID:  event.GameID(),
 		PartyID: event.LobbyID(),
 		Action:  action.NewPlayerRemoveAction(event.GameID(), event.LobbyID(), event.UserID(), event.PlayerID()),
+	}
+}
+
+func (w *GameChannelServerWriter) HandlePlayerDisconnected(event game.PlayerDisconnectedEvent) {
+	w.Server.ActionChannel <- &server.GameActionRequest{
+		GameID:  event.GameID(),
+		PartyID: event.PartyID(),
+		Action:  action.NewPlayerDisconnectAction(event.GameID(), event.PartyID(), event.PlayerID(), time.Now().UTC()),
+	}
+}
+
+func (w *GameChannelServerWriter) HandlePlayerReconnected(event game.PlayerReconnectedEvent) {
+	w.Server.ActionChannel <- &server.GameActionRequest{
+		GameID: event.GameID(),
+		Action: action.NewPlayerReconnectAction(event.PlayerID()),
 	}
 }
