@@ -1,7 +1,6 @@
 package consumer
 
 import (
-	"fmt"
 	"mevhub/internal/core/domain/player"
 	"time"
 
@@ -12,16 +11,16 @@ import (
 	"github.com/wagslane/go-rabbitmq"
 )
 
-type ClientDisconnectConsumer struct {
+type ClientConnectConsumer struct {
 	publisher *mevent.Publisher
 	*mevrabbit.StandardConsumer
 }
 
-func NewClientDisconnectConsumer(publisher *mevent.Publisher, conn *rabbitmq.Conn) *ClientDisconnectConsumer {
-	var service = &ClientDisconnectConsumer{
+func NewClientConnectConsumer(publisher *mevent.Publisher, conn *rabbitmq.Conn) *ClientConnectConsumer {
+	var service = &ClientConnectConsumer{
 		publisher: publisher,
 	}
-	consumer, err := mevrabbit.NewStandardConsumer(conn, mevrabbit.ClientDisconnect, mevrabbit.ClientDisconnected, mevrabbit.Client, service.Consume)
+	consumer, err := mevrabbit.NewStandardConsumer(conn, mevrabbit.ClientConnect, mevrabbit.ClientConnected, mevrabbit.Client, service.Consume)
 	if err != nil {
 		panic(err)
 	}
@@ -30,12 +29,11 @@ func NewClientDisconnectConsumer(publisher *mevent.Publisher, conn *rabbitmq.Con
 
 }
 
-func (s *ClientDisconnectConsumer) Consume(ctx *mevrabbit.ConsumerContext) (action rabbitmq.Action, err error) {
+func (s *ClientConnectConsumer) Consume(ctx *mevrabbit.ConsumerContext) (action rabbitmq.Action, err error) {
 	if ctx.UserID() == uuid.Nil || ctx.PlayerID() == uuid.Nil {
-		fmt.Println("Here's another")
 		return rabbitmq.NackDiscard, nil
 	}
-	message, err := protocommon.NewClientDisconnectedMessage(ctx.Delivery.Body)
+	message, err := protocommon.NewClientConnectedMessage(ctx.Delivery.Body)
 	if err != nil {
 		return rabbitmq.NackDiscard, nil
 	}
@@ -43,7 +41,7 @@ func (s *ClientDisconnectConsumer) Consume(ctx *mevrabbit.ConsumerContext) (acti
 	if err != nil {
 		return rabbitmq.NackDiscard, nil
 	}
-	var evt = player.NewDisconnectedEvent(ctx.Context, id, ctx.UserID(), ctx.PlayerID(), time.Now().UTC())
+	var evt = player.NewConnectedEvent(ctx.Context, id, ctx.UserID(), ctx.PlayerID(), time.Now().UTC())
 	s.publisher.Notify(evt)
 	return rabbitmq.Ack, nil
 }

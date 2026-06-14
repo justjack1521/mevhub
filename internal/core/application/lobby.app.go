@@ -57,6 +57,7 @@ func NewLobbyApplication(core *CoreApplication) *LobbyApplication {
 	var application = &LobbyApplication{
 		consumers: []ApplicationConsumer{
 			consumer.NewClientDisconnectConsumer(core.Services.EventPublisher, core.Services.RabbitMQConnection),
+			consumer.NewClientConnectConsumer(core.Services.EventPublisher, core.Services.RabbitMQConnection),
 		},
 	}
 	application.Queries = &LobbyApplicationQueries{
