@@ -26,10 +26,11 @@ type ParticipantLeaveCommandHandler struct {
 	SessionRepository     port.SessionInstanceRepository
 	ParticipantRepository port.LobbyParticipantRepository
 	ListenerRepository    lobby.NotificationListenerWriteRepository
+	CancelHandler         *LobbyCancelCommandHandler
 }
 
-func NewParticipantLeaveCommandHandler(publisher *mevent.Publisher, sessions port.SessionInstanceRepository, participants port.LobbyParticipantRepository, listeners lobby.NotificationListenerWriteRepository) *ParticipantLeaveCommandHandler {
-	return &ParticipantLeaveCommandHandler{EventPublisher: publisher, SessionRepository: sessions, ParticipantRepository: participants, ListenerRepository: listeners}
+func NewParticipantLeaveCommandHandler(publisher *mevent.Publisher, sessions port.SessionInstanceRepository, participants port.LobbyParticipantRepository, listeners lobby.NotificationListenerWriteRepository, cancel *LobbyCancelCommandHandler) *ParticipantLeaveCommandHandler {
+	return &ParticipantLeaveCommandHandler{EventPublisher: publisher, SessionRepository: sessions, ParticipantRepository: participants, ListenerRepository: listeners, CancelHandler: cancel}
 }
 
 func (h *ParticipantLeaveCommandHandler) Handle(ctx Context, cmd *ParticipantLeaveCommand) error {
@@ -64,6 +65,23 @@ func (h *ParticipantLeaveCommandHandler) Handle(ctx Context, cmd *ParticipantLea
 		current.LobbyID = uuid.Nil
 		current.PartySlot = 0
 		return h.SessionRepository.Update(ctx, current)
+	}
+
+	// There is no lobby without its host, so the host leaving is a cancel: hand
+	// off to that handler rather than stranding the other players in a lobby
+	// nobody can start. It re-validates host identity against the instance and
+	// owns the full teardown (sessions, participants, instance, events).
+	if participant.IsHost() {
+		var cancel = NewLobbyCancelCommand()
+		if err := h.CancelHandler.Handle(ctx, cancel); err != nil {
+			return err
+		}
+		// The inner command carries its own queue; forward it so this command's
+		// decorator publishes the teardown events.
+		for _, evt := range cancel.GetQueuedEvents() {
+			cmd.QueueEvent(evt)
+		}
+		return nil
 	}
 
 	// Slots are pre-created empty at lobby creation and joining mutates them in
