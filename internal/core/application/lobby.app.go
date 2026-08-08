@@ -197,7 +197,8 @@ func (a *LobbyApplication) NewParticipantJoinCommandHandler(core *CoreApplicatio
 }
 
 func (a *LobbyApplication) NewParticipantLeaveCommandHandler(core *CoreApplication) ParticipantLeaveCommandHandler {
-	var actual = command.NewParticipantLeaveCommandHandler(core.Services.EventPublisher, core.data.Sessions, core.data.LobbyParticipants, memory.NewLobbyChannelRepository(core.Services.Redis))
+	var cancel = command.NewLobbyCancelCommandHandler(core.Services.EventPublisher, core.data.Sessions, core.data.Lobbies, core.data.LobbyParticipants)
+	var actual = command.NewParticipantLeaveCommandHandler(core.Services.EventPublisher, core.data.Sessions, core.data.LobbyParticipants, memory.NewLobbyChannelRepository(core.Services.Redis), cancel)
 	return decorator.NewStandardCommandDecorator[command.Context, *command.ParticipantLeaveCommand](core.Services.EventPublisher, actual)
 }
 
