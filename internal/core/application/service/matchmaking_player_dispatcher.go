@@ -20,7 +20,7 @@ type PlayerMatchmakingDispatcher struct {
 }
 
 func NewPlayerMatchmakingDispatcher(publisher *mevent.Publisher, sessions port.SessionInstanceReadRepository, lobbies port.LobbyInstanceReadRepository, quests port.QuestRepository, participants port.LobbyParticipantRepository) *PlayerMatchmakingDispatcher {
-	return &PlayerMatchmakingDispatcher{EventPublisher: publisher, SessionInstanceRepository: sessions, LobbyInstanceRepository: lobbies, ParticipantRepository: participants}
+	return &PlayerMatchmakingDispatcher{EventPublisher: publisher, SessionInstanceRepository: sessions, LobbyInstanceRepository: lobbies, QuestRepository: quests, ParticipantRepository: participants}
 }
 
 func (s PlayerMatchmakingDispatcher) Dispatch(ctx context.Context, mode game.ModeIdentifier, id uuid.UUID, entry match.LobbyQueueEntry, player match.PlayerQueueEntry) (bool, error) {
@@ -49,20 +49,22 @@ func (s PlayerMatchmakingDispatcher) Dispatch(ctx context.Context, mode game.Mod
 		return false, err
 	}
 
+	// Occupancy need not be contiguous — a player leaving vacates their slot in
+	// place — so take the lowest empty slot rather than indexing by the count.
 	var filled int
+	var participant *lobby.Participant
 	for _, exist := range existing {
 		if exist.HasPlayer() {
 			filled++
+			continue
+		}
+		if participant == nil || exist.PlayerSlot < participant.PlayerSlot {
+			participant = exist
 		}
 	}
 
-	if filled == quest.Tier.GameMode.MaxPlayers {
+	if participant == nil || filled >= quest.Tier.GameMode.MaxPlayers {
 		return false, errors.New("lobby is full")
-	}
-
-	participant, err := s.ParticipantRepository.QueryParticipantForLobby(ctx, instance.SysID, filled)
-	if err != nil {
-		return false, err
 	}
 
 	var options = lobby.ParticipantJoinOptions{

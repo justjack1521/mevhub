@@ -1,7 +1,9 @@
 package subscriber
 
 import (
+	"errors"
 	"fmt"
+
 	"github.com/justjack1521/mevium/pkg/mevent"
 	uuid "github.com/satori/go.uuid"
 	"mevhub/internal/core/domain/lobby"
@@ -44,12 +46,29 @@ func (s *LobbyInstanceWriter) HandleSessionDeleted(evt session.InstanceDeletedEv
 	if instance.HostPlayerID != evt.PlayerID() {
 		participant, err := s.ParticipantRepository.QueryParticipantForLobby(evt.Context(), evt.LobbyID(), evt.PartySlot())
 		if err != nil {
+			// Slot already gone (lobby cancelled or started) — nothing to vacate.
+			if errors.Is(err, port.ErrParticipantNotFound) {
+				return nil
+			}
 			return err
 		}
-		if err := s.ParticipantRepository.Delete(evt.Context(), participant); err != nil {
+		var (
+			user    = participant.UserID
+			player  = participant.PlayerID
+			lobbyID = participant.LobbyID
+			slot    = participant.PlayerSlot
+		)
+		// The expired session may point at a slot someone else has since taken.
+		if !uuid.Equal(player, evt.PlayerID()) {
+			return nil
+		}
+		// Vacate rather than delete: the empty slot is the placeholder a future
+		// join mutates in place.
+		participant.RemovePlayer()
+		if err := s.ParticipantRepository.Create(evt.Context(), participant); err != nil {
 			return err
 		}
-		s.EventPublisher.Notify(lobby.NewParticipantDeletedEvent(evt.Context(), participant.UserID, participant.PlayerID, participant.LobbyID, participant.PlayerSlot))
+		s.EventPublisher.Notify(lobby.NewParticipantDeletedEvent(evt.Context(), user, player, lobbyID, slot))
 		return nil
 	}
 

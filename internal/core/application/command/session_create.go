@@ -2,10 +2,8 @@ package command
 
 import (
 	"github.com/justjack1521/mevium/pkg/mevent"
-	"mevhub/internal/core/domain/game"
 	"mevhub/internal/core/domain/session"
 	"mevhub/internal/core/port"
-	uuid "github.com/satori/go.uuid"
 )
 
 type SessionCreateCommand struct {
@@ -32,31 +30,34 @@ func NewSessionCreateCommandHandler(publisher *mevent.Publisher, sessions port.S
 
 func (h *SessionCreateCommandHandler) Handle(ctx Context, cmd *SessionCreateCommand) error {
 
-	exists, err := h.SessionRepository.Exists(ctx, ctx.UserID())
+	instance, err := session.NewInstance(ctx.UserID(), ctx.PlayerID())
 	if err != nil {
 		return err
 	}
 
+	// A relaunching client re-issues SessionCreate while its previous session
+	// may still reference a live lobby or game. Creating blind would wipe
+	// LobbyID/GameID and orphan the player in the live game (there is no
+	// ordering guarantee between this gRPC call and the AMQP ClientConnected
+	// event that performs relaunch detection). Carry the previous state over;
+	// HandlePlayerConnected remains the sole authority for reconnect/relaunch.
+	exists, err := h.SessionRepository.Exists(ctx, ctx.UserID())
+	if err != nil {
+		return err
+	}
 	if exists {
 		existing, err := h.SessionRepository.QueryByID(ctx, ctx.UserID())
 		if err != nil {
 			return err
 		}
-		if !uuid.Equal(existing.GameID, uuid.Nil) {
-			if err := h.SessionRepository.Update(ctx, existing); err != nil {
-				return err
-			}
-			if err := h.PlayerSummaryRepository.Delete(ctx, ctx.PlayerID()); err != nil {
-				return err
-			}
-			cmd.QueueEvent(game.NewPlayerReconnectedEvent(ctx, existing.GameID, existing.UserID, existing.PlayerID))
-			return nil
-		}
-	}
-
-	instance, err := session.NewInstance(ctx.UserID(), ctx.PlayerID())
-	if err != nil {
-		return err
+		instance.LobbyID = existing.LobbyID
+		instance.GameID = existing.GameID
+		instance.PartySlot = existing.PartySlot
+		instance.DeckIndex = existing.DeckIndex
+		instance.DisconnectSessionID = existing.DisconnectSessionID
+		instance.LastConnEventAt = existing.LastConnEventAt
+		instance.DisconnectedAt = existing.DisconnectedAt
+		instance.CurrentSessionID = existing.CurrentSessionID
 	}
 
 	if err := h.SessionRepository.Create(ctx, instance); err != nil {

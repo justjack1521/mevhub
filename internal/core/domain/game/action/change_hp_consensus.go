@@ -10,8 +10,8 @@ type HPConsensusChange struct {
 	Enemies []game.EnemyHP
 }
 
-func NewHPConsensusChange(gameID uuid.UUID, enemies []game.EnemyHP) HPConsensusChange {
-	return HPConsensusChange{GameID: gameID, Enemies: enemies}
+func NewHPConsensusChange(gameID uuid.UUID, enemies []game.EnemyHP) *HPConsensusChange {
+	return &HPConsensusChange{GameID: gameID, Enemies: enemies}
 }
 
 func (c HPConsensusChange) Identifier() game.ChangeIdentifier {

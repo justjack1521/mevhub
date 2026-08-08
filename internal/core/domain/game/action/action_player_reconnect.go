@@ -33,8 +33,17 @@ func (a *PlayerReconnectAction) Perform(instance *game.LiveGameInstance) error {
 		return ErrFailedReconnectPlayer(a.PlayerID, err)
 	}
 
+	// Idempotency: a duplicate ConnectedEvent for an already-connected player
+	// must not re-broadcast a reconnect or push another full sync.
+	if !player.Disconnected {
+		return nil
+	}
+
 	player.Disconnected = false
 	player.DisconnectTime = time.Time{}
-	instance.ChangeChannel <- NewPlayerReconnectChange(instance.InstanceID, a.PlayerID, party.PartyIndex, player.PartySlot)
+	instance.SendChange(NewPlayerReconnectChange(instance.InstanceID, a.PlayerID, party.PartyIndex, player.PartySlot))
+	// Re-sync the reconnecting player with the live state they missed while
+	// away (other players' queued actions, lock state, connection status, etc.).
+	instance.SendChange(NewGameStateSyncChange(instance, a.PlayerID))
 	return nil
 }

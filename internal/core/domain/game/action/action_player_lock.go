@@ -40,7 +40,10 @@ func (a *PlayerLockAction) Perform(instance *game.LiveGameInstance) error {
 		return ErrFailedLockAction(a.PlayerID, ErrPlayerUnableToLockAction)
 	}
 
-	player.ActionLockIndex = instance.GetActionLockedPlayerCount()
+	// Party-scoped, not game-wide: the lock index is consumed as an index
+	// into a party-sized queue when the enemy turn is built. A game-wide
+	// count with multiple parties produced out-of-range indexes.
+	player.ActionLockIndex = party.GetActionLockedPlayerCount()
 	player.ActionsLocked = true
 
 	instance.SendChange(NewPlayerLockActionChange(a.InstanceID, party.PartyIndex, player.PartySlot, player.ActionLockIndex))

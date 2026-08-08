@@ -2,8 +2,8 @@ package subscriber
 
 import (
 	"errors"
-	"fmt"
 	"github.com/justjack1521/mevium/pkg/mevent"
+	"log/slog"
 	"mevhub/internal/core/domain/game"
 	"mevhub/internal/core/port"
 )
@@ -13,10 +13,11 @@ type GamePartyWriter struct {
 	GameInstanceRepository port.GameInstanceReadRepository
 	LobbySummaryRepository port.LobbySummaryReadRepository
 	PartyRepository        port.GamePartyRepository
+	Logger                 *slog.Logger
 }
 
-func NewGamePartyWriter(publisher *mevent.Publisher, games port.GameInstanceReadRepository, lobbies port.LobbySummaryReadRepository, parties port.GamePartyRepository) *GamePartyWriter {
-	var service = &GamePartyWriter{EventPublisher: publisher, GameInstanceRepository: games, LobbySummaryRepository: lobbies, PartyRepository: parties}
+func NewGamePartyWriter(publisher *mevent.Publisher, games port.GameInstanceReadRepository, lobbies port.LobbySummaryReadRepository, parties port.GamePartyRepository, logger *slog.Logger) *GamePartyWriter {
+	var service = &GamePartyWriter{EventPublisher: publisher, GameInstanceRepository: games, LobbySummaryRepository: lobbies, PartyRepository: parties, Logger: logger}
 	publisher.Subscribe(service, game.InstanceRegisteredEvent{}, game.InstanceDeletedEvent{})
 	return service
 }
@@ -25,11 +26,11 @@ func (s *GamePartyWriter) Notify(event mevent.Event) {
 	switch actual := event.(type) {
 	case game.InstanceRegisteredEvent:
 		if err := s.HandleInstanceRegistered(actual); err != nil {
-			fmt.Println(err)
+			s.Logger.With("event", actual.Name(), "error", err.Error()).Error("game party writer failed to handle event")
 		}
 	case game.InstanceDeletedEvent:
 		if err := s.HandleInstanceDeleted(actual); err != nil {
-			fmt.Println(err)
+			s.Logger.With("event", actual.Name(), "error", err.Error()).Error("game party writer failed to handle event")
 		}
 	}
 }

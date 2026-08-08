@@ -64,7 +64,7 @@ func NewLobbyApplication(core *CoreApplication) *LobbyApplication {
 		SearchLobby:  application.NewSearchLobbyQueryHandler(core),
 		SearchPlayer: application.NewSearchPlayerQueryHandler(core),
 	}
-	var channeler = subscriber.NewLobbyNotificationChanneler(core.Services.EventPublisher, core.Services.Redis, core.Services.RabbitMQConnection, memory.NewLobbyChannelRepository(core.Services.Redis))
+	var channeler = subscriber.NewLobbyNotificationChanneler(core.Services.EventPublisher, core.Services.Redis, core.Services.RabbitMQConnection, memory.NewLobbyChannelRepository(core.Services.Redis), core.Services.Logger)
 	application.Commands = &LobbyApplicationCommands{
 		SessionCreate:      application.NewSessionCreateCommandHandler(core),
 		SessionEnd:         application.NewSessionEndCommandHandler(core),
@@ -92,12 +92,12 @@ func NewLobbyApplication(core *CoreApplication) *LobbyApplication {
 		subscriber.NewLobbyPlayerQueueWriter(core.Services.EventPublisher, core.data.MatchPlayerQueue, core.repositories.Quests),
 		subscriber.NewLobbyChannelEventNotifier(core.Services.EventPublisher, core.data.LobbyPlayerSummaries, application.Translators.LobbyPlayer),
 		subscriber.NewLobbyClientNotifier(core.Services.EventPublisher, core.Services.Redis),
-		subscriber.NewSessionLobbyWriter(core.Services.EventPublisher, core.data.Sessions),
+		subscriber.NewSessionLobbyWriter(core.Services.EventPublisher, core.data.Sessions, core.Services.Logger),
 		subscriber.NewLobbyInstanceWriter(core.Services.EventPublisher, core.data.Lobbies, core.data.LobbyParticipants),
 		subscriber.NewLobbySearchWriter(core.Services.EventPublisher, core.repositories.Quests, core.data.LobbySearch),
 	}
 
-	var lobbyDispatcher = service.NewLobbyMatchmakingDispatcher(core.Services.EventPublisher, core.repositories.Quests, core.data.Lobbies, core.data.Games, factory.NewGameInstanceFactory(core.repositories.Quests))
+	var lobbyDispatcher = service.NewLobbyMatchmakingDispatcher(core.Services.EventPublisher, core.repositories.Quests, core.data.Lobbies, core.data.LobbyParticipants, core.data.Sessions, core.data.Games, factory.NewGameInstanceFactory(core.repositories.Quests))
 
 	var soloLobbyQueueWorker = worker.NewLobbyMatchmakingQueueWorker(context.Background(), game.ModeIdentifierCompSingle, core.data.MatchLobbyQueue, lobbyDispatcher)
 	go soloLobbyQueueWorker.Run()

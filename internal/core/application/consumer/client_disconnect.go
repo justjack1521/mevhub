@@ -1,9 +1,7 @@
 package consumer
 
 import (
-	"fmt"
 	"mevhub/internal/core/domain/player"
-	"time"
 
 	"github.com/justjack1521/mevium/pkg/genproto/protocommon"
 	"github.com/justjack1521/mevium/pkg/mevent"
@@ -32,7 +30,6 @@ func NewClientDisconnectConsumer(publisher *mevent.Publisher, conn *rabbitmq.Con
 
 func (s *ClientDisconnectConsumer) Consume(ctx *mevrabbit.ConsumerContext) (action rabbitmq.Action, err error) {
 	if ctx.UserID() == uuid.Nil || ctx.PlayerID() == uuid.Nil {
-		fmt.Println("Here's another")
 		return rabbitmq.NackDiscard, nil
 	}
 	message, err := protocommon.NewClientDisconnectedMessage(ctx.Delivery.Body)
@@ -43,7 +40,7 @@ func (s *ClientDisconnectConsumer) Consume(ctx *mevrabbit.ConsumerContext) (acti
 	if err != nil {
 		return rabbitmq.NackDiscard, nil
 	}
-	var evt = player.NewDisconnectedEvent(ctx.Context, id, ctx.UserID(), ctx.PlayerID(), time.Now().UTC())
+	var evt = player.NewDisconnectedEvent(ctx.Context, id, ctx.UserID(), ctx.PlayerID(), message.Timestamp)
 	s.publisher.Notify(evt)
 	return rabbitmq.Ack, nil
 }

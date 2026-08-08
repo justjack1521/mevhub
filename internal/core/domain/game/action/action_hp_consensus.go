@@ -22,7 +22,7 @@ func (a *SubmitHPConsensusAction) Perform(instance *game.LiveGameInstance) error
 	}
 	state.submitHP(a.PlayerID, a.Enemies)
 	if state.allReported(instance) {
-		state.finalize(instance)
+		state.resolve(instance)
 	}
 	return nil
 }

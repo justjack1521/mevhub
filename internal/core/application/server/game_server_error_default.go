@@ -8,5 +8,5 @@ func NewErrorHandlerDefault() *ErrorHandlerDefault {
 }
 
 func (d *ErrorHandlerDefault) Handle(svr *GameServer, err error) {
-	svr.errorCount++
+	svr.errorCount.Add(1)
 }

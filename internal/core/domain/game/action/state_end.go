@@ -14,8 +14,7 @@ func (s *EndGameState) Update(instance *game.LiveGameInstance, t time.Time) {
 
 func NewEndGameState(instance *game.LiveGameInstance) *EndGameState {
 
-	instance.Ended = true
-	instance.EndedAt = time.Now().UTC()
+	instance.End()
 
 	return &EndGameState{}
 }

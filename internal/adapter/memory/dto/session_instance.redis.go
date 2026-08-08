@@ -13,6 +13,9 @@ type SessionInstanceRedis struct {
 	GameID              string `redis:"GameID"`
 	PartySlot           int    `redis:"PartySlot"`
 	DisconnectSessionID string `redis:"DisconnectSessionID"`
+	LastConnEventAt     int64  `redis:"LastConnEventAt"`
+	DisconnectedAt      int64  `redis:"DisconnectedAt"`
+	CurrentSessionID    string `redis:"CurrentSessionID"`
 }
 
 func (x *SessionInstanceRedis) ToEntity() *session.Instance {
@@ -24,6 +27,9 @@ func (x *SessionInstanceRedis) ToEntity() *session.Instance {
 		GameID:              uuid.FromStringOrNil(x.GameID),
 		PartySlot:           x.PartySlot,
 		DisconnectSessionID: uuid.FromStringOrNil(x.DisconnectSessionID),
+		LastConnEventAt:     x.LastConnEventAt,
+		DisconnectedAt:      x.DisconnectedAt,
+		CurrentSessionID:    uuid.FromStringOrNil(x.CurrentSessionID),
 	}
 }
 
@@ -36,5 +42,20 @@ func (x *SessionInstanceRedis) ToMapStringInterface() map[string]interface{} {
 		"GameID":              x.GameID,
 		"PartySlot":           x.PartySlot,
 		"DisconnectSessionID": x.DisconnectSessionID,
+		"LastConnEventAt":     x.LastConnEventAt,
+		"DisconnectedAt":      x.DisconnectedAt,
+		"CurrentSessionID":    x.CurrentSessionID,
+	}
+}
+
+// ConnectionStateMap holds only the fields the connect/disconnect handlers
+// mutate, for narrow HSET writes that cannot clobber concurrent lobby/game
+// field updates.
+func (x *SessionInstanceRedis) ConnectionStateMap() map[string]interface{} {
+	return map[string]interface{}{
+		"DisconnectSessionID": x.DisconnectSessionID,
+		"LastConnEventAt":     x.LastConnEventAt,
+		"DisconnectedAt":      x.DisconnectedAt,
+		"CurrentSessionID":    x.CurrentSessionID,
 	}
 }

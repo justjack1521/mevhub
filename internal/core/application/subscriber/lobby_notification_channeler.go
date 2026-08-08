@@ -10,9 +10,11 @@ import (
 	uuid "github.com/satori/go.uuid"
 	"github.com/sirupsen/logrus"
 	"github.com/wagslane/go-rabbitmq"
+	"log/slog"
 	"mevhub/internal/core/application/consumer"
 	"mevhub/internal/core/domain/lobby"
 	"strings"
+	"sync"
 )
 
 const LobbyChannelPrefix string = "lobby_notification_channel"
@@ -22,15 +24,20 @@ type LobbyNotificationChanneler struct {
 	client     *redis.Client
 	repository lobby.NotificationListenerRepository
 	publisher  *mevrabbit.StandardPublisher
-	channels   map[uuid.UUID]*LobbyInstanceNotificationChannel
+	logger     *slog.Logger
+	// mu guards channels: Open runs on gRPC goroutines while the event
+	// handlers run on whichever goroutine published the event.
+	mu       sync.Mutex
+	channels map[uuid.UUID]*LobbyInstanceNotificationChannel
 }
 
-func NewLobbyNotificationChanneler(publisher *mevent.Publisher, client *redis.Client, conn *rabbitmq.Conn, listeners lobby.NotificationListenerRepository) *LobbyNotificationChanneler {
+func NewLobbyNotificationChanneler(publisher *mevent.Publisher, client *redis.Client, conn *rabbitmq.Conn, listeners lobby.NotificationListenerRepository, logger *slog.Logger) *LobbyNotificationChanneler {
 	var manager = &LobbyNotificationChanneler{
 		client:     client,
 		channels:   make(map[uuid.UUID]*LobbyInstanceNotificationChannel),
 		repository: listeners,
 		publisher:  mevrabbit.NewClientPublisher(conn, rabbitmq.WithPublisherOptionsLogger(logrus.New())),
+		logger:     logger,
 	}
 	var channels = []mevent.Event{
 		mevent.ApplicationStartEvent{},
@@ -63,32 +70,52 @@ func (s *LobbyNotificationChanneler) Notify(event mevent.Event) {
 
 func (s *LobbyNotificationChanneler) Open(ctx context.Context, id uuid.UUID) {
 	var channel = s.NewLobbyInstanceNotificationChannel(ctx, id, s)
+	s.mu.Lock()
+	previous := s.channels[id]
 	s.channels[id] = channel
+	s.mu.Unlock()
+	if previous != nil {
+		previous.close(ctx)
+	}
 	go channel.run()
 }
 
-func (s *LobbyNotificationChanneler) Start(event mevent.ApplicationStartEvent) {
-	for _, channel := range s.channels {
-		channel.close(context.Background())
+// remove closes a lobby's channel and drops it from the registry; safe to call
+// from any goroutine and for ids that are no longer present.
+func (s *LobbyNotificationChanneler) remove(ctx context.Context, id uuid.UUID) {
+	s.mu.Lock()
+	channel := s.channels[id]
+	delete(s.channels, id)
+	s.mu.Unlock()
+	if channel != nil {
+		channel.close(ctx)
 	}
 }
 
+func (s *LobbyNotificationChanneler) Start(event mevent.ApplicationStartEvent) {
+	s.closeAll()
+}
+
 func (s *LobbyNotificationChanneler) CloseAll(event mevent.ApplicationShutdownEvent) {
+	s.closeAll()
+}
+
+func (s *LobbyNotificationChanneler) closeAll() {
+	s.mu.Lock()
+	channels := make([]*LobbyInstanceNotificationChannel, 0, len(s.channels))
 	for _, channel := range s.channels {
+		channels = append(channels, channel)
+	}
+	s.channels = make(map[uuid.UUID]*LobbyInstanceNotificationChannel)
+	s.mu.Unlock()
+	for _, channel := range channels {
 		channel.close(context.Background())
 	}
 }
 
 func (s *LobbyNotificationChanneler) HandleDelete(event lobby.InstanceDeletedEvent) {
 
-	defer func() {
-		channel, exists := s.channels[event.LobbyID()]
-		if exists == false || channel == nil {
-			return
-		}
-		channel.close(event.Context())
-		delete(s.channels, event.LobbyID())
-	}()
+	defer s.remove(event.Context(), event.LobbyID())
 
 	listeners, err := s.repository.QueryAllForLobby(event.Context(), event.LobbyID())
 	if err != nil {
@@ -126,7 +153,9 @@ func (s *LobbyNotificationChanneler) HandleDelete(event lobby.InstanceDeletedEve
 }
 
 func (s *LobbyNotificationChanneler) HandleParticipantDelete(event lobby.ParticipantDeletedEvent) {
+	s.mu.Lock()
 	channel, exists := s.channels[event.LobbyID()]
+	s.mu.Unlock()
 	if exists == false || channel == nil {
 		return
 	}
@@ -140,7 +169,9 @@ func (s *LobbyNotificationChanneler) HandleLobbyClientNotification(event consume
 }
 
 func (s *LobbyNotificationChanneler) HandleWatcherAdd(event lobby.WatcherAddedEvent) {
+	s.mu.Lock()
 	channel, exists := s.channels[event.LobbyID()]
+	s.mu.Unlock()
 	if exists == false || channel == nil {
 		return
 	}
@@ -153,7 +184,9 @@ func (s *LobbyNotificationChanneler) NewLobbyInstanceNotificationChannel(ctx con
 	var channel = &LobbyInstanceNotificationChannel{
 		LobbyID: instance,
 		manager: manager,
-		channel: s.client.Subscribe(ctx, s.Key(instance)),
+		// The subscription outlives the request that opened the lobby, so it
+		// must not be bound to the caller's (cancellable) context.
+		channel: s.client.Subscribe(context.Background(), s.Key(instance)),
 	}
 	return channel
 }

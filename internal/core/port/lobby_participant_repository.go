@@ -21,6 +21,10 @@ var (
 	ErrFailedQueryParticipantExists = func(slot int, err error) error {
 		return fmt.Errorf("failed to query participant %d: %w", slot, err)
 	}
+	ErrParticipantNotFound        = errors.New("participant not found")
+	ErrParticipantNotFoundForSlot = func(id uuid.UUID, slot int) error {
+		return fmt.Errorf("lobby %s slot %d: %w", id, slot, ErrParticipantNotFound)
+	}
 )
 
 type LobbyParticipantReadRepository interface {

@@ -76,12 +76,11 @@ func (r *LobbyInstanceRedisRepository) Create(ctx context.Context, instance *lob
 		PlayerSlotCount:    instance.PlayerSlotCount,
 		RegisteredAt:       instance.RegisteredAt.Unix(),
 	}
-	if err := r.client.HSet(ctx, key, result.ToMapStringInterface()).Err(); err != nil {
-		return lobby.ErrFailedCreateLobbyInstance(err)
-	}
-	r.client.Expire(ctx, key, lobby.KeepAliveTime)
-
-	if err := r.client.Set(ctx, r.GenerateLobbyPartyKey(instance.PartyID), result.SysID, lobby.KeepAliveTime).Err(); err != nil {
+	pipe := r.client.TxPipeline()
+	pipe.HSet(ctx, key, result.ToMapStringInterface())
+	pipe.Expire(ctx, key, lobby.KeepAliveTime)
+	pipe.Set(ctx, r.GenerateLobbyPartyKey(instance.PartyID), result.SysID, lobby.KeepAliveTime)
+	if _, err := pipe.Exec(ctx); err != nil {
 		return lobby.ErrFailedCreateLobbyInstance(err)
 	}
 

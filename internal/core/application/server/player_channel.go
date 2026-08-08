@@ -8,8 +8,8 @@ import (
 type PlayerChannel struct {
 	UserID         uuid.UUID
 	PlayerID       uuid.UUID
-	LastMessage    time.Time
 	DisconnectedAt *time.Time
+	timedOut       bool
 }
 
 func NewPlayerChannel(user uuid.UUID, player uuid.UUID) *PlayerChannel {

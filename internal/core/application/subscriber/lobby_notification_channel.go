@@ -2,7 +2,6 @@ package subscriber
 
 import (
 	"context"
-	"fmt"
 	"github.com/go-redis/redis/v8"
 	"github.com/justjack1521/mevrabbit"
 	uuid "github.com/satori/go.uuid"
@@ -23,7 +22,10 @@ func (c *LobbyInstanceNotificationChannel) Publish(ctx context.Context, message 
 	}
 
 	if len(listeners) == 0 {
-		c.close(ctx)
+		// Fully retire the channel — closing without deregistering leaked the
+		// registry entry (and the subscription) for the process lifetime.
+		c.manager.remove(ctx, c.LobbyID)
+		return nil
 	}
 
 	for _, listener := range listeners {
@@ -38,13 +40,16 @@ func (c *LobbyInstanceNotificationChannel) run() {
 	channel := c.channel.Channel()
 	for message := range channel {
 		if err := c.Publish(context.Background(), []byte(message.Payload)); err != nil {
-			fmt.Println("Error Publishing Message To Listener: ", err)
+			c.manager.logger.With("lobby.id", c.LobbyID.String(), "error", err.Error()).Error("failed to publish lobby notification to listener")
 		}
 	}
 }
 
 func (c *LobbyInstanceNotificationChannel) close(ctx context.Context) {
-	if err := c.channel.Unsubscribe(ctx, c.LobbyID.String()); err != nil {
-		fmt.Println(err)
+	// Close (not just Unsubscribe, which was previously issued with the wrong
+	// channel name and did nothing) tears down the subscription and ends the
+	// run() goroutine by closing its message channel.
+	if err := c.channel.Close(); err != nil {
+		c.manager.logger.With("lobby.id", c.LobbyID.String(), "error", err.Error()).Error("failed to close lobby notification channel")
 	}
 }

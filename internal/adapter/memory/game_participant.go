@@ -83,11 +83,12 @@ func (r *GameParticipantRepository) Create(ctx context.Context, party uuid.UUID,
 
 	var key = r.Key(party, participant.PlayerSlot)
 
-	if err := r.client.HSet(ctx, key, result.ToMapStringInterface()).Err(); err != nil {
+	pipe := r.client.TxPipeline()
+	pipe.HSet(ctx, key, result.ToMapStringInterface())
+	pipe.Expire(ctx, key, gameParticipantTTL)
+	if _, err := pipe.Exec(ctx); err != nil {
 		return err
 	}
-
-	r.client.Expire(ctx, key, gameParticipantTTL)
 	return nil
 
 }

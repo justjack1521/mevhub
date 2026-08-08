@@ -1,6 +1,8 @@
 package command
 
 import (
+	"errors"
+
 	"github.com/justjack1521/mevium/pkg/mevent"
 	uuid "github.com/satori/go.uuid"
 	"mevhub/internal/core/domain/lobby"
@@ -39,10 +41,36 @@ func (h *ParticipantLeaveCommandHandler) Handle(ctx Context, cmd *ParticipantLea
 
 	participant, err := h.ParticipantRepository.QueryParticipantForLobby(ctx, current.LobbyID, current.PartySlot)
 	if err != nil {
+		// The slot is gone entirely — the lobby was cancelled or started. Clear
+		// the session so the player is not stranded pointing at a dead lobby.
+		if errors.Is(err, port.ErrParticipantNotFound) {
+			current.LobbyID = uuid.Nil
+			current.PartySlot = 0
+			return h.SessionRepository.Update(ctx, current)
+		}
 		return err
 	}
 
-	if err := h.ParticipantRepository.Delete(ctx, participant); err != nil {
+	var (
+		user    = participant.UserID
+		player  = participant.PlayerID
+		lobbyID = participant.LobbyID
+		slot    = participant.PlayerSlot
+	)
+
+	// A stale session can point at a slot someone else has since taken; clear the
+	// session but leave the occupant alone.
+	if !uuid.Equal(player, ctx.PlayerID()) {
+		current.LobbyID = uuid.Nil
+		current.PartySlot = 0
+		return h.SessionRepository.Update(ctx, current)
+	}
+
+	// Slots are pre-created empty at lobby creation and joining mutates them in
+	// place, so vacate the slot rather than deleting it — deleting removes the
+	// placeholder the next join depends on.
+	participant.RemovePlayer()
+	if err := h.ParticipantRepository.Create(ctx, participant); err != nil {
 		return err
 	}
 
@@ -52,11 +80,11 @@ func (h *ParticipantLeaveCommandHandler) Handle(ctx Context, cmd *ParticipantLea
 		return err
 	}
 
-	if err := h.ListenerRepository.DeleteListener(ctx, participant.LobbyID, ctx.UserID()); err != nil {
+	if err := h.ListenerRepository.DeleteListener(ctx, lobbyID, ctx.UserID()); err != nil {
 		return err
 	}
 
-	cmd.QueueEvent(lobby.NewParticipantDeletedEvent(ctx, participant.UserID, participant.PlayerID, participant.LobbyID, participant.PlayerSlot))
+	cmd.QueueEvent(lobby.NewParticipantDeletedEvent(ctx, user, player, lobbyID, slot))
 
 	return nil
 

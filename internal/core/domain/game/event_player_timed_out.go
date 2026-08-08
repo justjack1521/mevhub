@@ -3,6 +3,7 @@ package game
 import (
 	"context"
 	uuid "github.com/satori/go.uuid"
+	"log/slog"
 )
 
 type PlayerTimedOutEvent struct {
@@ -18,6 +19,14 @@ func NewPlayerTimedOutEvent(ctx context.Context, gameID, userID, playerID uuid.U
 
 func (e PlayerTimedOutEvent) Name() string {
 	return "game.player.timed_out"
+}
+
+func (e PlayerTimedOutEvent) ToSlogFields() []slog.Attr {
+	return []slog.Attr{
+		slog.String("game.id", e.gameID.String()),
+		slog.String("user.id", e.userID.String()),
+		slog.String("player.id", e.playerID.String()),
+	}
 }
 
 func (e PlayerTimedOutEvent) Context() context.Context {

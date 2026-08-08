@@ -15,20 +15,21 @@ var (
 
 type PlayerDisconnectAction struct {
 	InstanceID     uuid.UUID
-	PartyID        uuid.UUID
 	PlayerID       uuid.UUID
 	DisconnectTime time.Time
 }
 
-func NewPlayerDisconnectAction(instanceID uuid.UUID, partyID uuid.UUID, playerID uuid.UUID, disconnectTime time.Time) *PlayerDisconnectAction {
-	return &PlayerDisconnectAction{InstanceID: instanceID, PartyID: partyID, PlayerID: playerID, DisconnectTime: disconnectTime}
+func NewPlayerDisconnectAction(instanceID uuid.UUID, playerID uuid.UUID, disconnectTime time.Time) *PlayerDisconnectAction {
+	return &PlayerDisconnectAction{InstanceID: instanceID, PlayerID: playerID, DisconnectTime: disconnectTime}
 }
 
 func (a *PlayerDisconnectAction) Perform(instance *game.LiveGameInstance) error {
 
-	party, err := instance.GetParty(a.PartyID)
+	// The session no longer carries a party reference once the game starts,
+	// so resolve the party from the player, as reconnect/remove already do.
+	party, err := instance.GetPartyForPlayer(a.PlayerID)
 	if err != nil {
-		return err
+		return ErrFailedDisconnectPlayer(a.PlayerID, err)
 	}
 
 	player, err := party.GetPlayer(a.PlayerID)
@@ -38,6 +39,6 @@ func (a *PlayerDisconnectAction) Perform(instance *game.LiveGameInstance) error 
 
 	player.Disconnected = true
 	player.DisconnectTime = a.DisconnectTime
-	instance.ChangeChannel <- NewPlayerDisconnectChange(instance.InstanceID, a.PlayerID, party.PartyIndex, player.PartySlot)
+	instance.SendChange(NewPlayerDisconnectChange(instance.InstanceID, a.PlayerID, party.PartyIndex, player.PartySlot))
 	return nil
 }

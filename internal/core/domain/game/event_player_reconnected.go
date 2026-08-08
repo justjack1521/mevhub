@@ -3,6 +3,7 @@ package game
 import (
 	"context"
 	uuid "github.com/satori/go.uuid"
+	"log/slog"
 )
 
 type PlayerReconnectedEvent struct {
@@ -18,6 +19,14 @@ func NewPlayerReconnectedEvent(ctx context.Context, gameID, userID, playerID uui
 
 func (e PlayerReconnectedEvent) Name() string {
 	return "game.player.reconnected"
+}
+
+func (e PlayerReconnectedEvent) ToSlogFields() []slog.Attr {
+	return []slog.Attr{
+		slog.String("game.id", e.gameID.String()),
+		slog.String("user.id", e.userID.String()),
+		slog.String("player.id", e.playerID.String()),
+	}
 }
 
 func (e PlayerReconnectedEvent) Context() context.Context {

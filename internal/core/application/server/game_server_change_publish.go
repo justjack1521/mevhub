@@ -2,6 +2,8 @@ package server
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"github.com/justjack1521/mevium/pkg/genproto/protocommon"
 	"github.com/justjack1521/mevium/pkg/genproto/protomulti"
 	"github.com/justjack1521/mevium/pkg/mevent"
@@ -10,12 +12,22 @@ import (
 	"mevhub/internal/core/domain/game/action"
 )
 
+// ErrUnhandledGameChange surfaces a change type with no dispatch case. Every
+// change the domain can emit must be handled (or explicitly ignored) here; a
+// silent fall-through previously masked the entire pipeline being dead.
+var ErrUnhandledGameChange = func(change game.Change) error {
+	return fmt.Errorf("unhandled game change %T (%s)", change, change.Identifier())
+}
+
 type changeMarshaller struct {
-	playerRemove  translate.GamePlayerRemoveChangeMarshaller
-	playerReady   translate.GamePlayerReadyChangeMarshaller
-	playerLock    translate.GamePlayerLockActionChangeMarshaller
-	playerEnqueue translate.GamePlayerEnqueueActionChangeMarshaller
-	playerDequeue translate.GamePlayerDequeueActionChangeMarshaller
+	playerRemove     translate.GamePlayerRemoveChangeMarshaller
+	playerReady      translate.GamePlayerReadyChangeMarshaller
+	playerLock       translate.GamePlayerLockActionChangeMarshaller
+	playerEnqueue    translate.GamePlayerEnqueueActionChangeMarshaller
+	playerDequeue    translate.GamePlayerDequeueActionChangeMarshaller
+	playerDisconnect translate.GamePlayerDisconnectChangeMarshaller
+	playerReconnect  translate.GamePlayerReconnectChangeMarshaller
+	gameSync         translate.GameStateSyncChangeMarshaller
 }
 
 type ChangeHandlerPublisher struct {
@@ -31,11 +43,14 @@ func NewChangeHandlerPublisher(publisher NotificationPublisher, eventPublisher *
 		eventPublisher: eventPublisher,
 		handler:        handler,
 		marshaller: changeMarshaller{
-			playerRemove:  translate.NewGamePlayerRemoveChangeMarshaller(),
-			playerReady:   translate.NewGamePlayerReadyChangeMarshaller(),
-			playerLock:    translate.NewGamePlayerLockActionChangeMarshaller(),
-			playerEnqueue: translate.NewGamePlayerEnqueueActionChangeMarshaller(),
-			playerDequeue: translate.NewGamePlayerDequeueActionChangeMarshaller(),
+			playerRemove:     translate.NewGamePlayerRemoveChangeMarshaller(),
+			playerReady:      translate.NewGamePlayerReadyChangeMarshaller(),
+			playerLock:       translate.NewGamePlayerLockActionChangeMarshaller(),
+			playerEnqueue:    translate.NewGamePlayerEnqueueActionChangeMarshaller(),
+			playerDequeue:    translate.NewGamePlayerDequeueActionChangeMarshaller(),
+			playerDisconnect: translate.NewGamePlayerDisconnectChangeMarshaller(),
+			playerReconnect:  translate.NewGamePlayerReconnectChangeMarshaller(),
+			gameSync:         translate.NewGameStateSyncChangeMarshaller(),
 		},
 	}
 }
@@ -47,31 +62,38 @@ func (c *ChangeHandlerPublisher) Handle(svr *GameServer, change game.Change) err
 	}
 
 	switch actual := change.(type) {
-	case action.PlayerAddChange:
+	case *action.PlayerAddChange:
 		return c.HandlePlayerAddChange(svr, actual)
-	case action.PlayerRemoveChange:
+	case *action.PlayerRemoveChange:
 		return c.HandlePlayerRemoveChange(svr, actual)
-	case action.PlayerReadyChange:
+	case *action.PlayerReadyChange:
 		return c.HandlePlayerReadyChange(svr, actual)
-	case action.PlayerEnqueueActionChange:
+	case *action.PlayerEnqueueActionChange:
 		return c.HandlePlayerEnqueueActionChange(svr, actual)
-	case action.PlayerDequeueActionChange:
+	case *action.PlayerDequeueActionChange:
 		return c.HandlePlayerDequeueActionChange(svr, actual)
-	case action.PlayerLockActionChange:
+	case *action.PlayerLockActionChange:
 		return c.HandlePlayerLockActionChange(svr, actual)
-	case action.StateChange:
+	case *action.StateChange:
 		return c.HandleGameStateChange(svr, actual)
-	case action.HPConsensusChange:
+	case *action.HPConsensusChange:
 		return c.HandleHPConsensusChange(svr, actual)
+	case *action.GameStateSyncChange:
+		return c.HandleGameStateSync(svr, actual)
 	case *action.PlayerDisconnectChange:
 		return c.HandlePlayerDisconnectChange(svr, actual)
 	case *action.PlayerReconnectChange:
 		return c.HandlePlayerReconnectChange(svr, actual)
+	case *action.PartyAddChange:
+		// Internal bookkeeping only; clients learn party composition from
+		// player-add notifications and the game sync snapshot.
+		return nil
+	default:
+		return ErrUnhandledGameChange(change)
 	}
-	return nil
 }
 
-func (c *ChangeHandlerPublisher) HandleGameStateChange(svr *GameServer, change action.StateChange) error {
+func (c *ChangeHandlerPublisher) HandleGameStateChange(svr *GameServer, change *action.StateChange) error {
 	switch actual := change.State.(type) {
 	case *action.PlayerTurnState:
 		return c.HandlePlayerTurnStateChange(svr, actual)
@@ -103,14 +125,19 @@ func (c *ChangeHandlerPublisher) HandlePlayerTurnStateChange(svr *GameServer, _ 
 
 func (c *ChangeHandlerPublisher) HandleEnemyTurnStateChange(svr *GameServer, change *action.EnemyTurnState) error {
 
-	var queues = make([]*protomulti.ProtoGamePartyActionQueue, len(change.QueuedActions))
+	// QueuedActions is keyed by party index, which is not guaranteed dense
+	// from zero, so the notification is built by append rather than indexing.
+	var queues = make([]*protomulti.ProtoGamePartyActionQueue, 0, len(change.QueuedActions))
 
 	for index, queued := range change.QueuedActions {
 		var p = &protomulti.ProtoGamePartyActionQueue{
 			PartyIndex:        int32(index),
-			PlayerActionQueue: make([]*protomulti.ProtoGamePlayerActionQueue, len(queued)),
+			PlayerActionQueue: make([]*protomulti.ProtoGamePlayerActionQueue, 0, len(queued)),
 		}
-		for i, q := range queued {
+		for _, q := range queued {
+			if q == nil {
+				continue
+			}
 			var player = &protomulti.ProtoGamePlayerActionQueue{
 				PlayerId: q.PlayerID.String(),
 				Actions:  make([]*protomulti.ProtoGameAction, len(q.Actions)),
@@ -124,8 +151,9 @@ func (c *ChangeHandlerPublisher) HandleEnemyTurnStateChange(svr *GameServer, cha
 				}
 				player.Actions[k] = act
 			}
-			p.PlayerActionQueue[i] = player
+			p.PlayerActionQueue = append(p.PlayerActionQueue, player)
 		}
+		queues = append(queues, p)
 	}
 
 	var message = &protomulti.GameActionQueueConfirmNotification{
@@ -134,7 +162,7 @@ func (c *ChangeHandlerPublisher) HandleEnemyTurnStateChange(svr *GameServer, cha
 	return c.publish(svr, protomulti.MultiGameNotificationType_GAME_NOTIFY_QUEUE_CONFIRM, message)
 }
 
-func (c *ChangeHandlerPublisher) HandlePlayerLockActionChange(svr *GameServer, change action.PlayerLockActionChange) error {
+func (c *ChangeHandlerPublisher) HandlePlayerLockActionChange(svr *GameServer, change *action.PlayerLockActionChange) error {
 	message, err := c.marshaller.playerLock.Marshall(change)
 	if err != nil {
 		return err
@@ -142,7 +170,7 @@ func (c *ChangeHandlerPublisher) HandlePlayerLockActionChange(svr *GameServer, c
 	return c.publish(svr, protomulti.MultiGameNotificationType_GAME_NOTIFY_LOCK_ACTION, message)
 }
 
-func (c *ChangeHandlerPublisher) HandlePlayerDequeueActionChange(svr *GameServer, change action.PlayerDequeueActionChange) error {
+func (c *ChangeHandlerPublisher) HandlePlayerDequeueActionChange(svr *GameServer, change *action.PlayerDequeueActionChange) error {
 	message, err := c.marshaller.playerDequeue.Marshall(change)
 	if err != nil {
 		return err
@@ -150,7 +178,7 @@ func (c *ChangeHandlerPublisher) HandlePlayerDequeueActionChange(svr *GameServer
 	return c.publish(svr, protomulti.MultiGameNotificationType_GAME_NOTIFY_DEQUEUE_ACTION, message)
 }
 
-func (c *ChangeHandlerPublisher) HandlePlayerEnqueueActionChange(svr *GameServer, change action.PlayerEnqueueActionChange) error {
+func (c *ChangeHandlerPublisher) HandlePlayerEnqueueActionChange(svr *GameServer, change *action.PlayerEnqueueActionChange) error {
 	message, err := c.marshaller.playerEnqueue.Marshall(change)
 	if err != nil {
 		return err
@@ -158,23 +186,29 @@ func (c *ChangeHandlerPublisher) HandlePlayerEnqueueActionChange(svr *GameServer
 	return c.publish(svr, protomulti.MultiGameNotificationType_GAME_NOTIFY_ENQUEUE_ACTION, message)
 }
 
-func (c *ChangeHandlerPublisher) HandlePlayerAddChange(svr *GameServer, change action.PlayerAddChange) error {
+func (c *ChangeHandlerPublisher) HandlePlayerAddChange(svr *GameServer, change *action.PlayerAddChange) error {
 	return nil
 }
 
 // HandlePlayerDisconnectChange broadcasts a disconnect notification.
-// TODO: replace stand-in once GAME_NOTIFY_PLAYER_DISCONNECT is added to the mevium proto.
 func (c *ChangeHandlerPublisher) HandlePlayerDisconnectChange(svr *GameServer, change *action.PlayerDisconnectChange) error {
-	return nil
+	message, err := c.marshaller.playerDisconnect.Marshall(change)
+	if err != nil {
+		return err
+	}
+	return c.publish(svr, protomulti.MultiGameNotificationType_GAME_NOTIFY_PLAYER_DISCONNECT, message)
 }
 
 // HandlePlayerReconnectChange broadcasts a reconnect notification.
-// TODO: replace stand-in once GAME_NOTIFY_PLAYER_RECONNECT is added to the mevium proto.
 func (c *ChangeHandlerPublisher) HandlePlayerReconnectChange(svr *GameServer, change *action.PlayerReconnectChange) error {
-	return nil
+	message, err := c.marshaller.playerReconnect.Marshall(change)
+	if err != nil {
+		return err
+	}
+	return c.publish(svr, protomulti.MultiGameNotificationType_GAME_NOTIFY_PLAYER_RECONNECT, message)
 }
 
-func (c *ChangeHandlerPublisher) HandlePlayerRemoveChange(svr *GameServer, change action.PlayerRemoveChange) error {
+func (c *ChangeHandlerPublisher) HandlePlayerRemoveChange(svr *GameServer, change *action.PlayerRemoveChange) error {
 	message, err := c.marshaller.playerRemove.Marshall(change)
 	if err != nil {
 		return err
@@ -182,7 +216,36 @@ func (c *ChangeHandlerPublisher) HandlePlayerRemoveChange(svr *GameServer, chang
 	return c.publish(svr, protomulti.MultiGameNotificationType_GAME_NOTIFY_PLAYER_REMOVE, message)
 }
 
-func (c *ChangeHandlerPublisher) HandlePlayerReadyChange(svr *GameServer, change action.PlayerReadyChange) error {
+// HandleGameStateSync delivers a full live-state snapshot to a single
+// reconnecting player rather than broadcasting it.
+func (c *ChangeHandlerPublisher) HandleGameStateSync(svr *GameServer, change *action.GameStateSyncChange) error {
+	message, err := c.marshaller.gameSync.Marshall(change)
+	if err != nil {
+		return err
+	}
+	svr.mu.RLock()
+	client, ok := svr.clients[change.TargetPlayerID]
+	svr.mu.RUnlock()
+	if !ok {
+		return nil
+	}
+	return c.publishTo(client, protomulti.MultiGameNotificationType_GAME_NOTIFY_GAME_SYNC, message)
+}
+
+func (c *ChangeHandlerPublisher) publishTo(client *PlayerChannel, operation protomulti.MultiGameNotificationType, message Notification) error {
+	bytes, err := message.MarshallBinary()
+	if err != nil {
+		return err
+	}
+	var notification = &protocommon.Notification{
+		Service: protocommon.ServiceKey_MULTI,
+		Type:    int32(operation),
+		Data:    bytes,
+	}
+	return c.publisher.Publish(context.Background(), client, notification)
+}
+
+func (c *ChangeHandlerPublisher) HandlePlayerReadyChange(svr *GameServer, change *action.PlayerReadyChange) error {
 	message, err := c.marshaller.playerReady.Marshall(change)
 	if err != nil {
 		return err
@@ -190,7 +253,7 @@ func (c *ChangeHandlerPublisher) HandlePlayerReadyChange(svr *GameServer, change
 	return c.publish(svr, protomulti.MultiGameNotificationType_GAME_NOTIFY_PLAYER_READY, message)
 }
 
-func (c *ChangeHandlerPublisher) HandleHPConsensusChange(svr *GameServer, change action.HPConsensusChange) error {
+func (c *ChangeHandlerPublisher) HandleHPConsensusChange(svr *GameServer, change *action.HPConsensusChange) error {
 	enemies := make([]*protomulti.ProtoGameEnemyHP, len(change.Enemies))
 	for i, e := range change.Enemies {
 		enemies[i] = &protomulti.ProtoGameEnemyHP{
@@ -218,11 +281,22 @@ func (c *ChangeHandlerPublisher) publish(svr *GameServer, operation protomulti.M
 		Data:    bytes,
 	}
 
+	// Snapshot under the lock, publish outside it: the client map is mutated
+	// from other goroutines and network I/O must not hold the lock. One
+	// client's failure must not starve the rest of the broadcast.
+	svr.mu.RLock()
+	var clients = make([]*PlayerChannel, 0, len(svr.clients))
 	for _, client := range svr.clients {
+		clients = append(clients, client)
+	}
+	svr.mu.RUnlock()
+
+	var errs []error
+	for _, client := range clients {
 		if err := c.publisher.Publish(context.Background(), client, notification); err != nil {
-			return err
+			errs = append(errs, err)
 		}
 	}
 
-	return nil
+	return errors.Join(errs...)
 }

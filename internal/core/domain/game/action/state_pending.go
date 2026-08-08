@@ -32,10 +32,12 @@ func NewPendingState(instance *game.LiveGameInstance) *PendingState {
 
 func (s *PendingState) Update(instance *game.LiveGameInstance, t time.Time) {
 
+	evictExpiredDisconnectedPlayers(instance, t)
+
 	var expired = s.Expired(t)
 
 	if expired {
-		instance.ActionChannel <- NewStateChangeAction(instance.InstanceID, NewEndGameState(instance))
+		transitionTo(instance, NewEndGameState(instance))
 		return
 	}
 
@@ -44,6 +46,6 @@ func (s *PendingState) Update(instance *game.LiveGameInstance, t time.Time) {
 	}
 
 	if instance.GetReadyPlayerCount() == instance.GetPlayerCount() {
-		instance.ActionChannel <- NewStateChangeAction(instance.InstanceID, NewPlayerTurnState(instance))
+		transitionTo(instance, NewPlayerTurnState(instance))
 	}
 }

@@ -119,6 +119,66 @@ func TestSetRole_WrongPlayer_ReturnsError(t *testing.T) {
 	assert.Error(t, err)
 }
 
+// --- RemovePlayer ---
+
+func TestRemovePlayer_ClearsPlayerOwnedFields(t *testing.T) {
+	playerID := uuid.NewV4()
+	p := newParticipant(playerID, 1)
+	p.Role = uuid.Nil
+	p.DeckIndex = 3
+	p.UseStamina = true
+	p.FromInvite = true
+	p.Ready = true
+
+	p.RemovePlayer()
+
+	assert.False(t, p.HasPlayer())
+	assert.Equal(t, uuid.Nil, p.UserID)
+	assert.Equal(t, uuid.Nil, p.PlayerID)
+	assert.Equal(t, uuid.Nil, p.Role)
+	assert.Equal(t, 0, p.DeckIndex)
+	assert.False(t, p.UseStamina)
+	assert.False(t, p.FromInvite)
+	assert.False(t, p.Ready)
+}
+
+func TestRemovePlayer_PreservesSlotConfiguration(t *testing.T) {
+	lobbyID := uuid.NewV4()
+	restriction := uuid.NewV4()
+	p := newParticipant(uuid.NewV4(), 2)
+	p.LobbyID = lobbyID
+	p.RoleRestriction = restriction
+	p.InviteOnly = true
+	p.Locked = true
+	p.BotControl = true
+
+	p.RemovePlayer()
+
+	assert.Equal(t, lobbyID, p.LobbyID)
+	assert.Equal(t, 2, p.PlayerSlot)
+	assert.Equal(t, restriction, p.RoleRestriction)
+	assert.True(t, p.InviteOnly)
+	assert.True(t, p.Locked)
+	assert.True(t, p.BotControl)
+}
+
+func TestRemovePlayer_SlotIsRejoinable(t *testing.T) {
+	p := newParticipant(uuid.NewV4(), 1)
+	p.RemovePlayer()
+
+	joiner := uuid.NewV4()
+	err := p.SetPlayer(uuid.NewV4(), joiner, lobby.ParticipantJoinOptions{
+		RoleID:     uuid.Nil,
+		SlotIndex:  1,
+		DeckIndex:  1,
+		UseStamina: true,
+	})
+
+	assert.NoError(t, err)
+	assert.True(t, p.HasPlayer())
+	assert.Equal(t, joiner, p.PlayerID)
+}
+
 // --- IsHost / HasPlayer ---
 
 func TestIsHost_SlotZero_ReturnsTrue(t *testing.T) {

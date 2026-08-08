@@ -64,6 +64,20 @@ func (x *Participant) SetPlayer(user, player uuid.UUID, options ParticipantJoinO
 
 }
 
+// RemovePlayer returns the participant to the vacant state it was created in.
+// Everything the departing player owned is cleared; everything belonging to the
+// slot itself (lobby, index, role restriction, invite/lock flags, bot control)
+// is kept, so the slot stays joinable rather than disappearing.
+func (x *Participant) RemovePlayer() {
+	x.UserID = uuid.Nil
+	x.PlayerID = uuid.Nil
+	x.Role = uuid.Nil
+	x.DeckIndex = 0
+	x.UseStamina = false
+	x.FromInvite = false
+	x.Ready = false
+}
+
 func (x *Participant) SetReady(player uuid.UUID, value bool) error {
 	if uuid.Equal(player, x.PlayerID) == false {
 		return ErrParticipantNotBelongToPlayer(player, x.PlayerID)

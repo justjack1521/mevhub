@@ -13,11 +13,14 @@ type LivePlayer struct {
 	Ready           bool
 	ActionsLocked   bool
 	ActionLockIndex int
-	MaxActionCount  int
-	Actions         []*PlayerAction
-	LastAction      time.Time
-	Disconnected    bool
-	DisconnectTime  time.Time
+	// MaxActionCount caps the queue in CanEnqueueAction; 0 means unlimited.
+	// Nothing populates it from loadout data yet, so every live player is
+	// currently uncapped.
+	MaxActionCount int
+	Actions        []*PlayerAction
+	LastAction     time.Time
+	Disconnected   bool
+	DisconnectTime time.Time
 }
 
 var (

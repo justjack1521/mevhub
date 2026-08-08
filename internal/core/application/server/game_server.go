@@ -4,13 +4,16 @@ import (
 	"context"
 	uuid "github.com/satori/go.uuid"
 	"mevhub/internal/core/domain/game"
-	"mevhub/internal/core/domain/game/action"
 	"sync"
+	"sync/atomic"
 	"time"
 )
 
 const (
-	ClientTimeoutPeriod = time.Minute * 3
+	// ClientTimeoutPeriod mirrors the domain's grace window: the reaper here
+	// drives session cleanup, while the live game evicts the player itself via
+	// game.DisconnectGracePeriod.
+	ClientTimeoutPeriod = game.DisconnectGracePeriod
 )
 
 type NotificationPublisher interface {
@@ -22,73 +25,64 @@ type Notification interface {
 }
 
 type GameServer struct {
-	InstanceID        uuid.UUID
-	game              *game.LiveGameInstance
-	mu                sync.RWMutex
-	clients           map[uuid.UUID]*PlayerChannel
-	ChangeHandler     ChangeHandler
-	ErrorHandler      ErrorHandler
-	errorCount        int
-	stalledTransition game.Change
+	InstanceID    uuid.UUID
+	game          *game.LiveGameInstance
+	mu            sync.RWMutex
+	clients       map[uuid.UUID]*PlayerChannel
+	ChangeHandler ChangeHandler
+	ErrorHandler  ErrorHandler
+	errorCount    atomic.Int64
 }
 
-func (s *GameServer) hasDisconnectedPlayers() bool {
+// ClaimExpiredClients returns the channels whose grace period has elapsed and
+// marks them so each is only ever returned once. It is safe to call from the
+// host goroutine: access to the clients map and the DisconnectedAt/timedOut
+// fields is synchronised against the change-handling goroutine.
+func (s *GameServer) ClaimExpiredClients(timeout time.Duration) []*PlayerChannel {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	var expired []*PlayerChannel
 	for _, ch := range s.clients {
-		if ch.DisconnectedAt != nil {
-			return true
+		if ch.timedOut || ch.DisconnectedAt == nil || time.Since(*ch.DisconnectedAt) < timeout {
+			continue
 		}
+		ch.timedOut = true
+		expired = append(expired, ch)
 	}
-	return false
-}
-
-func (s *GameServer) isTurnBoundary(change game.Change) bool {
-	sc, ok := change.(*action.StateChange)
-	if !ok {
-		return false
-	}
-	_, isPlayer := sc.State.(*action.PlayerTurnState)
-	_, isEnemy := sc.State.(*action.EnemyTurnState)
-	return isPlayer || isEnemy
-}
-
-func (s *GameServer) tryUnstall() {
-	if s.stalledTransition == nil || s.hasDisconnectedPlayers() {
-		return
-	}
-	stalled := s.stalledTransition
-	s.stalledTransition = nil
-	_ = s.ChangeHandler.Handle(s, stalled)
+	return expired
 }
 
 func (s *GameServer) Start() {
 	go s.WatchChanges()
 	go s.WatchErrors()
-	go s.game.WatchActions()
-	go s.game.Tick()
+	go s.game.Run()
+}
+
+// Stop signals the game loop and both watcher goroutines to exit.
+func (s *GameServer) Stop() {
+	s.game.Stop()
 }
 
 func (s *GameServer) WatchErrors() {
 	for {
-		err, ok := <-s.game.ErrorChannel
-		if !ok {
+		select {
+		case <-s.game.Done():
 			return
+		case err := <-s.game.ErrorChannel:
+			s.ErrorHandler.Handle(s, err)
 		}
-		s.ErrorHandler.Handle(s, err)
 	}
 }
 
 func (s *GameServer) WatchChanges() {
 	for {
-		change, ok := <-s.game.ChangeChannel
-		if !ok {
+		select {
+		case <-s.game.Done():
 			return
-		}
-		if s.isTurnBoundary(change) && s.hasDisconnectedPlayers() {
-			s.stalledTransition = change
-			continue
-		}
-		if err := s.ChangeHandler.Handle(s, change); err != nil {
-			s.game.ErrorChannel <- err
+		case change := <-s.game.ChangeChannel:
+			if err := s.ChangeHandler.Handle(s, change); err != nil {
+				s.game.SendError(err)
+			}
 		}
 	}
 }

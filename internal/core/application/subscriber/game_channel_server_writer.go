@@ -1,7 +1,7 @@
 package subscriber
 
 import (
-	"fmt"
+	"log/slog"
 	"mevhub/internal/core/application/server"
 	"mevhub/internal/core/domain/game"
 	"mevhub/internal/core/domain/game/action"
@@ -18,10 +18,11 @@ type GameChannelServerWriter struct {
 	InstanceRepository    port.GameInstanceRepository
 	PartyRepository       port.GamePartyReadRepository
 	ParticipantRepository port.GameParticipantReadRepository
+	Logger                *slog.Logger
 }
 
-func NewGameChannelServerWriter(svr *server.GameServerHost, publisher *mevent.Publisher, instances port.GameInstanceRepository, party port.GamePartyReadRepository, participants port.GameParticipantReadRepository) *GameChannelServerWriter {
-	var writer = &GameChannelServerWriter{Server: svr, InstanceRepository: instances, PartyRepository: party, ParticipantRepository: participants}
+func NewGameChannelServerWriter(svr *server.GameServerHost, publisher *mevent.Publisher, instances port.GameInstanceRepository, party port.GamePartyReadRepository, participants port.GameParticipantReadRepository, logger *slog.Logger) *GameChannelServerWriter {
+	var writer = &GameChannelServerWriter{Server: svr, InstanceRepository: instances, PartyRepository: party, ParticipantRepository: participants, Logger: logger}
 	publisher.Subscribe(writer, game.InstanceCreatedEvent{}, game.InstanceDeletedEvent{}, game.PartyCreatedEvent{}, game.ParticipantCreatedEvent{}, session.InstanceDeletedEvent{}, game.PlayerDisconnectedEvent{}, game.PlayerReconnectedEvent{})
 	return writer
 }
@@ -56,7 +57,7 @@ func (w *GameChannelServerWriter) HandleInstanceCreated(event game.InstanceCreat
 func (w *GameChannelServerWriter) HandleInstanceDelete(event game.InstanceDeletedEvent) {
 	w.Server.Unregister <- event.InstanceID()
 	if err := w.InstanceRepository.Delete(event.Context(), event.InstanceID()); err != nil {
-		fmt.Println(err)
+		w.Logger.With("instance.id", event.InstanceID().String(), "error", err.Error()).Error("failed to delete game instance")
 	}
 }
 
@@ -99,9 +100,8 @@ func (w *GameChannelServerWriter) HandleSessionDeleted(event session.InstanceDel
 
 func (w *GameChannelServerWriter) HandlePlayerDisconnected(event game.PlayerDisconnectedEvent) {
 	w.Server.ActionChannel <- &server.GameActionRequest{
-		GameID:  event.GameID(),
-		PartyID: event.PartyID(),
-		Action:  action.NewPlayerDisconnectAction(event.GameID(), event.PartyID(), event.PlayerID(), time.Now().UTC()),
+		GameID: event.GameID(),
+		Action: action.NewPlayerDisconnectAction(event.GameID(), event.PlayerID(), time.Now().UTC()),
 	}
 }
 

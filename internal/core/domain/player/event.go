@@ -2,34 +2,39 @@ package player
 
 import (
 	"context"
-	"time"
+	"log/slog"
 
 	uuid "github.com/satori/go.uuid"
-	"github.com/sirupsen/logrus"
 )
 
 type DisconnectedEvent struct {
-	ctx    context.Context
-	id     uuid.UUID
-	user   uuid.UUID
-	player uuid.UUID
-	time   time.Time
+	ctx       context.Context
+	id        uuid.UUID
+	user      uuid.UUID
+	player    uuid.UUID
+	timestamp int64
 }
 
-func NewDisconnectedEvent(ctx context.Context, id uuid.UUID, user uuid.UUID, player uuid.UUID, time time.Time) DisconnectedEvent {
-	return DisconnectedEvent{ctx: ctx, id: id, user: user, player: player, time: time}
+func NewDisconnectedEvent(ctx context.Context, id uuid.UUID, user uuid.UUID, player uuid.UUID, timestamp int64) DisconnectedEvent {
+	return DisconnectedEvent{ctx: ctx, id: id, user: user, player: player, timestamp: timestamp}
+}
+
+// Timestamp is the gateway emit time of the underlying ClientDisconnected, used
+// to order connect/disconnect events that may arrive out of order.
+func (e DisconnectedEvent) Timestamp() int64 {
+	return e.timestamp
 }
 
 func (e DisconnectedEvent) Name() string {
 	return "player.disconnect"
 }
 
-func (e DisconnectedEvent) ToLogFields() logrus.Fields {
-	return logrus.Fields{
-		"event.name":      e.Name(),
-		"user.id":         e.user,
-		"player.id":       e.player,
-		"disconnected.at": e.time,
+func (e DisconnectedEvent) ToSlogFields() []slog.Attr {
+	return []slog.Attr{
+		slog.String("session.id", e.id.String()),
+		slog.String("user.id", e.user.String()),
+		slog.String("player.id", e.player.String()),
+		slog.Int64("event.timestamp", e.timestamp),
 	}
 }
 
@@ -49,32 +54,34 @@ func (e DisconnectedEvent) PlayerID() uuid.UUID {
 	return e.player
 }
 
-func (e DisconnectedEvent) DisconnectedAt() time.Time {
-	return e.time
-}
-
 type ConnectedEvent struct {
-	ctx    context.Context
-	id     uuid.UUID
-	user   uuid.UUID
-	player uuid.UUID
-	time   time.Time
+	ctx       context.Context
+	id        uuid.UUID
+	user      uuid.UUID
+	player    uuid.UUID
+	timestamp int64
 }
 
-func NewConnectedEvent(ctx context.Context, id uuid.UUID, user uuid.UUID, player uuid.UUID, time time.Time) ConnectedEvent {
-	return ConnectedEvent{ctx: ctx, id: id, user: user, player: player, time: time}
+func NewConnectedEvent(ctx context.Context, id uuid.UUID, user uuid.UUID, player uuid.UUID, timestamp int64) ConnectedEvent {
+	return ConnectedEvent{ctx: ctx, id: id, user: user, player: player, timestamp: timestamp}
+}
+
+// Timestamp is the gateway emit time of the underlying ClientConnected, used to
+// order connect/disconnect events that may arrive out of order.
+func (e ConnectedEvent) Timestamp() int64 {
+	return e.timestamp
 }
 
 func (e ConnectedEvent) Name() string {
 	return "player.connect"
 }
 
-func (e ConnectedEvent) ToLogFields() logrus.Fields {
-	return logrus.Fields{
-		"event.name": e.Name(),
-		"user.id":    e.user,
-		"player.id":  e.player,
-		"connected.at": e.time,
+func (e ConnectedEvent) ToSlogFields() []slog.Attr {
+	return []slog.Attr{
+		slog.String("session.id", e.id.String()),
+		slog.String("user.id", e.user.String()),
+		slog.String("player.id", e.player.String()),
+		slog.Int64("event.timestamp", e.timestamp),
 	}
 }
 
@@ -92,8 +99,4 @@ func (e ConnectedEvent) UserID() uuid.UUID {
 
 func (e ConnectedEvent) PlayerID() uuid.UUID {
 	return e.player
-}
-
-func (e ConnectedEvent) ConnectedAt() time.Time {
-	return e.time
 }

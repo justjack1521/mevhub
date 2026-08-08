@@ -43,9 +43,16 @@ func (r *LobbyParticipantRepository) QueryCountForLobby(ctx context.Context, id 
 }
 
 func (r *LobbyParticipantRepository) QueryParticipantForLobby(ctx context.Context, id uuid.UUID, slot int) (*lobby.Participant, error) {
+	// HGETALL on a missing key returns an empty map rather than an error; without
+	// this guard a zero-value participant escapes as valid and subsequent writes
+	// land on the nil-lobby, slot-zero key.
 	var cmd = r.client.HGetAll(ctx, r.GenerateParticipantKey(id, slot))
-	if cmd.Err() != nil {
-		return nil, port.ErrFailedQueryParticipantForLobby(id, port.ErrFailedQueryParticipant(slot, cmd.Err()))
+	fields, err := cmd.Result()
+	if err != nil {
+		return nil, port.ErrFailedQueryParticipantForLobby(id, port.ErrFailedQueryParticipant(slot, err))
+	}
+	if len(fields) == 0 {
+		return nil, port.ErrParticipantNotFoundForSlot(id, slot)
 	}
 	var result = &dto.LobbyParticipantRedis{}
 	if err := cmd.Scan(result); err != nil {
@@ -127,11 +134,12 @@ func (r *LobbyParticipantRepository) Create(ctx context.Context, participant *lo
 
 	var key = r.GenerateParticipantKey(participant.LobbyID, participant.PlayerSlot)
 
-	if err := r.client.HSet(ctx, key, result.ToMapStringInterface()).Err(); err != nil {
+	pipe := r.client.TxPipeline()
+	pipe.HSet(ctx, key, result.ToMapStringInterface())
+	pipe.Expire(ctx, key, lobby.KeepAliveTime)
+	if _, err := pipe.Exec(ctx); err != nil {
 		return port.ErrFailedCreateParticipantForLobby(participant.LobbyID, port.ErrFailedCreateParticipant(participant.PlayerSlot, err))
 	}
-
-	r.client.Expire(ctx, key, lobby.KeepAliveTime)
 
 	return nil
 }

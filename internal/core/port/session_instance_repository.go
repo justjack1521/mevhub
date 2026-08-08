@@ -14,6 +14,11 @@ type SessionInstanceReadRepository interface {
 type SessionInstanceWriteRepository interface {
 	Create(ctx context.Context, instance *session.Instance) error
 	Update(ctx context.Context, instance *session.Instance) error
+	// UpdateConnectionState persists only the connect/disconnect bookkeeping
+	// fields (DisconnectSessionID, LastConnEventAt, DisconnectedAt) so the
+	// event handlers cannot clobber concurrent lobby/game field writes with a
+	// stale full-record read.
+	UpdateConnectionState(ctx context.Context, instance *session.Instance) error
 	Delete(ctx context.Context, instance *session.Instance) error
 }
 
