@@ -77,9 +77,12 @@ func (h *LobbyCancelCommandHandler) Handle(ctx Context, cmd *LobbyCancelCommand)
 		if err := h.SessionRepository.Update(ctx, session); err != nil {
 			return ErrFailedHandleCancelLobbyCommand(err)
 		}
-
-		cmd.QueueEvent(lobby.NewParticipantDeletedEvent(ctx, participant.UserID, participant.PlayerID, participant.LobbyID, participant.PlayerSlot))
 	}
+
+	// Deliberately no per-participant deleted event here. Its handlers drop the
+	// player from the listener set, and events publish in queue order — draining
+	// the listeners first would leave InstanceDeletedEvent with nobody to send
+	// the cancel notification to. The instance event covers the whole teardown.
 
 	if err := h.ParticipantRepository.DeleteAllForLobby(ctx, instance.SysID); err != nil {
 		return ErrFailedHandleCancelLobbyCommand(err)

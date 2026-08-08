@@ -209,7 +209,7 @@ func (h *LobbyCreateCommandHandler) Handle(ctx Context, cmd *LobbyCreateCommand)
 				return err
 			}
 
-			if err := h.ListenerRepository.CreateListener(ctx, instance.SysID, ctx.UserID()); err != nil {
+			if err := h.ListenerRepository.CreateListener(ctx, instance.SysID, ctx.UserID(), ctx.PlayerID()); err != nil {
 				return err
 			}
 

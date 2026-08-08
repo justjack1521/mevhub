@@ -11,7 +11,6 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/wagslane/go-rabbitmq"
 	"log/slog"
-	"mevhub/internal/core/application/consumer"
 	"mevhub/internal/core/domain/lobby"
 	"strings"
 	"sync"
@@ -45,7 +44,6 @@ func NewLobbyNotificationChanneler(publisher *mevent.Publisher, client *redis.Cl
 		lobby.InstanceDeletedEvent{},
 		lobby.WatcherAddedEvent{},
 		lobby.ParticipantDeletedEvent{},
-		consumer.LobbyClientNotificationEvent{},
 	}
 	publisher.Subscribe(manager, channels...)
 	return manager
@@ -63,8 +61,6 @@ func (s *LobbyNotificationChanneler) Notify(event mevent.Event) {
 		s.HandleParticipantDelete(actual)
 	case mevent.ApplicationShutdownEvent:
 		s.CloseAll(actual)
-	case consumer.LobbyClientNotificationEvent:
-		s.HandleLobbyClientNotification(actual)
 	}
 }
 
@@ -164,10 +160,6 @@ func (s *LobbyNotificationChanneler) HandleParticipantDelete(event lobby.Partici
 	}
 }
 
-func (s *LobbyNotificationChanneler) HandleLobbyClientNotification(event consumer.LobbyClientNotificationEvent) {
-	s.client.Publish(event.Context(), s.Key(event.LobbyID()), event.Data())
-}
-
 func (s *LobbyNotificationChanneler) HandleWatcherAdd(event lobby.WatcherAddedEvent) {
 	s.mu.Lock()
 	channel, exists := s.channels[event.LobbyID()]
@@ -175,7 +167,7 @@ func (s *LobbyNotificationChanneler) HandleWatcherAdd(event lobby.WatcherAddedEv
 	if exists == false || channel == nil {
 		return
 	}
-	if err := s.repository.CreateListener(event.Context(), event.LobbyID(), event.UserID()); err != nil {
+	if err := s.repository.CreateListener(event.Context(), event.LobbyID(), event.UserID(), event.PlayerID()); err != nil {
 		return
 	}
 }

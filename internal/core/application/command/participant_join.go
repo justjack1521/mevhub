@@ -90,7 +90,7 @@ func (h *ParticipantJoinCommandHandler) Handle(ctx Context, cmd *ParticipantJoin
 		return err
 	}
 
-	if err := h.ListenerRepository.CreateListener(ctx, participant.LobbyID, ctx.UserID()); err != nil {
+	if err := h.ListenerRepository.CreateListener(ctx, participant.LobbyID, ctx.UserID(), ctx.PlayerID()); err != nil {
 		return err
 	}
 
