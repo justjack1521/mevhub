@@ -18,14 +18,18 @@ type GamePartyWriter struct {
 
 func NewGamePartyWriter(publisher *mevent.Publisher, games port.GameInstanceReadRepository, lobbies port.LobbySummaryReadRepository, parties port.GamePartyRepository, logger *slog.Logger) *GamePartyWriter {
 	var service = &GamePartyWriter{EventPublisher: publisher, GameInstanceRepository: games, LobbySummaryRepository: lobbies, PartyRepository: parties, Logger: logger}
-	publisher.Subscribe(service, game.InstanceRegisteredEvent{}, game.InstanceDeletedEvent{})
+	// InstanceCreated, not InstanceRegistered: the lobby summaries this reads are
+	// deleted by lobby.InstanceDeletedEvent, which the starting command publishes
+	// immediately after InstanceCreated on the same goroutine. Registration is two
+	// goroutine hops behind, so waiting for it loses the race and every party with it.
+	publisher.Subscribe(service, game.InstanceCreatedEvent{}, game.InstanceDeletedEvent{})
 	return service
 }
 
 func (s *GamePartyWriter) Notify(event mevent.Event) {
 	switch actual := event.(type) {
-	case game.InstanceRegisteredEvent:
-		if err := s.HandleInstanceRegistered(actual); err != nil {
+	case game.InstanceCreatedEvent:
+		if err := s.HandleInstanceCreated(actual); err != nil {
 			s.Logger.With("event", actual.Name(), "error", err.Error()).Error("game party writer failed to handle event")
 		}
 	case game.InstanceDeletedEvent:
@@ -49,7 +53,7 @@ func (s *GamePartyWriter) HandleInstanceDeleted(evt game.InstanceDeletedEvent) e
 	return nil
 }
 
-func (s *GamePartyWriter) HandleInstanceRegistered(evt game.InstanceRegisteredEvent) error {
+func (s *GamePartyWriter) HandleInstanceCreated(evt game.InstanceCreatedEvent) error {
 
 	parent, err := s.GameInstanceRepository.Get(evt.Context(), evt.InstanceID())
 	if err != nil {

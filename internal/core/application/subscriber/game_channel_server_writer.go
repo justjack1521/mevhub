@@ -23,7 +23,7 @@ type GameChannelServerWriter struct {
 
 func NewGameChannelServerWriter(svr *server.GameServerHost, publisher *mevent.Publisher, instances port.GameInstanceRepository, party port.GamePartyReadRepository, participants port.GameParticipantReadRepository, logger *slog.Logger) *GameChannelServerWriter {
 	var writer = &GameChannelServerWriter{Server: svr, InstanceRepository: instances, PartyRepository: party, ParticipantRepository: participants, Logger: logger}
-	publisher.Subscribe(writer, game.InstanceCreatedEvent{}, game.InstanceDeletedEvent{}, game.PartyCreatedEvent{}, game.ParticipantCreatedEvent{}, session.InstanceDeletedEvent{}, game.PlayerDisconnectedEvent{}, game.PlayerReconnectedEvent{})
+	publisher.Subscribe(writer, game.InstanceCreatedEvent{}, game.InstanceRegisteredEvent{}, game.InstanceDeletedEvent{}, session.InstanceDeletedEvent{}, game.PlayerDisconnectedEvent{}, game.PlayerReconnectedEvent{})
 	return writer
 }
 
@@ -31,12 +31,10 @@ func (w *GameChannelServerWriter) Notify(event mevent.Event) {
 	switch actual := event.(type) {
 	case game.InstanceCreatedEvent:
 		w.HandleInstanceCreated(actual)
+	case game.InstanceRegisteredEvent:
+		w.HandleInstanceRegistered(actual)
 	case game.InstanceDeletedEvent:
 		w.HandleInstanceDelete(actual)
-	case game.PartyCreatedEvent:
-		w.HandlePartyCreated(actual)
-	case game.ParticipantCreatedEvent:
-		w.HandleParticipantCreated(actual)
 	case session.InstanceDeletedEvent:
 		w.HandleSessionDeleted(actual)
 	case game.PlayerDisconnectedEvent:
@@ -61,30 +59,46 @@ func (w *GameChannelServerWriter) HandleInstanceDelete(event game.InstanceDelete
 	}
 }
 
-func (w *GameChannelServerWriter) HandlePartyCreated(event game.PartyCreatedEvent) {
-	party, err := w.PartyRepository.Query(event.Context(), event.GameID(), event.PartyIndex())
-	if err != nil {
-		return
-	}
-	w.Server.ActionChannel <- &server.GameActionRequest{
-		GameID:  event.GameID(),
-		PartyID: event.PartyID(),
-		Action:  action.NewPartyAddAction(party.SysID, party.Index),
-	}
-}
+// HandleInstanceRegistered replays the persisted parties and participants into
+// the live game. Populating from the read models here rather than from the
+// PartyCreated/ParticipantCreated events is what makes the ordering safe: those
+// events fire while the server is still queued on Register, so their actions
+// would arrive before the host has the game in its map and be dropped as
+// orphaned. By registration time the read models are already written, because
+// GamePartyWriter runs to completion on InstanceCreated before this writer
+// queues the registration.
+func (w *GameChannelServerWriter) HandleInstanceRegistered(event game.InstanceRegisteredEvent) {
 
-func (w *GameChannelServerWriter) HandleParticipantCreated(event game.ParticipantCreatedEvent) {
-
-	participant, err := w.ParticipantRepository.Query(event.Context(), event.PartyID(), event.PlayerSlot())
+	parties, err := w.PartyRepository.QueryAll(event.Context(), event.InstanceID())
 	if err != nil {
+		w.Logger.With("instance.id", event.InstanceID().String(), "error", err.Error()).Error("failed to query parties for registered game")
 		return
 	}
 
-	w.Server.ActionChannel <- &server.GameActionRequest{
-		GameID:  event.GameID(),
-		PartyID: event.PartyID(),
-		Action:  action.NewPlayerAddAction(participant.UserID, participant.PlayerID, event.PartyID(), participant.PlayerSlot),
+	for _, party := range parties {
+
+		w.Server.ActionChannel <- &server.GameActionRequest{
+			GameID:  event.InstanceID(),
+			PartyID: party.SysID,
+			Action:  action.NewPartyAddAction(party.SysID, party.Index),
+		}
+
+		participants, err := w.ParticipantRepository.QueryAll(event.Context(), party.SysID)
+		if err != nil {
+			w.Logger.With("instance.id", event.InstanceID().String(), "party.id", party.SysID.String(), "error", err.Error()).Error("failed to query participants for registered game")
+			continue
+		}
+
+		for _, participant := range participants {
+			w.Server.ActionChannel <- &server.GameActionRequest{
+				GameID:  event.InstanceID(),
+				PartyID: party.SysID,
+				Action:  action.NewPlayerAddAction(participant.UserID, participant.PlayerID, party.SysID, participant.PlayerSlot),
+			}
+		}
+
 	}
+
 }
 
 func (w *GameChannelServerWriter) HandleSessionDeleted(event session.InstanceDeletedEvent) {

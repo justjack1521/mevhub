@@ -65,10 +65,15 @@ func NewGameApplication(core *CoreApplication) *GameApplication {
 		Player:  translate.NewGamePlayerTranslator(),
 	}
 
+	// Order matters: the publisher notifies handlers in subscription order, and
+	// all three of these subscribe to game.InstanceCreatedEvent's fan-out. The
+	// party and participant writers must have written their read models before
+	// the channel writer queues the game server for registration, since the
+	// registration callback populates the live game from those read models.
 	application.subscribers = []ApplicationSubscriber{
-		subscriber.NewGameChannelServerWriter(svr, core.Services.EventPublisher, core.data.Games, core.data.GameParties, core.data.GameParticipants, core.Services.Logger),
 		subscriber.NewGamePartyWriter(core.Services.EventPublisher, core.data.Games, core.data.LobbySummaries, core.data.GameParties, core.Services.Logger),
 		subscriber.NewGameParticipantWriter(core.Services.EventPublisher, core.data.LobbyParticipants, core.data.GameParticipants, core.Services.Logger),
+		subscriber.NewGameChannelServerWriter(svr, core.Services.EventPublisher, core.data.Games, core.data.GameParties, core.data.GameParticipants, core.Services.Logger),
 		subscriber.NewGameLoadoutEvictionSubscriber(core.Services.EventPublisher, core.data.GamePlayerLoadouts),
 	}
 
