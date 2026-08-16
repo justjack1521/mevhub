@@ -43,8 +43,9 @@ type LiveGameInstance struct {
 	MaxPartyCount int
 	PartyOptions  PartyInstanceOptions
 	// LastEnemyHP holds the most recently resolved enemy HP consensus so a
-	// reconnecting player can be re-synced with the current enemy state. It is
-	// empty until the first enemy turn resolves.
+	// reconnecting player can be re-synced with the current enemy state. The
+	// consensus is disabled, so nothing writes this and the sync snapshot
+	// carries no enemies — reconnecting clients source enemy HP themselves.
 	LastEnemyHP []EnemyHP
 
 	ended    atomic.Bool
@@ -211,6 +212,10 @@ func (game *LiveGameInstance) Run() {
 
 // SendChange never blocks past shutdown: a change no consumer will drain is
 // dropped once the game is stopped.
+//
+// It stays blocking by design. Dropping a change here would put it beyond the
+// reach of the replay log as well as the wire, turning a stall into a hole no
+// catch-up could ever fill.
 func (game *LiveGameInstance) SendChange(change Change) {
 	select {
 	case game.ChangeChannel <- change:

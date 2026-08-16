@@ -29,6 +29,7 @@ type GameApplicationCommands struct {
 	DequeueAction     DequeueActionCommandHandler
 	LockAction        LockActionCommandHandler
 	SubmitHPConsensus SubmitHPConsensusCommandHandler
+	GameCatchUp       GameCatchUpCommandHandler
 }
 
 type GameApplicationTranslators struct {
@@ -58,6 +59,7 @@ func NewGameApplication(core *CoreApplication) *GameApplication {
 		DequeueAction:     command.NewDequeueActionCommandHandler(core.data.Sessions, svr),
 		LockAction:        command.NewLockActionCommandHandler(core.data.Sessions, svr),
 		SubmitHPConsensus: command.NewSubmitHPConsensusCommandHandler(core.data.Sessions, svr),
+		GameCatchUp:       command.NewGameCatchUpCommandHandler(core.data.Sessions, svr),
 	}
 
 	application.Translators = &GameApplicationTranslators{
@@ -85,5 +87,6 @@ type EnqueueActionCommandHandler decorator.CommandHandler[command.Context, *comm
 type DequeueActionCommandHandler decorator.CommandHandler[command.Context, *command.DequeueActionCommand]
 type LockActionCommandHandler decorator.CommandHandler[command.Context, *command.LockActionCommand]
 type SubmitHPConsensusCommandHandler decorator.CommandHandler[command.Context, *command.SubmitHPConsensusCommand]
+type GameCatchUpCommandHandler decorator.CommandHandler[command.Context, *command.GameCatchUpCommand]
 
 type GameSummaryQueryHandler decorator.QueryHandler[query.Context, query.GameSummaryQuery, game.Summary]

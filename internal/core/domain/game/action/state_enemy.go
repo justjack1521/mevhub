@@ -7,7 +7,9 @@ import (
 	"time"
 )
 
-const hpConsensusTimeout = time.Second * 15
+// enemyTurnTimeout bounds the enemy turn: a client that never reports itself
+// ready (crashed mid-animation, wedged) must not stall the turn for everyone.
+const enemyTurnTimeout = time.Second * 15
 
 type EnemyTurnState struct {
 	QueuedActions map[int][]*game.PlayerActionQueue
@@ -26,6 +28,8 @@ func NewEnemyTurnState(instance *game.LiveGameInstance) *EnemyTurnState {
 	for _, party := range instance.Parties {
 		var queue = make([]*game.PlayerActionQueue, party.GetPlayerCount())
 		for _, player := range party.Players {
+			// Clearing Ready arms the turn's exit condition: each client sets it
+			// again once it has played the enemy turn out.
 			player.Ready = false
 			// Copy the queue: the live player's Actions slice keeps being
 			// mutated after this state captures it.
@@ -43,6 +47,12 @@ func NewEnemyTurnState(instance *game.LiveGameInstance) *EnemyTurnState {
 	}
 	return state
 }
+
+// The HP consensus is disabled: nothing calls submitHP, allReported,
+// calculateConsensus or resolve any more, and the enemy turn no longer waits on
+// or broadcasts enemy HP. The code below is kept intact so the mechanism can be
+// switched back on by restoring the two call sites — SubmitHPConsensusAction.Perform
+// and the resolve branch of Update.
 
 func (s *EnemyTurnState) submitHP(playerID uuid.UUID, enemies []game.EnemyHP) {
 	s.hpReports[playerID] = enemies
@@ -152,19 +162,20 @@ func (s *EnemyTurnState) Update(instance *game.LiveGameInstance, t time.Time) {
 		return
 	}
 
-	if !s.resolved {
-		if s.allReported(instance) || t.Sub(s.startTime) > hpConsensusTimeout {
-			s.resolve(instance)
-		}
-		return
-	}
-
-	// Turn is resolved; we are now at the enemy -> player boundary. Hold the
-	// hand-off to the next player turn while any player is within their
-	// reconnect grace period. The stall lifts on reconnect or timeout removal.
 	if s.advanced {
 		return
 	}
+
+	// The enemy turn is a client-side interlude: it ends when every present
+	// player reports itself ready again (NewEnemyTurnState cleared the flag on
+	// entry), or when the timeout lifts a turn a silent client would stall.
+	if instance.GetReadyPlayerCount() < instance.GetPlayerCount() && t.Sub(s.startTime) <= enemyTurnTimeout {
+		return
+	}
+
+	// We are at the enemy -> player boundary. Hold the hand-off to the next
+	// player turn while any player is within their reconnect grace period. The
+	// stall lifts on reconnect or timeout removal.
 	if instance.HasDisconnectedPlayers() {
 		return
 	}

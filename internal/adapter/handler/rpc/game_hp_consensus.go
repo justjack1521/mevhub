@@ -10,8 +10,9 @@ import (
 
 func (g MultiGrpcServer) SubmitHPConsensus(ctx context.Context, request *protomulti.GameHPConsensusRequest) (*protomulti.GameHPConsensusResponse, error) {
 
-	// A report with no enemies carries no information and, unvalidated, an
-	// all-empty round would read as a wipe and end the game for everyone.
+	// The consensus itself is disabled (SubmitHPConsensusAction.Perform is a
+	// no-op), so this endpoint only still exists for clients that keep calling
+	// it. The empty-report rejection is kept as plain input validation.
 	if len(request.Enemies) == 0 {
 		return nil, errors.New("hp consensus report contains no enemies")
 	}

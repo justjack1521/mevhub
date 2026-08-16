@@ -5,7 +5,7 @@ go 1.25.0
 require (
 	github.com/go-redis/redis/v8 v8.11.5
 	github.com/justjack1521/mevconn v0.0.0-20240724034951-1028ae2f3b3a
-	github.com/justjack1521/mevium v0.0.0-20260614145507-e45ac6c9547e
+	github.com/justjack1521/mevium v0.0.0-20260816092044-7d02a25bb973
 	github.com/justjack1521/mevrabbit v0.0.0-20241120034927-1727a709432d
 	github.com/justjack1521/mevrelic v0.0.0-20240509231826-42880847997d
 	github.com/justjack1521/mevrpc v0.0.0-20240508141837-73ab62053f83

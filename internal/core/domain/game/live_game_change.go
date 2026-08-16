@@ -1,5 +1,8 @@
 package game
 
+// Change is the aggregate's outbound vocabulary. Not every change reaches a
+// client — some are internal bookkeeping — so the ordinal a client uses to
+// detect and repair gaps is assigned where the bytes are published, not here.
 type Change interface {
 	Identifier() ChangeIdentifier
 }
@@ -19,4 +22,5 @@ const (
 	ChangeIdentifierLockAction       ChangeIdentifier = "lock.action"
 	ChangeIdentifierHPConsensus      ChangeIdentifier = "hp.consensus"
 	ChangeIdentifierGameSync         ChangeIdentifier = "game.sync"
+	ChangeIdentifierCatchUp          ChangeIdentifier = "catch.up"
 )

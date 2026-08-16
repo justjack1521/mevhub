@@ -34,7 +34,7 @@ func (a *PlayerReconnectAction) Perform(instance *game.LiveGameInstance) error {
 	}
 
 	// Idempotency: a duplicate ConnectedEvent for an already-connected player
-	// must not re-broadcast a reconnect or push another full sync.
+	// must not re-broadcast a reconnect.
 	if !player.Disconnected {
 		return nil
 	}
@@ -42,8 +42,10 @@ func (a *PlayerReconnectAction) Perform(instance *game.LiveGameInstance) error {
 	player.Disconnected = false
 	player.DisconnectTime = time.Time{}
 	instance.SendChange(NewPlayerReconnectChange(instance.InstanceID, a.PlayerID, party.PartyIndex, player.PartySlot))
-	// Re-sync the reconnecting player with the live state they missed while
-	// away (other players' queued actions, lock state, connection status, etc.).
-	instance.SendChange(NewGameStateSyncChange(instance, a.PlayerID))
+	// No state snapshot is pushed here any more. A reconnecting client re-syncs
+	// itself by calling GameCatchUp with the last sequence it applied, which
+	// replays what it missed through the handlers it already runs — rather than
+	// through a reconciliation path exercised only on reconnect.
+	// NewGameStateSyncChange and its marshaller are left intact and dormant.
 	return nil
 }
