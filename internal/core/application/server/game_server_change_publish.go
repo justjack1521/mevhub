@@ -80,8 +80,6 @@ func (c *ChangeHandlerPublisher) Handle(svr *GameServer, change game.Change) err
 		return c.HandleHPConsensusChange(svr, actual)
 	case *action.GameStateSyncChange:
 		return c.HandleGameStateSync(svr, actual)
-	case *action.CatchUpChange:
-		return c.HandleCatchUpChange(svr, actual)
 	case *action.PlayerDisconnectChange:
 		return c.HandlePlayerDisconnectChange(svr, actual)
 	case *action.PlayerReconnectChange:
@@ -218,81 +216,18 @@ func (c *ChangeHandlerPublisher) HandlePlayerRemoveChange(svr *GameServer, chang
 	return c.publish(svr, protomulti.MultiGameNotificationType_GAME_NOTIFY_PLAYER_REMOVE, message)
 }
 
-// HandleGameStateSync delivers a full live-state snapshot to a single
-// reconnecting player rather than broadcasting it. Nothing emits this change
-// any more — notification replay took its place — but the path is kept intact
-// and reversible.
+// HandleGameStateSync broadcasts the game's full current state to everyone. It
+// is the repair path for a lost notification: every kind a client could have
+// missed is a field in this message, so a client that missed one converges here
+// without having to detect the loss, ask for anything, or be correct about
+// anything. It is emitted on every state transition, on reconnect, and on a
+// heartbeat while a state runs long.
 func (c *ChangeHandlerPublisher) HandleGameStateSync(svr *GameServer, change *action.GameStateSyncChange) error {
 	message, err := c.marshaller.gameSync.Marshall(change)
 	if err != nil {
 		return err
 	}
-	svr.mu.RLock()
-	client, ok := svr.clients[change.TargetPlayerID]
-	svr.mu.RUnlock()
-	if !ok {
-		return nil
-	}
-	return c.publishTo(client, protomulti.MultiGameNotificationType_GAME_NOTIFY_GAME_SYNC, message)
-}
-
-// HandleCatchUpChange replays the log to the one player who asked for it. The
-// replayed notifications keep their original kind, payload and ordinal, so the
-// client cannot tell them from live traffic and can dedupe against what it has
-// already applied.
-func (c *ChangeHandlerPublisher) HandleCatchUpChange(svr *GameServer, change *action.CatchUpChange) error {
-
-	// Sampled before the send so the caller learns the range even if it has no
-	// delivery path left; the log holds everything published up to this change,
-	// because appends happen on this goroutine.
-	entries, from, to := svr.notifications.Replay(change.FromSequence)
-	change.Report(action.CatchUpResult{
-		FromSequence:    from,
-		ToSequence:      to,
-		TurnRemainingMs: change.TurnRemainingMs,
-	})
-
-	svr.mu.RLock()
-	client, ok := svr.clients[change.TargetPlayerID]
-	svr.mu.RUnlock()
-	if !ok {
-		return nil
-	}
-
-	// One client's failure must not abandon the rest of its own backlog: a gap
-	// mid-replay is exactly what the client would have to ask about again.
-	var errs []error
-	for _, entry := range entries {
-		var notification = &protocommon.Notification{
-			Service:  protocommon.ServiceKey_MULTI,
-			Type:     int32(entry.kind),
-			Data:     entry.payload,
-			Sequence: entry.sequence,
-		}
-		if err := c.publisher.Publish(context.Background(), client, notification); err != nil {
-			errs = append(errs, err)
-		}
-	}
-
-	return errors.Join(errs...)
-
-}
-
-// publishTo delivers to a single client and is never logged for replay: its
-// traffic is targeted at one player and must not become replayable by another.
-// It therefore goes out unsequenced — taking an ordinal from the broadcast
-// stream would put a hole in that stream for everybody else.
-func (c *ChangeHandlerPublisher) publishTo(client *PlayerChannel, operation protomulti.MultiGameNotificationType, message Notification) error {
-	bytes, err := message.MarshallBinary()
-	if err != nil {
-		return err
-	}
-	var notification = &protocommon.Notification{
-		Service: protocommon.ServiceKey_MULTI,
-		Type:    int32(operation),
-		Data:    bytes,
-	}
-	return c.publisher.Publish(context.Background(), client, notification)
+	return c.publish(svr, protomulti.MultiGameNotificationType_GAME_NOTIFY_GAME_SYNC, message)
 }
 
 func (c *ChangeHandlerPublisher) HandlePlayerReadyChange(svr *GameServer, change *action.PlayerReadyChange) error {
@@ -325,16 +260,15 @@ func (c *ChangeHandlerPublisher) publish(svr *GameServer, operation protomulti.M
 		return err
 	}
 
-	// Log before the fan-out, not after: a publish that errors below is then
-	// still replayable, which is the whole point of keeping the bytes. The log
-	// also assigns the ordinal, so what a client sees is numbered gaplessly.
-	var sequence = svr.notifications.Append(operation, bytes)
-
+	// The ordinal is telemetry, not a repair mechanism: nothing resends by
+	// sequence any more. It stays because it is the only way a client can tell
+	// that it lost something, which is the only way we can find out whether
+	// notifications are actually going missing.
 	var notification = &protocommon.Notification{
 		Service:  protocommon.ServiceKey_MULTI,
 		Type:     int32(operation),
 		Data:     bytes,
-		Sequence: sequence,
+		Sequence: svr.sequence.Add(1),
 	}
 
 	// Snapshot under the lock, publish outside it: the client map is mutated

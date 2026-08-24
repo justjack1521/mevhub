@@ -3,24 +3,19 @@ package rpc
 import (
 	"context"
 	"github.com/justjack1521/mevium/pkg/genproto/protomulti"
-	"mevhub/internal/core/application/command"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
-// GameCatchUp resends the notifications a client missed. The backlog itself
-// leaves over the client's normal notification channel, in order, so only the
-// range it covers comes back on this call.
+// GameCatchUp is retired. Clients no longer repair a lost notification by asking
+// for it back — the game restates its whole state on every transition, on
+// reconnect, and on a heartbeat, so a client that missed something converges on
+// the next restatement without asking. See action.GameStateSyncChange.
+//
+// The method survives only because it is on the generated
+// MeviusMultiServiceServer interface, which MultiGrpcServer satisfies without
+// embedding the Unimplemented server. Removing it would not compile. It can go
+// for good once the RPC is dropped from the mevium proto.
 func (g MultiGrpcServer) GameCatchUp(ctx context.Context, request *protomulti.GameCatchUpRequest) (*protomulti.GameCatchUpResponse, error) {
-
-	cmd := command.NewGameCatchUpCommand(request.GetLastSequence())
-
-	if err := g.app.SubApplications.Game.Commands.GameCatchUp.Handle(g.NewCommandContext(ctx), cmd); err != nil {
-		return nil, err
-	}
-
-	return &protomulti.GameCatchUpResponse{
-		FromSequence:    cmd.Result.FromSequence,
-		ToSequence:      cmd.Result.ToSequence,
-		TurnRemainingMs: cmd.Result.TurnRemainingMs,
-	}, nil
-
+	return nil, status.Error(codes.Unimplemented, "game catch up is retired; the game restates its state periodically")
 }

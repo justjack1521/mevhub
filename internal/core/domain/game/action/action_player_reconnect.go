@@ -42,10 +42,13 @@ func (a *PlayerReconnectAction) Perform(instance *game.LiveGameInstance) error {
 	player.Disconnected = false
 	player.DisconnectTime = time.Time{}
 	instance.SendChange(NewPlayerReconnectChange(instance.InstanceID, a.PlayerID, party.PartyIndex, player.PartySlot))
-	// No state snapshot is pushed here any more. A reconnecting client re-syncs
-	// itself by calling GameCatchUp with the last sequence it applied, which
-	// replays what it missed through the handlers it already runs — rather than
-	// through a reconciliation path exercised only on reconnect.
-	// NewGameStateSyncChange and its marshaller are left intact and dormant.
+
+	// Restate immediately rather than leaving the returning player to wait out
+	// the heartbeat. Nothing changes state on a reconnect, so this is the only
+	// prompt emission they would get — and because both turn boundaries stall
+	// while anyone is disconnected, what they missed is bounded to this state,
+	// all of which the restatement describes.
+	restateGame(instance)
+
 	return nil
 }

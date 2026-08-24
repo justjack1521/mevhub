@@ -10,11 +10,17 @@ import (
 
 const (
 	StateTickPeriod = time.Millisecond * 250
+	// StateRestatePeriod bounds how long a client can stay wrong. The game
+	// restates itself in full at least this often, so a notification lost
+	// anywhere between here and the client's socket repairs itself without the
+	// client having to notice, ask, or be correct about anything.
+	StateRestatePeriod = time.Second * 5
 	// DisconnectGracePeriod bounds how long a disconnected player's seat is
-	// held before the game loop evicts them. The application layer's client
-	// reaper uses the same window; the domain deadline is the authoritative
-	// backstop that guarantees a turn-boundary stall always lifts.
-	DisconnectGracePeriod = time.Minute * 3
+	// held before the game loop evicts them, and so how long a turn boundary
+	// stalls for a player who is never coming back. The application layer's
+	// client reaper uses the same window; the domain deadline is the
+	// authoritative backstop that guarantees the stall always lifts.
+	DisconnectGracePeriod = time.Second * 30
 )
 
 var (
@@ -44,9 +50,13 @@ type LiveGameInstance struct {
 	PartyOptions  PartyInstanceOptions
 	// LastEnemyHP holds the most recently resolved enemy HP consensus so a
 	// reconnecting player can be re-synced with the current enemy state. The
-	// consensus is disabled, so nothing writes this and the sync snapshot
-	// carries no enemies — reconnecting clients source enemy HP themselves.
+	// consensus is disabled, so nothing writes this and the restatement
+	// carries no enemies — clients source enemy HP themselves.
 	LastEnemyHP []EnemyHP
+	// LastSyncAt is when the game last restated itself in full. Read and
+	// written only inside the single-writer loop, so it needs no
+	// synchronisation of its own.
+	LastSyncAt time.Time
 
 	ended    atomic.Bool
 	done     chan struct{}
@@ -213,9 +223,10 @@ func (game *LiveGameInstance) Run() {
 // SendChange never blocks past shutdown: a change no consumer will drain is
 // dropped once the game is stopped.
 //
-// It stays blocking by design. Dropping a change here would put it beyond the
-// reach of the replay log as well as the wire, turning a stall into a hole no
-// catch-up could ever fill.
+// It stays blocking by design. A dropped change is a notification no client
+// ever sees, and while the next restatement would eventually paper over the
+// resulting divergence, dropping under load is how a brief publisher stall
+// turns into every client being wrong at once.
 func (game *LiveGameInstance) SendChange(change Change) {
 	select {
 	case game.ChangeChannel <- change:

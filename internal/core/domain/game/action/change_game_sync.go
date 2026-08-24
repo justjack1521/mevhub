@@ -39,32 +39,36 @@ type GameSyncParty struct {
 	Players    []GameSyncPlayer
 }
 
-// GameStateSyncChange is a full snapshot of the live game state targeted at a
-// single player (TargetPlayerID), used to re-sync a player who has reconnected
-// after their grace period. It is delivered only to the target, not broadcast.
+// GameStateSyncChange restates the whole of the live game state and is
+// broadcast to every player. It carries no history: the game holds a roster,
+// each player's queued actions and flags, the phase and the turn timer, and
+// that set fully describes every notification a client could have missed. A
+// client that lost one therefore does not need it resent — it needs this.
 type GameStateSyncChange struct {
 	InstanceID      uuid.UUID
-	TargetPlayerID  uuid.UUID
 	Phase           GameSyncPhase
 	TurnRemainingMs int64
 	Parties         []GameSyncParty
 	Enemies         []game.EnemyHP
 }
 
-// NewGameStateSyncChange builds a snapshot from the live instance. It must be
-// called from inside the game's single-writer loop (an Action or State), which
-// is the only context where the aggregate may be read.
-func NewGameStateSyncChange(instance *game.LiveGameInstance, target uuid.UUID) *GameStateSyncChange {
+// NewGameStateSyncChange builds the restatement from the live instance. It must
+// be called from inside the game's single-writer loop (an Action or State),
+// which is the only context where the aggregate may be read.
+func NewGameStateSyncChange(instance *game.LiveGameInstance) *GameStateSyncChange {
 
-	// Copy: the snapshot crosses the change channel to the publisher
+	// Copy: the restatement crosses the change channel to the publisher
 	// goroutine while the loop may resolve a new consensus into LastEnemyHP.
 	var enemies = make([]game.EnemyHP, len(instance.LastEnemyHP))
 	copy(enemies, instance.LastEnemyHP)
 
 	var change = &GameStateSyncChange{
-		InstanceID:     instance.InstanceID,
-		TargetPlayerID: target,
-		Enemies:        enemies,
+		InstanceID: instance.InstanceID,
+		Enemies:    enemies,
+		// -1 is the established "no timer" signal, and it is the correct
+		// default for every phase that is not a timed player turn. Leaving the
+		// zero value here would report 0ms, which reads as "already over".
+		TurnRemainingMs: -1,
 	}
 
 	switch state := instance.State.(type) {
@@ -76,11 +80,9 @@ func NewGameStateSyncChange(instance *game.LiveGameInstance, target uuid.UUID) *
 				remaining = 0
 			}
 			change.TurnRemainingMs = remaining.Milliseconds()
-		} else {
-			// TurnDuration == 0 means the turn never expires; 0ms would read
-			// as "already over", so signal "no timer" instead.
-			change.TurnRemainingMs = -1
 		}
+		// TurnDuration == 0 means the turn never expires, so the -1 default
+		// stands.
 	case *EnemyTurnState:
 		change.Phase = GameSyncPhaseEnemyTurn
 	case *PendingState:

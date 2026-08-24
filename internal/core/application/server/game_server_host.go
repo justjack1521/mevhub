@@ -10,7 +10,12 @@ import (
 	"time"
 )
 
-const gameServerHostReapCheckPeriod = time.Second * 30
+// gameServerHostReapCheckPeriod is how often expired clients are claimed. It
+// bounds how far past game.DisconnectGracePeriod a reap can land, so it wants to
+// stay well under that window: at 30s against a 30s grace, eviction was anywhere
+// from 30s to 60s. The domain evicts precisely on its own 250ms tick regardless
+// — this only governs session cleanup.
+const gameServerHostReapCheckPeriod = time.Second * 10
 
 type GameServerHost struct {
 	games      map[uuid.UUID]*GameServer

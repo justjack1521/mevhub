@@ -154,6 +154,7 @@ func (s *EnemyTurnState) resolve(instance *game.LiveGameInstance) {
 func (s *EnemyTurnState) Update(instance *game.LiveGameInstance, t time.Time) {
 
 	evictExpiredDisconnectedPlayers(instance, t)
+	restateGamePeriodically(instance, t)
 
 	// All players gone (left or evicted): end the game so the host can
 	// reclaim it, rather than idling here forever.

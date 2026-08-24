@@ -32,10 +32,10 @@ type GameServer struct {
 	ChangeHandler ChangeHandler
 	ErrorHandler  ErrorHandler
 	errorCount    atomic.Int64
-	// notifications holds every broadcast this game has published, so a client
-	// that missed some can ask for them back. It has its own lock; see
-	// notificationLog.
-	notifications notificationLog
+	// sequence numbers this game's broadcasts so a client can tell that it lost
+	// one. Nothing resends by sequence — the game restates itself instead — so
+	// this exists purely so loss is measurable rather than silent.
+	sequence atomic.Uint64
 }
 
 // ClaimExpiredClients returns the channels whose grace period has elapsed and

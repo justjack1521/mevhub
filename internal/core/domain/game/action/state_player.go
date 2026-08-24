@@ -38,6 +38,7 @@ func (s *PlayerTurnState) Expired(t time.Time) bool {
 func (s *PlayerTurnState) Update(instance *game.LiveGameInstance, t time.Time) {
 
 	evictExpiredDisconnectedPlayers(instance, t)
+	restateGamePeriodically(instance, t)
 
 	// An abandoned game must end, not spin: with zero players the ready count
 	// comparison below would be trivially true and bounce this game between

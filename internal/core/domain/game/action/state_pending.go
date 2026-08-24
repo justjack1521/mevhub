@@ -33,6 +33,7 @@ func NewPendingState(instance *game.LiveGameInstance) *PendingState {
 func (s *PendingState) Update(instance *game.LiveGameInstance, t time.Time) {
 
 	evictExpiredDisconnectedPlayers(instance, t)
+	restateGamePeriodically(instance, t)
 
 	var expired = s.Expired(t)
 
