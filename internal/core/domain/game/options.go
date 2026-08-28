@@ -28,5 +28,10 @@ type InstanceOptions struct {
 	MaxPlayerCount     int
 	MaxRunTime         time.Duration
 	PlayerTurnDuration time.Duration
-	Restrictions       []lobby.PartySlotRestriction
+	// DeadPlayerKickDuration is how long a player may stay dead with no revive
+	// before they are kicked from the game. Deliberately left zero for now (no
+	// kick): the quest tier data does not carry it yet, so the factory never
+	// populates it. The proto and read-model round trip carry it fine.
+	DeadPlayerKickDuration time.Duration
+	Restrictions           []lobby.PartySlotRestriction
 }

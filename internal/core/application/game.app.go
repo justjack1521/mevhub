@@ -29,6 +29,9 @@ type GameApplicationCommands struct {
 	DequeueAction     DequeueActionCommandHandler
 	LockAction        LockActionCommandHandler
 	SubmitHPConsensus SubmitHPConsensusCommandHandler
+	PlayerDeath       PlayerDeathCommandHandler
+	PlayerRevive      PlayerReviveCommandHandler
+	PlayerReviveClaim PlayerReviveClaimCommandHandler
 }
 
 type GameApplicationTranslators struct {
@@ -58,6 +61,9 @@ func NewGameApplication(core *CoreApplication) *GameApplication {
 		DequeueAction:     command.NewDequeueActionCommandHandler(core.data.Sessions, svr),
 		LockAction:        command.NewLockActionCommandHandler(core.data.Sessions, svr),
 		SubmitHPConsensus: command.NewSubmitHPConsensusCommandHandler(core.data.Sessions, svr),
+		PlayerDeath:       command.NewPlayerDeathCommandHandler(core.data.Sessions, svr),
+		PlayerRevive:      command.NewPlayerReviveCommandHandler(core.data.Sessions, svr),
+		PlayerReviveClaim: command.NewPlayerReviveClaimCommandHandler(core.data.Sessions, svr),
 	}
 
 	application.Translators = &GameApplicationTranslators{
@@ -85,5 +91,8 @@ type EnqueueActionCommandHandler decorator.CommandHandler[command.Context, *comm
 type DequeueActionCommandHandler decorator.CommandHandler[command.Context, *command.DequeueActionCommand]
 type LockActionCommandHandler decorator.CommandHandler[command.Context, *command.LockActionCommand]
 type SubmitHPConsensusCommandHandler decorator.CommandHandler[command.Context, *command.SubmitHPConsensusCommand]
+type PlayerDeathCommandHandler decorator.CommandHandler[command.Context, *command.PlayerDeathCommand]
+type PlayerReviveCommandHandler decorator.CommandHandler[command.Context, *command.PlayerReviveCommand]
+type PlayerReviveClaimCommandHandler decorator.CommandHandler[command.Context, *command.PlayerReviveClaimCommand]
 
 type GameSummaryQueryHandler decorator.QueryHandler[query.Context, query.GameSummaryQuery, game.Summary]

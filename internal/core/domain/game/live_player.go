@@ -21,15 +21,43 @@ type LivePlayer struct {
 	LastAction     time.Time
 	Disconnected   bool
 	DisconnectTime time.Time
+	// Dead marks a player who has fallen in battle. A dead player cannot act
+	// (enqueue/dequeue) but stays in the game and may be revived — by another
+	// player or by themselves. DeathTime anchors the kick sweep: a player dead
+	// longer than the game's DeadPlayerKickDuration with no revive is removed.
+	Dead      bool
+	DeathTime time.Time
+	// ReviveClaimSource and ReviveClaimExpiry form the decaying revive claim.
+	// Reviving costs items consumed through a separate service (BattleRevive on
+	// MeviusGameService), so before consuming anything a client must claim the
+	// exclusive right to revive this corpse; a second claimant is denied and
+	// spends nothing. The claim decays at ReviveClaimExpiry so an abandoned
+	// claim (claimant crashed, item purchase failed) never leaves a corpse
+	// unrevivable. The claim is advisory: revive itself does not require it,
+	// because rejecting a late revive cannot un-spend anyone's item.
+	ReviveClaimSource uuid.UUID
+	ReviveClaimExpiry time.Time
+}
+
+// HasActiveReviveClaim reports whether an unexpired revive claim stands on this
+// player at time t. An expired claim is simply not active — nothing needs to
+// sweep it; the next claim attempt overwrites it.
+func (p *LivePlayer) HasActiveReviveClaim(t time.Time) bool {
+	return uuid.Equal(p.ReviveClaimSource, uuid.Nil) == false && t.Before(p.ReviveClaimExpiry)
 }
 
 var (
 	ErrPlayerActionsLocked = errors.New("player actions locked")
 	ErrPlayerActionsFull   = errors.New("player actions full")
 	ErrPlayerActionsEmpty  = errors.New("player actions empty")
+	ErrPlayerDead          = errors.New("player is dead")
 )
 
 func (p *LivePlayer) CanEnqueueAction() error {
+
+	if p.Dead {
+		return ErrPlayerDead
+	}
 
 	if p.ActionsLocked {
 		return ErrPlayerActionsLocked
@@ -43,6 +71,11 @@ func (p *LivePlayer) CanEnqueueAction() error {
 }
 
 func (p *LivePlayer) CanDequeueAction() error {
+
+	if p.Dead {
+		return ErrPlayerDead
+	}
+
 	if p.ActionsLocked {
 		return ErrPlayerActionsLocked
 	}

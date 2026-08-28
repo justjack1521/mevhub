@@ -33,6 +33,8 @@ func NewPendingState(instance *game.LiveGameInstance) *PendingState {
 func (s *PendingState) Update(instance *game.LiveGameInstance, t time.Time) {
 
 	evictExpiredDisconnectedPlayers(instance, t)
+	evictExpiredDeadPlayers(instance, t)
+	expireLapsedReviveClaims(instance, t)
 	restateGamePeriodically(instance, t)
 
 	var expired = s.Expired(t)
@@ -46,7 +48,14 @@ func (s *PendingState) Update(instance *game.LiveGameInstance, t time.Time) {
 		return
 	}
 
-	if instance.GetReadyPlayerCount() == instance.GetPlayerCount() {
+	// Alive-scoped like the turn boundaries: a death should not be reportable
+	// before the battle starts, but if one ever is, the game must neither wait
+	// on the corpse nor start with nobody able to act.
+	if instance.GetAlivePlayerCount() == 0 {
+		return
+	}
+
+	if instance.AllAlivePlayersReady() {
 		transitionTo(instance, NewPlayerTurnState(instance))
 	}
 }

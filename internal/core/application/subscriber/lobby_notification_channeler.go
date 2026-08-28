@@ -43,6 +43,7 @@ func NewLobbyNotificationChanneler(publisher *mevent.Publisher, client *redis.Cl
 		mevent.ApplicationShutdownEvent{},
 		lobby.InstanceDeletedEvent{},
 		lobby.WatcherAddedEvent{},
+		lobby.WatcherRemovedEvent{},
 		lobby.ParticipantDeletedEvent{},
 	}
 	publisher.Subscribe(manager, channels...)
@@ -57,6 +58,8 @@ func (s *LobbyNotificationChanneler) Notify(event mevent.Event) {
 		s.HandleDelete(actual)
 	case lobby.WatcherAddedEvent:
 		s.HandleWatcherAdd(actual)
+	case lobby.WatcherRemovedEvent:
+		s.HandleWatcherRemove(actual)
 	case lobby.ParticipantDeletedEvent:
 		s.HandleParticipantDelete(actual)
 	case mevent.ApplicationShutdownEvent:
@@ -157,6 +160,17 @@ func (s *LobbyNotificationChanneler) HandleParticipantDelete(event lobby.Partici
 	}
 	if err := s.repository.DeleteListener(event.Context(), event.LobbyID(), event.UserID()); err != nil {
 		return
+	}
+}
+
+// HandleWatcherRemove deletes the listener unconditionally — deliberately not
+// mirroring HandleWatcherAdd's channel-exists guard. The listener set lives in
+// Redis and is shared across instances, so the deletion matters even when this
+// process does not host the lobby's channel; and if the lobby is already gone,
+// deleting from a missing set is a harmless no-op.
+func (s *LobbyNotificationChanneler) HandleWatcherRemove(event lobby.WatcherRemovedEvent) {
+	if err := s.repository.DeleteListener(event.Context(), event.LobbyID(), event.UserID()); err != nil {
+		s.logger.With("lobby.id", event.LobbyID().String(), "error", err.Error()).Error("failed to remove lobby watcher listener")
 	}
 }
 

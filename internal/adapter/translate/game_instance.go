@@ -23,10 +23,11 @@ func (f gameInstanceTranslator) Marshall(data *game.Instance) (out *protomulti.P
 		Seed:     int32(data.Seed),
 		State:    int32(data.State),
 		Options: &protomulti.ProtoGameInstanceOptions{
-			MinimumPlayerLevel: int32(data.Options.MinimumPlayerLevel),
-			MaxRunTime:         int64(data.Options.MaxRunTime),
-			PlayerTurnDuration: int64(data.Options.PlayerTurnDuration),
-			MaxPlayerCount:     int32(data.Options.MaxPlayerCount),
+			MinimumPlayerLevel:     int32(data.Options.MinimumPlayerLevel),
+			MaxRunTime:             int64(data.Options.MaxRunTime),
+			PlayerTurnDuration:     int64(data.Options.PlayerTurnDuration),
+			MaxPlayerCount:         int32(data.Options.MaxPlayerCount),
+			DeadPlayerKickDuration: int64(data.Options.DeadPlayerKickDuration),
 		},
 		RegisteredAt: data.RegisteredAt.Unix(),
 	}
@@ -43,10 +44,11 @@ func (f gameInstanceTranslator) Unmarshall(data *protomulti.ProtoGameInstance) (
 		Seed:     int(data.Seed),
 		State:    game.InstanceState(data.State),
 		Options: &game.InstanceOptions{
-			MinimumPlayerLevel: int(data.Options.MinimumPlayerLevel),
-			MaxRunTime:         time.Duration(data.Options.MaxRunTime),
-			PlayerTurnDuration: time.Duration(data.Options.PlayerTurnDuration),
-			MaxPlayerCount:     int(data.Options.MaxPlayerCount),
+			MinimumPlayerLevel:     int(data.Options.MinimumPlayerLevel),
+			MaxRunTime:             time.Duration(data.Options.MaxRunTime),
+			PlayerTurnDuration:     time.Duration(data.Options.PlayerTurnDuration),
+			MaxPlayerCount:         int(data.Options.MaxPlayerCount),
+			DeadPlayerKickDuration: time.Duration(data.Options.DeadPlayerKickDuration),
 		},
 		RegisteredAt: time.Unix(data.RegisteredAt, 0),
 	}

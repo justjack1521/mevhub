@@ -27,7 +27,12 @@ type changeMarshaller struct {
 	playerDequeue    translate.GamePlayerDequeueActionChangeMarshaller
 	playerDisconnect translate.GamePlayerDisconnectChangeMarshaller
 	playerReconnect  translate.GamePlayerReconnectChangeMarshaller
+	playerDeath      translate.GamePlayerDeathChangeMarshaller
+	playerRevive     translate.GamePlayerReviveChangeMarshaller
 	gameSync         translate.GameStateSyncChangeMarshaller
+
+	playerReviveClaim       translate.GamePlayerReviveClaimChangeMarshaller
+	playerReviveClaimExpire translate.GamePlayerReviveClaimExpireChangeMarshaller
 }
 
 type ChangeHandlerPublisher struct {
@@ -50,7 +55,12 @@ func NewChangeHandlerPublisher(publisher NotificationPublisher, eventPublisher *
 			playerDequeue:    translate.NewGamePlayerDequeueActionChangeMarshaller(),
 			playerDisconnect: translate.NewGamePlayerDisconnectChangeMarshaller(),
 			playerReconnect:  translate.NewGamePlayerReconnectChangeMarshaller(),
+			playerDeath:      translate.NewGamePlayerDeathChangeMarshaller(),
+			playerRevive:     translate.NewGamePlayerReviveChangeMarshaller(),
 			gameSync:         translate.NewGameStateSyncChangeMarshaller(),
+
+			playerReviveClaim:       translate.NewGamePlayerReviveClaimChangeMarshaller(),
+			playerReviveClaimExpire: translate.NewGamePlayerReviveClaimExpireChangeMarshaller(),
 		},
 	}
 }
@@ -88,6 +98,14 @@ func (c *ChangeHandlerPublisher) Handle(svr *GameServer, change game.Change) err
 		// Internal bookkeeping only; clients learn party composition from the
 		// lobby, which is where it has always actually come from.
 		return nil
+	case *action.PlayerDeathChange:
+		return c.HandlePlayerDeathChange(svr, actual)
+	case *action.PlayerReviveChange:
+		return c.HandlePlayerReviveChange(svr, actual)
+	case *action.PlayerReviveClaimChange:
+		return c.HandlePlayerReviveClaimChange(svr, actual)
+	case *action.PlayerReviveClaimExpireChange:
+		return c.HandlePlayerReviveClaimExpireChange(svr, actual)
 	default:
 		return ErrUnhandledGameChange(change)
 	}
@@ -206,6 +224,50 @@ func (c *ChangeHandlerPublisher) HandlePlayerReconnectChange(svr *GameServer, ch
 		return err
 	}
 	return c.publish(svr, protomulti.MultiGameNotificationType_GAME_NOTIFY_PLAYER_RECONNECT, message)
+}
+
+// HandlePlayerDeathChange broadcasts a death notification. The death itself is
+// client-reported; this fans it out to the rest of the game.
+func (c *ChangeHandlerPublisher) HandlePlayerDeathChange(svr *GameServer, change *action.PlayerDeathChange) error {
+	message, err := c.marshaller.playerDeath.Marshall(change)
+	if err != nil {
+		return err
+	}
+	return c.publish(svr, protomulti.MultiGameNotificationType_GAME_NOTIFY_PLAYER_DEATH, message)
+}
+
+// HandlePlayerReviveChange broadcasts a revive notification, carrying who
+// performed the revive alongside who rose.
+func (c *ChangeHandlerPublisher) HandlePlayerReviveChange(svr *GameServer, change *action.PlayerReviveChange) error {
+	message, err := c.marshaller.playerRevive.Marshall(change)
+	if err != nil {
+		return err
+	}
+	return c.publish(svr, protomulti.MultiGameNotificationType_GAME_NOTIFY_PLAYER_REVIVE, message)
+}
+
+// HandlePlayerReviveClaimChange broadcasts a granted (or refreshed) revive
+// claim so every client can mark the target as "being revived" and stop
+// offering the revive. The grant itself was already answered synchronously to
+// the claimant; this is for everyone else.
+func (c *ChangeHandlerPublisher) HandlePlayerReviveClaimChange(svr *GameServer, change *action.PlayerReviveClaimChange) error {
+	message, err := c.marshaller.playerReviveClaim.Marshall(change)
+	if err != nil {
+		return err
+	}
+	return c.publish(svr, protomulti.MultiGameNotificationType_GAME_NOTIFY_PLAYER_REVIVE_CLAIM, message)
+}
+
+// HandlePlayerReviveClaimExpireChange broadcasts a claim that decayed without
+// its revive landing, so clients clear the indicator and the corpse reads as
+// claimable again. A claim consumed by a revive emits the revive notification
+// instead, never this.
+func (c *ChangeHandlerPublisher) HandlePlayerReviveClaimExpireChange(svr *GameServer, change *action.PlayerReviveClaimExpireChange) error {
+	message, err := c.marshaller.playerReviveClaimExpire.Marshall(change)
+	if err != nil {
+		return err
+	}
+	return c.publish(svr, protomulti.MultiGameNotificationType_GAME_NOTIFY_PLAYER_REVIVE_CLAIM_EXPIRE, message)
 }
 
 func (c *ChangeHandlerPublisher) HandlePlayerRemoveChange(svr *GameServer, change *action.PlayerRemoveChange) error {

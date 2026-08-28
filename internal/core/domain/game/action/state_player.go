@@ -38,6 +38,8 @@ func (s *PlayerTurnState) Expired(t time.Time) bool {
 func (s *PlayerTurnState) Update(instance *game.LiveGameInstance, t time.Time) {
 
 	evictExpiredDisconnectedPlayers(instance, t)
+	evictExpiredDeadPlayers(instance, t)
+	expireLapsedReviveClaims(instance, t)
 	restateGamePeriodically(instance, t)
 
 	// An abandoned game must end, not spin: with zero players the ready count
@@ -48,7 +50,16 @@ func (s *PlayerTurnState) Update(instance *game.LiveGameInstance, t time.Time) {
 		return
 	}
 
-	var ready = instance.GetActionLockedPlayerCount() == instance.GetPlayerCount()
+	// Everyone dead: hold here rather than churn turns — with no living player
+	// the all-alive-locked condition is vacuously true and the game would
+	// bounce between turn states forever. Any revive (including a self-revive)
+	// lifts the hold; when a kick duration is configured, the death sweep
+	// eventually empties the game into the abandoned check above.
+	if instance.GetAlivePlayerCount() == 0 {
+		return
+	}
+
+	var ready = instance.AllAlivePlayersLocked()
 	var expired = s.Expired(t)
 
 	if ready || expired {
@@ -65,6 +76,11 @@ func (s *PlayerTurnState) Update(instance *game.LiveGameInstance, t time.Time) {
 
 			for _, party := range instance.Parties {
 				for _, player := range party.Players {
+					// A dead player is exempt from locking, not force-locked:
+					// they cannot act, and the enemy turn skips them anyway.
+					if player.Dead {
+						continue
+					}
 					if player.ActionsLocked == false {
 						player.ActionLockIndex = party.GetActionLockedPlayerCount()
 						player.ActionsLocked = true

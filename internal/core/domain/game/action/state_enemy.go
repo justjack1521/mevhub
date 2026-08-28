@@ -31,6 +31,12 @@ func NewEnemyTurnState(instance *game.LiveGameInstance) *EnemyTurnState {
 			// Clearing Ready arms the turn's exit condition: each client sets it
 			// again once it has played the enemy turn out.
 			player.Ready = false
+			// A dead player contributes no actions and, if they never locked,
+			// still holds the zero-value lock index — using it would overwrite
+			// whichever living player genuinely locked at that index.
+			if player.Dead {
+				continue
+			}
 			// Copy the queue: the live player's Actions slice keeps being
 			// mutated after this state captures it.
 			var actions = make([]*game.PlayerAction, len(player.Actions))
@@ -154,6 +160,8 @@ func (s *EnemyTurnState) resolve(instance *game.LiveGameInstance) {
 func (s *EnemyTurnState) Update(instance *game.LiveGameInstance, t time.Time) {
 
 	evictExpiredDisconnectedPlayers(instance, t)
+	evictExpiredDeadPlayers(instance, t)
+	expireLapsedReviveClaims(instance, t)
 	restateGamePeriodically(instance, t)
 
 	// All players gone (left or evicted): end the game so the host can
@@ -167,10 +175,18 @@ func (s *EnemyTurnState) Update(instance *game.LiveGameInstance, t time.Time) {
 		return
 	}
 
-	// The enemy turn is a client-side interlude: it ends when every present
+	// Everyone dead: hold the hand-off, mirroring the player turn's hold — the
+	// all-alive-ready condition below is vacuously true with no living player
+	// and would bounce the game between turn states forever. A revive lifts it.
+	if instance.GetAlivePlayerCount() == 0 {
+		return
+	}
+
+	// The enemy turn is a client-side interlude: it ends when every living
 	// player reports itself ready again (NewEnemyTurnState cleared the flag on
 	// entry), or when the timeout lifts a turn a silent client would stall.
-	if instance.GetReadyPlayerCount() < instance.GetPlayerCount() && t.Sub(s.startTime) <= enemyTurnTimeout {
+	// Dead players are exempt — the turn must not wait on a corpse.
+	if instance.AllAlivePlayersReady() == false && t.Sub(s.startTime) <= enemyTurnTimeout {
 		return
 	}
 

@@ -21,6 +21,12 @@ const (
 	// client reaper uses the same window; the domain deadline is the
 	// authoritative backstop that guarantees the stall always lifts.
 	DisconnectGracePeriod = time.Second * 30
+	// ReviveClaimDuration is how long a granted revive claim holds before it
+	// decays. It must comfortably cover the claimant's round trip to consume
+	// the revive item (BattleRevive on the game service) plus the PlayerRevive
+	// call back here, but stay short enough that an abandoned claim only
+	// briefly blocks other would-be revivers.
+	ReviveClaimDuration = time.Second * 10
 )
 
 var (
@@ -48,6 +54,11 @@ type LiveGameInstance struct {
 	EndedAt       time.Time
 	MaxPartyCount int
 	PartyOptions  PartyInstanceOptions
+	// DeadPlayerKickDuration is how long a player may stay dead with no revive
+	// before the death sweep removes them from the game. Zero disables the
+	// kick, which is the current configuration everywhere: nothing populates
+	// the option yet, so dead players are never kicked.
+	DeadPlayerKickDuration time.Duration
 	// LastEnemyHP holds the most recently resolved enemy HP consensus so a
 	// reconnecting player can be re-synced with the current enemy state. The
 	// consensus is disabled, so nothing writes this and the restatement
@@ -65,13 +76,14 @@ type LiveGameInstance struct {
 
 func NewLiveGameInstance(source *Instance) *LiveGameInstance {
 	var game = &LiveGameInstance{
-		InstanceID:    source.SysID,
-		ActionChannel: make(chan Action, 64),
-		ChangeChannel: make(chan Change, 64),
-		ErrorChannel:  make(chan error, 16),
-		Parties:       make(map[uuid.UUID]*LiveParty),
-		GameDuration:  source.Options.MaxRunTime,
-		MaxPartyCount: source.Options.MaxPartyCount,
+		InstanceID:             source.SysID,
+		ActionChannel:          make(chan Action, 64),
+		ChangeChannel:          make(chan Change, 64),
+		ErrorChannel:           make(chan error, 16),
+		Parties:                make(map[uuid.UUID]*LiveParty),
+		GameDuration:           source.Options.MaxRunTime,
+		MaxPartyCount:          source.Options.MaxPartyCount,
+		DeadPlayerKickDuration: source.Options.DeadPlayerKickDuration,
 		PartyOptions: PartyInstanceOptions{
 			MaxPlayerCount:     source.Options.MaxPlayerCount,
 			PlayerTurnDuration: source.Options.PlayerTurnDuration,
@@ -181,6 +193,47 @@ func (game *LiveGameInstance) HasDisconnectedPlayers() bool {
 		}
 	}
 	return false
+}
+
+func (game *LiveGameInstance) GetAlivePlayerCount() int {
+	var total = 0
+	for _, party := range game.Parties {
+		for _, player := range party.Players {
+			if player.Dead == false {
+				total++
+			}
+		}
+	}
+	return total
+}
+
+// AllAlivePlayersLocked reports whether every living player has locked in
+// their action queue. Dead players are exempt: they cannot act, so a turn
+// boundary must never wait on them. Vacuously true with no living players —
+// callers guard on GetAlivePlayerCount first.
+func (game *LiveGameInstance) AllAlivePlayersLocked() bool {
+	for _, party := range game.Parties {
+		for _, player := range party.Players {
+			if player.Dead == false && player.ActionsLocked == false {
+				return false
+			}
+		}
+	}
+	return true
+}
+
+// AllAlivePlayersReady reports whether every living player has flagged itself
+// ready. Dead players are exempt for the same reason as AllAlivePlayersLocked,
+// and it is likewise vacuously true with no living players.
+func (game *LiveGameInstance) AllAlivePlayersReady() bool {
+	for _, party := range game.Parties {
+		for _, player := range party.Players {
+			if player.Dead == false && player.Ready == false {
+				return false
+			}
+		}
+	}
+	return true
 }
 
 func (game *LiveGameInstance) GetActionLockedPlayerCount() int {

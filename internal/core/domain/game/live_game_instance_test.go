@@ -103,6 +103,23 @@ func TestDequeueAction_ActionsLocked_ReturnsError(t *testing.T) {
 	assert.ErrorIs(t, err, game.ErrPlayerActionsLocked)
 }
 
+// --- LivePlayer: death ---
+
+func TestEnqueueAction_DeadPlayer_ReturnsError(t *testing.T) {
+	p := newLivePlayer(3)
+	p.Dead = true
+	err := p.EnqueueAction(&game.PlayerAction{})
+	assert.ErrorIs(t, err, game.ErrPlayerDead)
+}
+
+func TestDequeueAction_DeadPlayer_ReturnsError(t *testing.T) {
+	p := newLivePlayer(3)
+	_ = p.EnqueueAction(&game.PlayerAction{})
+	p.Dead = true
+	err := p.DequeueAction()
+	assert.ErrorIs(t, err, game.ErrPlayerDead)
+}
+
 // --- LiveParty ---
 
 func TestLiveParty_PlayerExists_ReturnsFalseForUnknown(t *testing.T) {
@@ -198,6 +215,85 @@ func TestLiveGameInstance_RemovePlayer_NotFound_ReturnsError(t *testing.T) {
 	assert.Error(t, err)
 }
 
+func TestLiveGameInstance_GetAlivePlayerCount_ExcludesDead(t *testing.T) {
+	g := newLiveGame(t)
+	party := newLiveParty(4)
+	alive := newLivePlayer(3)
+	dead := newLivePlayer(3)
+	dead.Dead = true
+	party.Players[alive.PlayerID] = alive
+	party.Players[dead.PlayerID] = dead
+	g.Parties[party.PartyID] = party
+
+	assert.Equal(t, 2, g.GetPlayerCount())
+	assert.Equal(t, 1, g.GetAlivePlayerCount())
+}
+
+func TestLiveGameInstance_AllAlivePlayersLocked_DeadPlayerExempt(t *testing.T) {
+	g := newLiveGame(t)
+	party := newLiveParty(4)
+	locked := newLivePlayer(3)
+	locked.ActionsLocked = true
+	dead := newLivePlayer(3)
+	dead.Dead = true
+	party.Players[locked.PlayerID] = locked
+	party.Players[dead.PlayerID] = dead
+	g.Parties[party.PartyID] = party
+
+	assert.True(t, g.AllAlivePlayersLocked())
+}
+
+func TestLiveGameInstance_AllAlivePlayersLocked_UnlockedAlivePlayerBlocks(t *testing.T) {
+	g := newLiveGame(t)
+	party := newLiveParty(4)
+	locked := newLivePlayer(3)
+	locked.ActionsLocked = true
+	unlocked := newLivePlayer(3)
+	party.Players[locked.PlayerID] = locked
+	party.Players[unlocked.PlayerID] = unlocked
+	g.Parties[party.PartyID] = party
+
+	assert.False(t, g.AllAlivePlayersLocked())
+}
+
+func TestLiveGameInstance_AllAlivePlayersReady_DeadPlayerExempt(t *testing.T) {
+	g := newLiveGame(t)
+	party := newLiveParty(4)
+	ready := newLivePlayer(3)
+	ready.Ready = true
+	dead := newLivePlayer(3)
+	dead.Dead = true
+	party.Players[ready.PlayerID] = ready
+	party.Players[dead.PlayerID] = dead
+	g.Parties[party.PartyID] = party
+
+	assert.True(t, g.AllAlivePlayersReady())
+}
+
+func TestLiveGameInstance_AllAlivePlayersReady_UnreadyAlivePlayerBlocks(t *testing.T) {
+	g := newLiveGame(t)
+	party := newLiveParty(4)
+	ready := newLivePlayer(3)
+	ready.Ready = true
+	unready := newLivePlayer(3)
+	party.Players[ready.PlayerID] = ready
+	party.Players[unready.PlayerID] = unready
+	g.Parties[party.PartyID] = party
+
+	assert.False(t, g.AllAlivePlayersReady())
+}
+
+func TestNewLiveGameInstance_CarriesDeadPlayerKickDuration(t *testing.T) {
+	inst := &game.Instance{
+		SysID: uuid.NewV4(),
+		Options: &game.InstanceOptions{
+			DeadPlayerKickDuration: time.Second * 45,
+		},
+	}
+	g := game.NewLiveGameInstance(inst)
+	assert.Equal(t, time.Second*45, g.DeadPlayerKickDuration)
+}
+
 func TestLiveGameInstance_GetReadyPlayerCount_SumsAcrossParties(t *testing.T) {
 	g := newLiveGame(t)
 
@@ -212,4 +308,25 @@ func TestLiveGameInstance_GetReadyPlayerCount_SumsAcrossParties(t *testing.T) {
 	}
 
 	assert.Equal(t, 2, g.GetReadyPlayerCount())
+}
+
+func TestLivePlayer_HasActiveReviveClaim_Unclaimed_False(t *testing.T) {
+	p := newLivePlayer(3)
+	assert.False(t, p.HasActiveReviveClaim(time.Now()))
+}
+
+func TestLivePlayer_HasActiveReviveClaim_WithinWindow_True(t *testing.T) {
+	now := time.Now()
+	p := newLivePlayer(3)
+	p.ReviveClaimSource = uuid.NewV4()
+	p.ReviveClaimExpiry = now.Add(game.ReviveClaimDuration)
+	assert.True(t, p.HasActiveReviveClaim(now))
+}
+
+func TestLivePlayer_HasActiveReviveClaim_Expired_False(t *testing.T) {
+	now := time.Now()
+	p := newLivePlayer(3)
+	p.ReviveClaimSource = uuid.NewV4()
+	p.ReviveClaimExpiry = now.Add(-time.Millisecond)
+	assert.False(t, p.HasActiveReviveClaim(now))
 }

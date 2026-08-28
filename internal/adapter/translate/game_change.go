@@ -2,12 +2,17 @@ package translate
 
 import (
 	"github.com/justjack1521/mevium/pkg/genproto/protomulti"
+	uuid "github.com/satori/go.uuid"
 	"mevhub/internal/core/domain/game/action"
 )
 
 type GamePlayerRemoveChangeMarshaller Marshaller[*action.PlayerRemoveChange, *protomulti.GamePlayerRemoveNotification]
 type GamePlayerDisconnectChangeMarshaller Marshaller[*action.PlayerDisconnectChange, *protomulti.GamePlayerDisconnectNotification]
 type GamePlayerReconnectChangeMarshaller Marshaller[*action.PlayerReconnectChange, *protomulti.GamePlayerReconnectNotification]
+type GamePlayerDeathChangeMarshaller Marshaller[*action.PlayerDeathChange, *protomulti.GamePlayerDeathNotification]
+type GamePlayerReviveChangeMarshaller Marshaller[*action.PlayerReviveChange, *protomulti.GamePlayerReviveNotification]
+type GamePlayerReviveClaimChangeMarshaller Marshaller[*action.PlayerReviveClaimChange, *protomulti.GamePlayerReviveClaimNotification]
+type GamePlayerReviveClaimExpireChangeMarshaller Marshaller[*action.PlayerReviveClaimExpireChange, *protomulti.GamePlayerReviveClaimExpireNotification]
 type GamePlayerReadyChangeMarshaller Marshaller[*action.PlayerReadyChange, *protomulti.GamePlayerReadyNotification]
 type GamePlayerEnqueueActionChangeMarshaller Marshaller[*action.PlayerEnqueueActionChange, *protomulti.GameEnqueueActionNotification]
 type GamePlayerDequeueActionChangeMarshaller Marshaller[*action.PlayerDequeueActionChange, *protomulti.GameDequeueActionNotification]
@@ -56,6 +61,66 @@ func (g gamePlayerReconnectChangeMarshaller) Marshall(data *action.PlayerReconne
 	}, nil
 }
 
+type gamePlayerDeathChangeMarshaller struct{}
+
+func NewGamePlayerDeathChangeMarshaller() GamePlayerDeathChangeMarshaller {
+	return gamePlayerDeathChangeMarshaller{}
+}
+
+func (g gamePlayerDeathChangeMarshaller) Marshall(data *action.PlayerDeathChange) (*protomulti.GamePlayerDeathNotification, error) {
+	return &protomulti.GamePlayerDeathNotification{
+		GameId:      data.InstanceID.String(),
+		PartyIndex:  int32(data.PartyIndex),
+		PlayerIndex: int32(data.PartySlot),
+	}, nil
+}
+
+type gamePlayerReviveChangeMarshaller struct{}
+
+func NewGamePlayerReviveChangeMarshaller() GamePlayerReviveChangeMarshaller {
+	return gamePlayerReviveChangeMarshaller{}
+}
+
+func (g gamePlayerReviveChangeMarshaller) Marshall(data *action.PlayerReviveChange) (*protomulti.GamePlayerReviveNotification, error) {
+	return &protomulti.GamePlayerReviveNotification{
+		GameId:         data.InstanceID.String(),
+		PartyIndex:     int32(data.PartyIndex),
+		PlayerIndex:    int32(data.PartySlot),
+		SourcePlayerId: data.SourceID.String(),
+	}, nil
+}
+
+type gamePlayerReviveClaimChangeMarshaller struct{}
+
+func NewGamePlayerReviveClaimChangeMarshaller() GamePlayerReviveClaimChangeMarshaller {
+	return gamePlayerReviveClaimChangeMarshaller{}
+}
+
+func (g gamePlayerReviveClaimChangeMarshaller) Marshall(data *action.PlayerReviveClaimChange) (*protomulti.GamePlayerReviveClaimNotification, error) {
+	return &protomulti.GamePlayerReviveClaimNotification{
+		GameId:         data.InstanceID.String(),
+		PartyIndex:     int32(data.PartyIndex),
+		PlayerIndex:    int32(data.PartySlot),
+		SourcePlayerId: data.SourceID.String(),
+		RemainingMs:    data.Remaining.Milliseconds(),
+	}, nil
+}
+
+type gamePlayerReviveClaimExpireChangeMarshaller struct{}
+
+func NewGamePlayerReviveClaimExpireChangeMarshaller() GamePlayerReviveClaimExpireChangeMarshaller {
+	return gamePlayerReviveClaimExpireChangeMarshaller{}
+}
+
+func (g gamePlayerReviveClaimExpireChangeMarshaller) Marshall(data *action.PlayerReviveClaimExpireChange) (*protomulti.GamePlayerReviveClaimExpireNotification, error) {
+	return &protomulti.GamePlayerReviveClaimExpireNotification{
+		GameId:         data.InstanceID.String(),
+		PartyIndex:     int32(data.PartyIndex),
+		PlayerIndex:    int32(data.PartySlot),
+		SourcePlayerId: data.SourceID.String(),
+	}, nil
+}
+
 type gameStateSyncChangeMarshaller struct{}
 
 func NewGameStateSyncChangeMarshaller() GameStateSyncChangeMarshaller {
@@ -84,7 +149,15 @@ func (g gameStateSyncChangeMarshaller) Marshall(data *action.GameStateSyncChange
 				Locked:       player.Locked,
 				LockIndex:    int32(player.LockIndex),
 				Disconnected: player.Disconnected,
+				Dead:         player.Dead,
 				Actions:      actions,
+			}
+			// Nil marshals as the all-zero uuid string, and the wire contract
+			// for "no claim" is an empty string — so only an active claim is
+			// written at all.
+			if uuid.Equal(player.ReviveClaimSourceID, uuid.Nil) == false {
+				players[j].ReviveClaimSourceId = player.ReviveClaimSourceID.String()
+				players[j].ReviveClaimRemainingMs = player.ReviveClaimRemaining.Milliseconds()
 			}
 		}
 		parties[i] = &protomulti.ProtoGameSyncParty{

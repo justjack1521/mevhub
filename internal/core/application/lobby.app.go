@@ -45,6 +45,7 @@ type LobbyApplicationCommands struct {
 	ParticipantUnready ParticipantUnreadyCommandHandler
 	ParticipantFind    ParticipantFindCommandHandler
 	ParticipantWatch   ParticipantWatchCommandHandler
+	ParticipantUnwatch ParticipantUnwatchCommandHandler
 }
 
 type LobbyApplicationTranslators struct {
@@ -74,6 +75,7 @@ func NewLobbyApplication(core *CoreApplication) *LobbyApplication {
 		LobbyStart:         application.NewLobbyStartCommandHandler(core),
 		LobbyStamp:         application.NewLobbyStampCommandHandler(core),
 		ParticipantWatch:   application.NewParticipantWatchCommandHandler(core),
+		ParticipantUnwatch: application.NewParticipantUnwatchCommandHandler(core),
 		ParticipantJoin:    application.NewParticipantJoinCommandHandler(core),
 		ParticipantLeave:   application.NewParticipantLeaveCommandHandler(core),
 		ParticipantReady:   application.NewParticipantReadyCommandHandler(core),
@@ -143,6 +145,7 @@ type ParticipantReadyCommandHandler decorator.CommandHandler[command.Context, *c
 type ParticipantUnreadyCommandHandler decorator.CommandHandler[command.Context, *command.ParticipantUnreadyCommand]
 type ParticipantFindCommandHandler decorator.CommandHandler[command.Context, *command.ParticipantFindCommand]
 type ParticipantWatchCommandHandler decorator.CommandHandler[command.Context, *command.WatchLobbyCommand]
+type ParticipantUnwatchCommandHandler decorator.CommandHandler[command.Context, *command.UnwatchLobbyCommand]
 
 func (a *LobbyApplication) NewSessionCreateCommandHandler(core *CoreApplication) SessionCreateCommandHandler {
 	var actual = command.NewSessionCreateCommandHandler(core.Services.EventPublisher, core.data.Sessions, core.data.LobbyPlayerSummaries)
@@ -215,6 +218,11 @@ func (a *LobbyApplication) NewParticipantUnreadyCommandHandler(core *CoreApplica
 func (a *LobbyApplication) NewParticipantWatchCommandHandler(core *CoreApplication) ParticipantWatchCommandHandler {
 	var actual = command.NewWatchLobbyCommandHandler(core.Services.EventPublisher)
 	return decorator.NewStandardCommandDecorator[command.Context, *command.WatchLobbyCommand](core.Services.EventPublisher, actual)
+}
+
+func (a *LobbyApplication) NewParticipantUnwatchCommandHandler(core *CoreApplication) ParticipantUnwatchCommandHandler {
+	var actual = command.NewUnwatchLobbyCommandHandler(core.Services.EventPublisher, core.data.Sessions)
+	return decorator.NewStandardCommandDecorator[command.Context, *command.UnwatchLobbyCommand](core.Services.EventPublisher, actual)
 }
 
 func (a *LobbyApplication) NewLobbyStampCommandHandler(core *CoreApplication) LobbyStampCommandHandler {

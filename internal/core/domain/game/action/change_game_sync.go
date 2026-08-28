@@ -14,11 +14,6 @@ const (
 	GameSyncPhaseUnknown GameSyncPhase = iota
 	GameSyncPhasePlayerTurn
 	GameSyncPhaseEnemyTurn
-	// GameSyncPhasePending and GameSyncPhaseEndGame are ahead of the pinned
-	// protomulti.GameSyncPhase enum (proto3 open enums carry them fine); the
-	// proto definition needs the matching values added before clients can
-	// name them. Without these a player syncing during pending or after the
-	// game ended was indistinguishable from a server bug (phase 0, 0ms).
 	GameSyncPhasePending
 	GameSyncPhaseEndGame
 )
@@ -30,7 +25,15 @@ type GameSyncPlayer struct {
 	Locked       bool
 	LockIndex    int
 	Disconnected bool
-	Actions      []*game.PlayerAction
+	Dead         bool
+	// ReviveClaimSourceID is who holds an active revive claim on this player
+	// (nil = none), with ReviveClaimRemaining as the window left. Carried so a
+	// missed claim or expiry notification repairs itself here like any other:
+	// remaining shrinks in each frame and the fields empty once the claim
+	// resolves or decays.
+	ReviveClaimSourceID  uuid.UUID
+	ReviveClaimRemaining time.Duration
+	Actions              []*game.PlayerAction
 }
 
 type GameSyncParty struct {
@@ -91,6 +94,8 @@ func NewGameStateSyncChange(instance *game.LiveGameInstance) *GameStateSyncChang
 		change.Phase = GameSyncPhaseEndGame
 	}
 
+	var now = time.Now().UTC()
+
 	for _, party := range instance.Parties {
 		var summary = GameSyncParty{PartyIndex: party.PartyIndex, PartyID: party.PartyID}
 		for _, player := range party.Players {
@@ -98,15 +103,24 @@ func NewGameStateSyncChange(instance *game.LiveGameInstance) *GameStateSyncChang
 			// enqueue/dequeue once it has crossed the change channel.
 			var actions = make([]*game.PlayerAction, len(player.Actions))
 			copy(actions, player.Actions)
-			summary.Players = append(summary.Players, GameSyncPlayer{
+			var entry = GameSyncPlayer{
 				PlayerID:     player.PlayerID,
 				PlayerIndex:  player.PartySlot,
 				Ready:        player.Ready,
 				Locked:       player.ActionsLocked,
 				LockIndex:    player.ActionLockIndex,
 				Disconnected: player.Disconnected,
+				Dead:         player.Dead,
 				Actions:      actions,
-			})
+			}
+			// The expiry sweep usually clears lapsed claims before a frame is
+			// built, but the active check keeps a claim that lapsed inside the
+			// same tick from being restated as live.
+			if player.HasActiveReviveClaim(now) {
+				entry.ReviveClaimSourceID = player.ReviveClaimSource
+				entry.ReviveClaimRemaining = player.ReviveClaimExpiry.Sub(now)
+			}
+			summary.Players = append(summary.Players, entry)
 		}
 		change.Parties = append(change.Parties, summary)
 	}
