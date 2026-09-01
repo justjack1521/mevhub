@@ -28,6 +28,7 @@ type changeMarshaller struct {
 	playerDisconnect translate.GamePlayerDisconnectChangeMarshaller
 	playerReconnect  translate.GamePlayerReconnectChangeMarshaller
 	playerDeath      translate.GamePlayerDeathChangeMarshaller
+	playerChat       translate.GamePlayerChatChangeMarshaller
 	playerRevive     translate.GamePlayerReviveChangeMarshaller
 	gameSync         translate.GameStateSyncChangeMarshaller
 
@@ -56,6 +57,7 @@ func NewChangeHandlerPublisher(publisher NotificationPublisher, eventPublisher *
 			playerDisconnect: translate.NewGamePlayerDisconnectChangeMarshaller(),
 			playerReconnect:  translate.NewGamePlayerReconnectChangeMarshaller(),
 			playerDeath:      translate.NewGamePlayerDeathChangeMarshaller(),
+			playerChat:       translate.NewGamePlayerChatChangeMarshaller(),
 			playerRevive:     translate.NewGamePlayerReviveChangeMarshaller(),
 			gameSync:         translate.NewGameStateSyncChangeMarshaller(),
 
@@ -106,6 +108,8 @@ func (c *ChangeHandlerPublisher) Handle(svr *GameServer, change game.Change) err
 		return c.HandlePlayerReviveClaimChange(svr, actual)
 	case *action.PlayerReviveClaimExpireChange:
 		return c.HandlePlayerReviveClaimExpireChange(svr, actual)
+	case *action.PlayerChatChange:
+		return c.HandlePlayerChatChange(svr, actual)
 	default:
 		return ErrUnhandledGameChange(change)
 	}
@@ -268,6 +272,17 @@ func (c *ChangeHandlerPublisher) HandlePlayerReviveClaimExpireChange(svr *GameSe
 		return err
 	}
 	return c.publish(svr, protomulti.MultiGameNotificationType_GAME_NOTIFY_PLAYER_REVIVE_CLAIM_EXPIRE, message)
+}
+
+// HandlePlayerChatChange broadcasts a chat message to everyone in the game.
+// Chat is ephemeral and never carried in the sync frame: a client that missed
+// one has nothing to repair.
+func (c *ChangeHandlerPublisher) HandlePlayerChatChange(svr *GameServer, change *action.PlayerChatChange) error {
+	message, err := c.marshaller.playerChat.Marshall(change)
+	if err != nil {
+		return err
+	}
+	return c.publish(svr, protomulti.MultiGameNotificationType_GAME_NOTIFY_CHAT, message)
 }
 
 func (c *ChangeHandlerPublisher) HandlePlayerRemoveChange(svr *GameServer, change *action.PlayerRemoveChange) error {

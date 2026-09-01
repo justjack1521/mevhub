@@ -23,6 +23,7 @@ const (
 	ChangeIdentifierDequeueAction    ChangeIdentifier = "dequeue.action"
 	ChangeIdentifierLockAction       ChangeIdentifier = "lock.action"
 	ChangeIdentifierHPConsensus      ChangeIdentifier = "hp.consensus"
+	ChangeIdentifierPlayerChat       ChangeIdentifier = "player.chat"
 	ChangeIdentifierGameSync         ChangeIdentifier = "game.sync"
 	// A granted revive claim and its unconsumed decay are both broadcast so
 	// every client can show (and clear) a "being revived" indicator; a claim

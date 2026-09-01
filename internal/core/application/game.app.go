@@ -32,6 +32,7 @@ type GameApplicationCommands struct {
 	PlayerDeath       PlayerDeathCommandHandler
 	PlayerRevive      PlayerReviveCommandHandler
 	PlayerReviveClaim PlayerReviveClaimCommandHandler
+	GameChat          GameChatCommandHandler
 }
 
 type GameApplicationTranslators struct {
@@ -64,6 +65,7 @@ func NewGameApplication(core *CoreApplication) *GameApplication {
 		PlayerDeath:       command.NewPlayerDeathCommandHandler(core.data.Sessions, svr),
 		PlayerRevive:      command.NewPlayerReviveCommandHandler(core.data.Sessions, svr),
 		PlayerReviveClaim: command.NewPlayerReviveClaimCommandHandler(core.data.Sessions, svr),
+		GameChat:          command.NewGameChatCommandHandler(core.data.Sessions, svr),
 	}
 
 	application.Translators = &GameApplicationTranslators{
@@ -94,5 +96,6 @@ type SubmitHPConsensusCommandHandler decorator.CommandHandler[command.Context, *
 type PlayerDeathCommandHandler decorator.CommandHandler[command.Context, *command.PlayerDeathCommand]
 type PlayerReviveCommandHandler decorator.CommandHandler[command.Context, *command.PlayerReviveCommand]
 type PlayerReviveClaimCommandHandler decorator.CommandHandler[command.Context, *command.PlayerReviveClaimCommand]
+type GameChatCommandHandler decorator.CommandHandler[command.Context, *command.GameChatCommand]
 
 type GameSummaryQueryHandler decorator.QueryHandler[query.Context, query.GameSummaryQuery, game.Summary]

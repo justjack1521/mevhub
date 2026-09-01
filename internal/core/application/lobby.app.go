@@ -39,6 +39,7 @@ type LobbyApplicationCommands struct {
 	LobbyReady         LobbyReadyCommandHandler
 	LobbyStart         LobbyStartCommandHandler
 	LobbyStamp         LobbyStampCommandHandler
+	LobbyChat          LobbyChatCommandHandler
 	ParticipantJoin    ParticipantJoinCommandHandler
 	ParticipantLeave   ParticipantLeaveCommandHandler
 	ParticipantReady   ParticipantReadyCommandHandler
@@ -74,6 +75,7 @@ func NewLobbyApplication(core *CoreApplication) *LobbyApplication {
 		LobbyReady:         application.NewLobbyReadyCommandHandler(core),
 		LobbyStart:         application.NewLobbyStartCommandHandler(core),
 		LobbyStamp:         application.NewLobbyStampCommandHandler(core),
+		LobbyChat:          application.NewLobbyChatCommandHandler(core),
 		ParticipantWatch:   application.NewParticipantWatchCommandHandler(core),
 		ParticipantUnwatch: application.NewParticipantUnwatchCommandHandler(core),
 		ParticipantJoin:    application.NewParticipantJoinCommandHandler(core),
@@ -139,6 +141,7 @@ type LobbyCancelCommandHandler decorator.CommandHandler[command.Context, *comman
 type LobbyStartCommandHandler decorator.CommandHandler[command.Context, *command.LobbyStartCommand]
 type LobbyReadyCommandHandler decorator.CommandHandler[command.Context, *command.LobbyReadyCommand]
 type LobbyStampCommandHandler decorator.CommandHandler[command.Context, *command.LobbyStampCommand]
+type LobbyChatCommandHandler decorator.CommandHandler[command.Context, *command.LobbyChatCommand]
 type ParticipantJoinCommandHandler decorator.CommandHandler[command.Context, *command.ParticipantJoinCommand]
 type ParticipantLeaveCommandHandler decorator.CommandHandler[command.Context, *command.ParticipantLeaveCommand]
 type ParticipantReadyCommandHandler decorator.CommandHandler[command.Context, *command.ParticipantReadyCommand]
@@ -228,4 +231,9 @@ func (a *LobbyApplication) NewParticipantUnwatchCommandHandler(core *CoreApplica
 func (a *LobbyApplication) NewLobbyStampCommandHandler(core *CoreApplication) LobbyStampCommandHandler {
 	var actual = command.NewLobbyStampCommandHandler(core.Services.EventPublisher, core.data.Sessions)
 	return decorator.NewStandardCommandDecorator[command.Context, *command.LobbyStampCommand](core.Services.EventPublisher, actual)
+}
+
+func (a *LobbyApplication) NewLobbyChatCommandHandler(core *CoreApplication) LobbyChatCommandHandler {
+	var actual = command.NewLobbyChatCommandHandler(core.Services.EventPublisher, core.data.Sessions)
+	return decorator.NewStandardCommandDecorator[command.Context, *command.LobbyChatCommand](core.Services.EventPublisher, actual)
 }

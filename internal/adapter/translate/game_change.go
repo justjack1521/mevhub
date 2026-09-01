@@ -14,6 +14,7 @@ type GamePlayerReviveChangeMarshaller Marshaller[*action.PlayerReviveChange, *pr
 type GamePlayerReviveClaimChangeMarshaller Marshaller[*action.PlayerReviveClaimChange, *protomulti.GamePlayerReviveClaimNotification]
 type GamePlayerReviveClaimExpireChangeMarshaller Marshaller[*action.PlayerReviveClaimExpireChange, *protomulti.GamePlayerReviveClaimExpireNotification]
 type GamePlayerReadyChangeMarshaller Marshaller[*action.PlayerReadyChange, *protomulti.GamePlayerReadyNotification]
+type GamePlayerChatChangeMarshaller Marshaller[*action.PlayerChatChange, *protomulti.GameChatNotification]
 type GamePlayerEnqueueActionChangeMarshaller Marshaller[*action.PlayerEnqueueActionChange, *protomulti.GameEnqueueActionNotification]
 type GamePlayerDequeueActionChangeMarshaller Marshaller[*action.PlayerDequeueActionChange, *protomulti.GameDequeueActionNotification]
 type GamePlayerLockActionChangeMarshaller Marshaller[*action.PlayerLockActionChange, *protomulti.GameLockActionNotification]
@@ -181,6 +182,21 @@ func (g gameStateSyncChangeMarshaller) Marshall(data *action.GameStateSyncChange
 		Phase:           protomulti.GameSyncPhase(data.Phase),
 		TurnRemainingMs: data.TurnRemainingMs,
 		Enemies:         enemies,
+	}, nil
+}
+
+type gamePlayerChatChangeMarshaller struct{}
+
+func NewGamePlayerChatChangeMarshaller() GamePlayerChatChangeMarshaller {
+	return gamePlayerChatChangeMarshaller{}
+}
+
+func (g gamePlayerChatChangeMarshaller) Marshall(data *action.PlayerChatChange) (*protomulti.GameChatNotification, error) {
+	return &protomulti.GameChatNotification{
+		GameId:      data.InstanceID.String(),
+		PartyIndex:  int32(data.PartyIndex),
+		PlayerIndex: int32(data.PartySlot),
+		Message:     data.Message,
 	}, nil
 }
 
