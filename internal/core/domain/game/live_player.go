@@ -125,4 +125,5 @@ const (
 	PlayerActionTypeNormalAttack
 	PlayerActionTypeAbilityCast
 	PlayerActionTypeElementDrive
+	PlayerActionTypeUltimate
 )
