@@ -24,6 +24,10 @@ func NewPlayerDequeueAction(instanceID uuid.UUID, partyID uuid.UUID, playerID uu
 
 func (a *PlayerDequeueAction) Perform(instance *game.LiveGameInstance) error {
 
+	if err := requirePlayerTurn(instance); err != nil {
+		return ErrFailedDequeueAction(a.PlayerID, err)
+	}
+
 	party, err := instance.GetPartyForPlayer(a.PlayerID)
 	if err != nil {
 		return err
