@@ -2,11 +2,12 @@ package external
 
 import (
 	"context"
+	"mevhub/internal/adapter/translate"
+	"mevhub/internal/core/domain/game"
+
 	"github.com/justjack1521/mevium/pkg/genproto/protoidentity"
 	services "github.com/justjack1521/mevium/pkg/genproto/service"
 	uuid "github.com/satori/go.uuid"
-	"mevhub/internal/adapter/translate"
-	"mevhub/internal/core/domain/game"
 )
 
 type GamePlayerLoadoutRepository struct {
@@ -19,7 +20,7 @@ func NewGamePlayerLoadoutRepository(client services.MeviusIdentityServiceClient)
 }
 
 func (r *GamePlayerLoadoutRepository) Query(ctx context.Context, id uuid.UUID, index int) (game.PlayerLoadout, error) {
-	loadout, err := r.client.GetSinglePlayerLoadout(ctx, &protoidentity.GetSinglePlayerLoadoutRequest{
+	loadout, err := r.client.GetMultiPlayerLoadout(ctx, &protoidentity.GetMultiPlayerLoadoutRequest{
 		PlayerId:  id.String(),
 		DeckIndex: int32(index),
 	})

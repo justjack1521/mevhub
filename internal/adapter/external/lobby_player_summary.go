@@ -2,12 +2,13 @@ package external
 
 import (
 	"context"
+	"mevhub/internal/adapter/translate"
+	"mevhub/internal/core/domain/lobby"
+
 	"github.com/justjack1521/mevium/pkg/genproto/protoidentity"
 	"github.com/justjack1521/mevium/pkg/genproto/protomulti"
 	services "github.com/justjack1521/mevium/pkg/genproto/service"
 	uuid "github.com/satori/go.uuid"
-	"mevhub/internal/adapter/translate"
-	"mevhub/internal/core/domain/lobby"
 )
 
 type LobbyPlayerSummaryRepository struct {
@@ -20,7 +21,7 @@ func NewLobbyPlayerSummaryRepository(client services.MeviusIdentityServiceClient
 }
 
 func (r *LobbyPlayerSummaryRepository) Query(ctx context.Context, id uuid.UUID) (lobby.PlayerSummary, error) {
-	identity, err := r.client.GetSinglePlayerLoadoutIdentity(ctx, &protoidentity.GetSinglePlayerLoadoutIdentityRequest{PlayerId: id.String()})
+	identity, err := r.client.GetMultiPlayerLoadoutIdentity(ctx, &protoidentity.GetMultiPlayerLoadoutIdentityRequest{PlayerId: id.String()})
 	if err != nil {
 		return lobby.PlayerSummary{}, err
 	}
