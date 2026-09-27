@@ -43,7 +43,18 @@ func (x *Participant) HasPlayer() bool {
 	return x.UserID != uuid.Nil && x.PlayerID != uuid.Nil
 }
 
+// Unavailable reports whether the slot can never be taken by a joining player.
+// Bot-controlled slots are treated as locked. Invite-only is a client-side guard
+// and is deliberately not enforced here.
+func (x *Participant) Unavailable() bool {
+	return x.Locked || x.BotControl
+}
+
 func (x *Participant) SetPlayer(user, player uuid.UUID, options ParticipantJoinOptions) error {
+
+	if x.Unavailable() {
+		return ErrPlayerSlotUnavailable(x.PlayerSlot)
+	}
 
 	x.UserID = user
 	x.PlayerID = player
@@ -111,7 +122,7 @@ func (x *Participant) SetRole(player uuid.UUID, role uuid.UUID) error {
 	if uuid.Equal(player, x.PlayerID) == false {
 		return ErrParticipantNotBelongToPlayer(player, x.PlayerID)
 	}
-	if uuid.Equal(role, x.RoleRestriction) == false {
+	if uuid.Equal(x.RoleRestriction, uuid.Nil) == false && uuid.Equal(role, x.RoleRestriction) == false {
 		return ErrRoleNotAllow(role, x.RoleRestriction)
 	}
 	x.Role = role

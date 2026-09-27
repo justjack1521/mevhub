@@ -124,7 +124,6 @@ func (a *LobbyApplication) NewSearchLobbyQueryHandler(core *CoreApplication) Sea
 	var actual = query.NewSearchLobbyQueryHandler(
 		core.data.LobbySearch,
 		service.NewSummaryQueryService(core.data.Lobbies, core.data.LobbyParticipants, core.data.LobbySummaries, core.data.LobbyPlayerSummaries),
-		core.data.LobbyPlayerSummaries,
 	)
 	return actual
 }

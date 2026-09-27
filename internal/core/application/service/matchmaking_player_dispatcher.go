@@ -58,6 +58,13 @@ func (s PlayerMatchmakingDispatcher) Dispatch(ctx context.Context, mode game.Mod
 			filled++
 			continue
 		}
+		if exist.Unavailable() {
+			continue
+		}
+		// Matchmade players carry no role, so they can't take a role-restricted slot.
+		if !uuid.Equal(exist.RoleRestriction, uuid.Nil) {
+			continue
+		}
 		if participant == nil || exist.PlayerSlot < participant.PlayerSlot {
 			participant = exist
 		}

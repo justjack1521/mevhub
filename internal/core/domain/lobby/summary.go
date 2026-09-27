@@ -19,6 +19,9 @@ type PlayerSlotSummary struct {
 	PartySlot       int
 	Ready           bool
 	RoleRestriction uuid.UUID
+	InviteOnly      bool
+	Locked          bool
+	BotControl      bool
 	PlayerSummary   PlayerSummary
 }
 

@@ -11,6 +11,7 @@ import (
 type ParticipantJoinCommand struct {
 	BasicCommand
 	LobbyID    uuid.UUID
+	RoleID     uuid.UUID
 	DeckIndex  int
 	SlotIndex  int
 	UseStamina bool
@@ -21,9 +22,10 @@ func (c ParticipantJoinCommand) CommandName() string {
 	return "participant.lobby"
 }
 
-func NewParticipantJoinCommand(id uuid.UUID, deck, slot int, stamina, invite bool) *ParticipantJoinCommand {
+func NewParticipantJoinCommand(id, role uuid.UUID, deck, slot int, stamina, invite bool) *ParticipantJoinCommand {
 	return &ParticipantJoinCommand{
 		LobbyID:    id,
+		RoleID:     role,
 		DeckIndex:  deck,
 		SlotIndex:  slot,
 		UseStamina: stamina,
@@ -69,7 +71,7 @@ func (h *ParticipantJoinCommandHandler) Handle(ctx Context, cmd *ParticipantJoin
 	}
 
 	var options = lobby.ParticipantJoinOptions{
-		RoleID:     uuid.UUID{},
+		RoleID:     cmd.RoleID,
 		SlotIndex:  cmd.SlotIndex,
 		DeckIndex:  cmd.DeckIndex,
 		UseStamina: cmd.UseStamina,

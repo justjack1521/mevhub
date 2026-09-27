@@ -13,7 +13,7 @@ func (g MultiGrpcServer) ParticipantJoin(ctx context.Context, request *protomult
 		return nil, err
 	}
 
-	var cmd = command.NewParticipantJoinCommand(id, int(request.DeckIndex), int(request.SlotIndex), request.UseStamina, request.FromInvite)
+	var cmd = command.NewParticipantJoinCommand(id, uuid.FromStringOrNil(request.RoleId), int(request.DeckIndex), int(request.SlotIndex), request.UseStamina, request.FromInvite)
 
 	if err := g.app.SubApplications.Lobby.Commands.ParticipantJoin.Handle(g.NewCommandContext(ctx), cmd); err != nil {
 		return nil, err

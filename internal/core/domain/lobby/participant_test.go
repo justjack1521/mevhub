@@ -105,6 +105,15 @@ func TestSetRole_NilRestriction_NilRole_Succeeds(t *testing.T) {
 	assert.NoError(t, err)
 }
 
+func TestSetRole_NilRestriction_AnyRole_Succeeds(t *testing.T) {
+	playerID := uuid.NewV4()
+	roleID := uuid.NewV4()
+	p := newParticipant(playerID, 1) // RoleRestriction = uuid.Nil
+	err := p.SetRole(playerID, roleID)
+	assert.NoError(t, err)
+	assert.Equal(t, roleID, p.Role)
+}
+
 func TestSetRole_DoesNotMatchRestriction_ReturnsError(t *testing.T) {
 	playerID := uuid.NewV4()
 	p := newParticipant(playerID, 1)
@@ -177,6 +186,39 @@ func TestRemovePlayer_SlotIsRejoinable(t *testing.T) {
 	assert.NoError(t, err)
 	assert.True(t, p.HasPlayer())
 	assert.Equal(t, joiner, p.PlayerID)
+}
+
+func TestSetPlayer_LockedSlot_ReturnsError(t *testing.T) {
+	p := newParticipant(uuid.NewV4(), 1)
+	p.Locked = true
+	p.RemovePlayer()
+
+	err := p.SetPlayer(uuid.NewV4(), uuid.NewV4(), lobby.ParticipantJoinOptions{SlotIndex: 1})
+
+	assert.Error(t, err)
+	assert.False(t, p.HasPlayer())
+}
+
+func TestSetPlayer_BotSlot_ReturnsError(t *testing.T) {
+	p := newParticipant(uuid.NewV4(), 1)
+	p.BotControl = true
+	p.RemovePlayer()
+
+	err := p.SetPlayer(uuid.NewV4(), uuid.NewV4(), lobby.ParticipantJoinOptions{SlotIndex: 1})
+
+	assert.Error(t, err)
+	assert.False(t, p.HasPlayer())
+}
+
+func TestSetPlayer_InviteOnlySlot_IsJoinable(t *testing.T) {
+	p := newParticipant(uuid.NewV4(), 1)
+	p.InviteOnly = true
+	p.RemovePlayer()
+
+	err := p.SetPlayer(uuid.NewV4(), uuid.NewV4(), lobby.ParticipantJoinOptions{SlotIndex: 1})
+
+	assert.NoError(t, err)
+	assert.True(t, p.HasPlayer())
 }
 
 // --- IsHost / HasPlayer ---

@@ -113,6 +113,10 @@ func (h *LobbyCreateCommandHandler) Handle(ctx Context, cmd *LobbyCreateCommand)
 	}
 
 	for _, value := range cmd.Options.Restrictions {
+		// The host always occupies slot 0; restricting it would lock the host out of their own lobby.
+		if value.Index == 0 {
+			continue
+		}
 		opts.SlotRestrictions[value.Index] = value
 	}
 

@@ -65,6 +65,9 @@ func (s *SummaryQueryService) Query(ctx context.Context, id uuid.UUID) (lobby.Su
 				PartySlot:       value.PlayerSlot,
 				Ready:           false,
 				RoleRestriction: value.RoleRestriction,
+				InviteOnly:      value.InviteOnly,
+				Locked:          value.Locked,
+				BotControl:      value.BotControl,
 				PlayerSummary:   lobby.PlayerSummary{},
 			}
 			continue
@@ -77,6 +80,9 @@ func (s *SummaryQueryService) Query(ctx context.Context, id uuid.UUID) (lobby.Su
 			PartySlot:       value.PlayerSlot,
 			Ready:           value.Ready,
 			RoleRestriction: value.RoleRestriction,
+			InviteOnly:      value.InviteOnly,
+			Locked:          value.Locked,
+			BotControl:      value.BotControl,
 			PlayerSummary:   player,
 		}
 	}

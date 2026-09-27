@@ -73,6 +73,13 @@ func (t lobbyPlayerSlotSummaryTranslator) Marshall(data lobby.PlayerSlotSummary)
 		SlotIndex: int32(data.PartySlot),
 		Ready:     data.Ready,
 		Player:    player,
+		Restriction: &protomulti.ProtoLobbyPlayerSlotRestriction{
+			SlotIndex:       int32(data.PartySlot),
+			RoleRestriction: data.RoleRestriction.String(),
+			Locked:          data.Locked,
+			Bot:             data.BotControl,
+			InviteOnly:      data.InviteOnly,
+		},
 	}
 	return result, nil
 }
@@ -86,6 +93,12 @@ func (t lobbyPlayerSlotSummaryTranslator) Unmarshall(data *protomulti.ProtoLobby
 		PartySlot:     int(data.SlotIndex),
 		Ready:         data.Ready,
 		PlayerSummary: player,
+	}
+	if restriction := data.GetRestriction(); restriction != nil {
+		result.RoleRestriction = uuid.FromStringOrNil(restriction.RoleRestriction)
+		result.InviteOnly = restriction.InviteOnly
+		result.Locked = restriction.Locked
+		result.BotControl = restriction.Bot
 	}
 	return result, nil
 }

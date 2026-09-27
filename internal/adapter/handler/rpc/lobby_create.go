@@ -5,6 +5,7 @@ import (
 	"github.com/justjack1521/mevium/pkg/genproto/protomulti"
 	uuid "github.com/satori/go.uuid"
 	"mevhub/internal/core/application/command"
+	"mevhub/internal/core/domain/lobby"
 )
 
 func (g MultiGrpcServer) LobbyCreate(context context.Context, request *protomulti.LobbyCreateRequest) (*protomulti.LobbyCreateResponse, error) {
@@ -13,9 +14,20 @@ func (g MultiGrpcServer) LobbyCreate(context context.Context, request *protomult
 		return nil, err
 	}
 
+	var restrictions = make([]lobby.PlayerSlotRestriction, len(request.Restrictions))
+	for index, value := range request.Restrictions {
+		restrictions[index] = lobby.PlayerSlotRestriction{
+			Index:           int(value.SlotIndex),
+			RoleRestriction: uuid.FromStringOrNil(value.RoleRestriction),
+			InviteOnly:      value.InviteOnly,
+			Locked:          value.Locked,
+			BotControl:      value.Bot,
+		}
+	}
+
 	var options = command.CreateLobbyOptions{
 		MinimumPlayerLevel: int(request.MinPlayerLevel),
-		Restrictions:       nil,
+		Restrictions:       restrictions,
 	}
 
 	var cmd = command.NewLobbyCreateCommand(quest, int(request.DeckIndex), request.Comment, options)
