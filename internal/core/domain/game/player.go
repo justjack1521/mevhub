@@ -23,6 +23,7 @@ type Player struct {
 type PlayerLoadout struct {
 	PlayerID     uuid.UUID
 	PlayerName   string
+	PlayerLevel  int
 	DeckIndex    int
 	JobCard      PlayerJobCardLoadout
 	Weapon       PlayerWeaponLoadout

@@ -125,16 +125,31 @@ func (s *LobbyNotificationChanneler) HandleDelete(event lobby.InstanceDeletedEve
 		return
 	}
 
-	var notification = &protomulti.LobbyCancelNotification{LobbyId: event.LobbyID().String()}
-
-	n, err := notification.MarshallBinary()
-	if err != nil {
+	// A lobby deleted because it started tells its listeners START, not CANCEL. The
+	// started event's own START travels through the lobby's pub/sub channel, which
+	// this deletion is about to close and whose listeners it is about to drop, so it
+	// can arrive after a CANCEL or not at all. Sending it here, directly and before
+	// anything else, is the one ordering clients can rely on. They ignore a second
+	// START if the pub/sub copy does get through.
+	var (
+		n    []byte
+		kind protomulti.MultiLobbyNotificationType
+		mErr error
+	)
+	if event.Started() {
+		kind = protomulti.MultiLobbyNotificationType_LOBBY_NOTIFY_START
+		n, mErr = (&protomulti.LobbyStartNotification{LobbyId: event.LobbyID().String(), GameId: event.StartedGameID().String()}).MarshallBinary()
+	} else {
+		kind = protomulti.MultiLobbyNotificationType_LOBBY_NOTIFY_CANCEL
+		n, mErr = (&protomulti.LobbyCancelNotification{LobbyId: event.LobbyID().String()}).MarshallBinary()
+	}
+	if mErr != nil {
 		return
 	}
 
 	var message = &protocommon.Notification{
 		Service: protocommon.ServiceKey_MULTI,
-		Type:    int32(protomulti.MultiLobbyNotificationType_LOBBY_NOTIFY_CANCEL),
+		Type:    int32(kind),
 		Data:    n,
 	}
 

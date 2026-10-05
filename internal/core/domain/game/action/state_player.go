@@ -50,12 +50,10 @@ func (s *PlayerTurnState) Update(instance *game.LiveGameInstance, t time.Time) {
 		return
 	}
 
-	// Everyone dead: hold here rather than churn turns — with no living player
-	// the all-alive-locked condition is vacuously true and the game would
-	// bounce between turn states forever. Any revive (including a self-revive)
-	// lifts the hold; when a kick duration is configured, the death sweep
-	// eventually empties the game into the abandoned check above.
+	// Everyone dead is a wipe: the game is over. Revives (a self-revive
+	// included) are only possible while someone is still standing.
 	if instance.GetAlivePlayerCount() == 0 {
+		transitionTo(instance, NewEndGameState(instance))
 		return
 	}
 
@@ -82,7 +80,7 @@ func (s *PlayerTurnState) Update(instance *game.LiveGameInstance, t time.Time) {
 						continue
 					}
 					if player.ActionsLocked == false {
-						player.ActionLockIndex = party.GetActionLockedPlayerCount()
+						player.ActionLockIndex = party.NextActionLockIndex()
 						player.ActionsLocked = true
 						instance.SendChange(NewPlayerLockActionChange(instance.InstanceID, party.PartyIndex, player.PartySlot, player.ActionLockIndex))
 					}

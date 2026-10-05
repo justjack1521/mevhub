@@ -5,6 +5,7 @@ import (
 	"github.com/justjack1521/mevium/pkg/genproto/protomulti"
 	uuid "github.com/satori/go.uuid"
 	"mevhub/internal/core/domain/lobby"
+	"time"
 )
 
 type LobbySummaryTranslator Translator[lobby.Summary, *protomulti.ProtoLobbySummary]
@@ -28,6 +29,7 @@ func (t lobbySummaryTranslator) Marshall(data lobby.Summary) (out *protomulti.Pr
 		PartyId:            data.PartyID,
 		Comment:            data.LobbyComment,
 		MinimumPlayerLevel: int32(data.MinimumPlayerLevel),
+		RegisteredAt:       registeredAtToUnix(data.RegisteredAt),
 		Players:            make([]*protomulti.ProtoLobbyPlayerSlot, len(data.Players)),
 	}
 	for index, value := range data.Players {
@@ -47,6 +49,7 @@ func (t lobbySummaryTranslator) Unmarshall(data *protomulti.ProtoLobbySummary) (
 		PartyID:            data.PartyId,
 		LobbyComment:       data.Comment,
 		MinimumPlayerLevel: int(data.MinimumPlayerLevel),
+		RegisteredAt:       registeredAtFromUnix(data.RegisteredAt),
 		Players:            make([]lobby.PlayerSlotSummary, len(data.Players)),
 	}
 	for index, value := range data.Players {
@@ -247,4 +250,20 @@ func (t lobbyPlayerLoadoutTranslator) Unmarshall(data *protoidentity.ProtoPlayer
 
 	return result, nil
 
+}
+
+// The proto carries Unix seconds; a zero time stays 0 rather than becoming a
+// large negative number, and 0 comes back as the zero time.
+func registeredAtToUnix(t time.Time) int32 {
+	if t.IsZero() {
+		return 0
+	}
+	return int32(t.Unix())
+}
+
+func registeredAtFromUnix(seconds int32) time.Time {
+	if seconds == 0 {
+		return time.Time{}
+	}
+	return time.Unix(int64(seconds), 0).UTC()
 }

@@ -96,6 +96,23 @@ func (r *LobbySearchRedisRepository) Delete(ctx context.Context, instance lobby.
 	return err
 }
 
+// Prune removes an id from every set the query reads. A lobby that expires out
+// of Redis emits no deletion, so its id would otherwise stay in the index for
+// as long as new lobbies keep renewing the sets' TTL. Sets the query does not
+// read are left for the searches that do.
+func (r *LobbySearchRedisRepository) Prune(ctx context.Context, qry lobby.SearchQuery, id uuid.UUID) error {
+	var keys = r.GenerateKeysFromQuery(qry)
+	_, err := r.client.Pipelined(ctx, func(pipe redis.Pipeliner) error {
+		for _, key := range keys {
+			if err := pipe.ZRem(ctx, key, id.String()).Err(); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+	return err
+}
+
 func (r *LobbySearchRedisRepository) ZAddArgs(instance lobby.SearchEntry) redis.ZAddArgs {
 	return redis.ZAddArgs{
 		NX:      true,

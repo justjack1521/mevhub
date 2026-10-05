@@ -34,8 +34,29 @@ func newClaimGame(t *testing.T) (*game.LiveGameInstance, *game.LivePlayer) {
 		Dead:      true,
 		DeathTime: time.Now().UTC(),
 	}
+	// A standing teammate: reviving is only possible while someone is alive.
+	// Without one the party is wiped, which newWipedGame covers.
+	ally := &game.LivePlayer{
+		UserID:    uuid.NewV4(),
+		PlayerID:  uuid.NewV4(),
+		PartySlot: 1,
+	}
 	party.Players[player.PlayerID] = player
+	party.Players[ally.PlayerID] = ally
 	g.Parties[party.PartyID] = party
+	return g, player
+}
+
+// newWipedGame is newClaimGame with every player down.
+func newWipedGame(t *testing.T) (*game.LiveGameInstance, *game.LivePlayer) {
+	t.Helper()
+	g, player := newClaimGame(t)
+	for _, party := range g.Parties {
+		for _, p := range party.Players {
+			p.Dead = true
+			p.DeathTime = time.Now().UTC()
+		}
+	}
 	return g, player
 }
 
@@ -150,4 +171,41 @@ func TestPlayerRevive_ClearsStandingClaim(t *testing.T) {
 	assert.False(t, player.Dead)
 	assert.Equal(t, uuid.Nil, player.ReviveClaimSource)
 	assert.True(t, player.ReviveClaimExpiry.IsZero())
+}
+
+func TestPlayerReviveClaim_PartyWiped_Denied(t *testing.T) {
+	g, player := newWipedGame(t)
+
+	result := performClaim(t, g, player.PlayerID, player.PlayerID, time.Now().UTC())
+
+	assert.False(t, result.Granted)
+	assert.Equal(t, action.ReviveClaimDenyReasonUnavailable, result.Reason)
+	assert.Equal(t, uuid.Nil, player.ReviveClaimSource, "a wiped party must not take a claim")
+}
+
+func TestPlayerRevive_PartyWiped_NoOp(t *testing.T) {
+	g, player := newWipedGame(t)
+
+	revive := action.NewPlayerReviveAction(g.InstanceID, player.PlayerID, player.PlayerID)
+	require.NoError(t, revive.Perform(g))
+
+	assert.True(t, player.Dead, "a wipe is final")
+}
+
+func TestPlayerTurn_PartyWiped_EndsGame(t *testing.T) {
+	g, _ := newWipedGame(t)
+	g.State = action.NewPlayerTurnState(g)
+
+	g.State.Update(g, time.Now().UTC())
+
+	assert.IsType(t, &action.EndGameState{}, g.State)
+}
+
+func TestEnemyTurn_PartyWiped_EndsGame(t *testing.T) {
+	g, _ := newWipedGame(t)
+	g.State = action.NewEnemyTurnState(g)
+
+	g.State.Update(g, time.Now().UTC())
+
+	assert.IsType(t, &action.EndGameState{}, g.State)
 }

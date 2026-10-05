@@ -15,7 +15,7 @@ const lobbyPartyKey = "lobby_party"
 
 var (
 	ErrLobbyInstanceNotFoundByKey = func(key string) error {
-		return fmt.Errorf("lobby instance not found by key: %s", key)
+		return fmt.Errorf("%w by key: %s", lobby.ErrLobbyInstanceNotFound, key)
 	}
 )
 

@@ -49,6 +49,20 @@ func (x *LiveParty) RemovePlayer(id uuid.UUID) error {
 	return nil
 }
 
+// NextActionLockIndex is the lock index for the next player to lock this turn:
+// one past the highest already held. Not the locked count - a player removed
+// after locking leaves a gap, and counting would hand the next player an index
+// someone still holds.
+func (x *LiveParty) NextActionLockIndex() int {
+	var next = 0
+	for _, player := range x.Players {
+		if player.ActionsLocked && player.ActionLockIndex >= next {
+			next = player.ActionLockIndex + 1
+		}
+	}
+	return next
+}
+
 func (x *LiveParty) GetActionLockedPlayerCount() int {
 	var count int
 	for _, player := range x.Players {

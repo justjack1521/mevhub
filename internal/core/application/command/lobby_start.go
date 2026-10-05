@@ -93,7 +93,7 @@ func (h *LobbyStartCommandHandler) Handle(ctx Context, cmd *LobbyStartCommand) e
 
 	cmd.QueueEvent(lobby.NewInstanceStartedEvent(ctx, instance.SysID, result.SysID))
 	cmd.QueueEvent(game.NewInstanceCreatedEvent(ctx, result.SysID))
-	cmd.QueueEvent(lobby.NewInstanceDeletedEvent(ctx, instance.SysID, instance.QuestID))
+	cmd.QueueEvent(lobby.NewInstanceDeletedEvent(ctx, instance.SysID, instance.QuestID).WithStartedGame(result.SysID))
 
 	return nil
 

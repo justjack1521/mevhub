@@ -46,7 +46,7 @@ func NewLobbyCreateCommand(quest uuid.UUID, deck int, comment string, options Cr
 type LobbyCreateCommandHandler struct {
 	EventPublisher          *mevent.Publisher
 	SessionRepository       port.SessionInstanceRepository
-	InstanceRepository      port.LobbyInstanceWriteRepository
+	InstanceRepository      port.LobbyInstanceRepository
 	QuestRepository         port.QuestRepository
 	ParticipantFactory      lobby.ParticipantFactory
 	ParticipantRepository   port.LobbyParticipantWriteRepository
@@ -61,7 +61,7 @@ type LobbyCreateCommandHandler struct {
 func NewLobbyCreateCommandHandler(
 	publisher *mevent.Publisher,
 	sessions port.SessionInstanceRepository,
-	instances port.LobbyInstanceWriteRepository,
+	instances port.LobbyInstanceRepository,
 	quests port.QuestRepository,
 	participants port.LobbyParticipantWriteRepository,
 	summaries port.LobbySummaryWriteRepository,
@@ -94,7 +94,11 @@ func (h *LobbyCreateCommandHandler) Handle(ctx Context, cmd *LobbyCreateCommand)
 		return err
 	}
 
-	if current.CanJoinLobby() == false {
+	free, err := releaseStaleLobby(ctx, h.SessionRepository, h.InstanceRepository, current)
+	if err != nil {
+		return err
+	}
+	if free == false {
 		return lobby.ErrPlayerAlreadyInLobby(current.LobbyID)
 	}
 
@@ -135,6 +139,7 @@ func (h *LobbyCreateCommandHandler) Handle(ctx Context, cmd *LobbyCreateCommand)
 		PartyID:            cmd.PartyID,
 		LobbyComment:       cmd.Comment,
 		MinimumPlayerLevel: instance.MinimumPlayerLevel,
+		RegisteredAt:       instance.RegisteredAt,
 	}
 	if err := h.SummaryRepository.Create(ctx, summary); err != nil {
 		return err

@@ -1,6 +1,8 @@
 package query
 
 import (
+	"errors"
+
 	uuid "github.com/satori/go.uuid"
 
 	"mevhub/internal/core/domain/lobby"
@@ -21,11 +23,11 @@ func NewSearchLobbyQuery(qry lobby.SearchQuery, party string) SearchLobbyQuery {
 }
 
 type SearchLobbyQueryHandler struct {
-	SearchRepository  port.LobbySearchReadRepository
+	SearchRepository  port.LobbySearchIndexRepository
 	SummaryRepository port.LobbySearchSummaryRepository
 }
 
-func NewSearchLobbyQueryHandler(lobbies port.LobbySearchReadRepository, summaries port.LobbySearchSummaryRepository) *SearchLobbyQueryHandler {
+func NewSearchLobbyQueryHandler(lobbies port.LobbySearchIndexRepository, summaries port.LobbySearchSummaryRepository) *SearchLobbyQueryHandler {
 	return &SearchLobbyQueryHandler{SearchRepository: lobbies, SummaryRepository: summaries}
 }
 
@@ -49,6 +51,13 @@ func (h *SearchLobbyQueryHandler) Handle(ctx Context, qry SearchLobbyQuery) ([]l
 	for _, value := range lobbies {
 		summary, err := h.SummaryRepository.Query(ctx, value.LobbyID)
 		if err != nil {
+			// Gone, not failing: the lobby expired and nothing took it out of the
+			// index. Drop it from the sets this search read so the next one does
+			// not pay for the lookup again. Best effort - the result is skipped
+			// either way.
+			if errors.Is(err, lobby.ErrLobbyInstanceNotFound) {
+				_ = h.SearchRepository.Prune(ctx, qry.query, value.LobbyID)
+			}
 			continue
 		}
 		if !hasAvailableSlot(summary) {

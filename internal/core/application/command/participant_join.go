@@ -52,7 +52,11 @@ func (h *ParticipantJoinCommandHandler) Handle(ctx Context, cmd *ParticipantJoin
 	if err != nil {
 		return err
 	}
-	if !current.CanJoinLobby() {
+	free, err := releaseStaleLobby(ctx, h.SessionRepository, h.InstanceRepository, current)
+	if err != nil {
+		return err
+	}
+	if !free {
 		return lobby.ErrPlayerAlreadyInLobby(current.LobbyID)
 	}
 

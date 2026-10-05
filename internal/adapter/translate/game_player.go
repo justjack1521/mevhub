@@ -87,6 +87,7 @@ func (t gamePlayerLoadoutTranslator) Marshall(data game.PlayerLoadout) (out *pro
 	return &protoidentity.ProtoPlayerLoadout{
 		PlayerId:     data.PlayerID.String(),
 		PlayerName:   data.PlayerName,
+		PlayerLevel:  int32(data.PlayerLevel),
 		DeckIndex:    int32(data.DeckIndex),
 		Job:          job,
 		Weapon:       weapon,
@@ -120,6 +121,7 @@ func (t gamePlayerLoadoutTranslator) Unmarshall(data *protoidentity.ProtoPlayerL
 	var result = game.PlayerLoadout{
 		PlayerID:     uuid.FromStringOrNil(data.PlayerId),
 		PlayerName:   data.PlayerName,
+		PlayerLevel:  int(data.PlayerLevel),
 		DeckIndex:    int(data.DeckIndex),
 		JobCard:      job,
 		Weapon:       weapon,

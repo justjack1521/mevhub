@@ -62,5 +62,6 @@ func (r *LobbySummaryDatabaseRepository) convertLobbySummary(summary lobby.Summa
 		PartyID:            summary.PartyID,
 		LobbyComment:       summary.LobbyComment,
 		MinimumPlayerLevel: summary.MinimumPlayerLevel,
+		RegisteredAt:       summary.RegisteredAt,
 	}
 }

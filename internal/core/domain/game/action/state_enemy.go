@@ -26,28 +26,43 @@ func NewEnemyTurnState(instance *game.LiveGameInstance) *EnemyTurnState {
 		startTime:     time.Now().UTC(),
 	}
 	for _, party := range instance.Parties {
-		var queue = make([]*game.PlayerActionQueue, party.GetPlayerCount())
+		var players = make([]*game.LivePlayer, 0, len(party.Players))
 		for _, player := range party.Players {
 			// Clearing Ready arms the turn's exit condition: each client sets it
 			// again once it has played the enemy turn out.
 			player.Ready = false
-			// A dead player contributes no actions and, if they never locked,
-			// still holds the zero-value lock index — using it would overwrite
-			// whichever living player genuinely locked at that index.
+			// A dead player contributes no actions.
 			if player.Dead {
 				continue
 			}
+			players = append(players, player)
+		}
+
+		// Lock order, packed. Lock indices can have gaps (a player removed after
+		// locking), so they are sorted rather than used as positions; clients take
+		// the position in this queue as the resolution order. Party slot breaks
+		// ties, and anyone somehow unlocked goes last, so map iteration order
+		// never decides anything.
+		sort.SliceStable(players, func(i, j int) bool {
+			if players[i].ActionsLocked != players[j].ActionsLocked {
+				return players[i].ActionsLocked
+			}
+			if players[i].ActionLockIndex != players[j].ActionLockIndex {
+				return players[i].ActionLockIndex < players[j].ActionLockIndex
+			}
+			return players[i].PartySlot < players[j].PartySlot
+		})
+
+		var queue = make([]*game.PlayerActionQueue, 0, len(players))
+		for _, player := range players {
 			// Copy the queue: the live player's Actions slice keeps being
 			// mutated after this state captures it.
 			var actions = make([]*game.PlayerAction, len(player.Actions))
 			copy(actions, player.Actions)
-			if player.ActionLockIndex < 0 || player.ActionLockIndex >= len(queue) {
-				continue
-			}
-			queue[player.ActionLockIndex] = &game.PlayerActionQueue{
+			queue = append(queue, &game.PlayerActionQueue{
 				PlayerID: player.PlayerID,
 				Actions:  actions,
-			}
+			})
 		}
 		state.QueuedActions[party.PartyIndex] = queue
 	}
@@ -175,10 +190,12 @@ func (s *EnemyTurnState) Update(instance *game.LiveGameInstance, t time.Time) {
 		return
 	}
 
-	// Everyone dead: hold the hand-off, mirroring the player turn's hold — the
-	// all-alive-ready condition below is vacuously true with no living player
-	// and would bounce the game between turn states forever. A revive lifts it.
+	// Everyone dead is a wipe: the game is over. A dead player can only be
+	// revived while someone in the party is still standing, so there is nothing
+	// to wait for, and ending here gives every client the same outcome even if
+	// one of their sims has not reached the wipe yet.
 	if instance.GetAlivePlayerCount() == 0 {
+		transitionTo(instance, NewEndGameState(instance))
 		return
 	}
 
