@@ -33,6 +33,7 @@ type GameApplicationCommands struct {
 	PlayerRevive      PlayerReviveCommandHandler
 	PlayerReviveClaim PlayerReviveClaimCommandHandler
 	GameChat          GameChatCommandHandler
+	GameStamp         GameStampCommandHandler
 }
 
 type GameApplicationTranslators struct {
@@ -66,6 +67,7 @@ func NewGameApplication(core *CoreApplication) *GameApplication {
 		PlayerRevive:      command.NewPlayerReviveCommandHandler(core.data.Sessions, svr),
 		PlayerReviveClaim: command.NewPlayerReviveClaimCommandHandler(core.data.Sessions, svr),
 		GameChat:          command.NewGameChatCommandHandler(core.data.Sessions, svr),
+		GameStamp:         command.NewGameStampCommandHandler(core.data.Sessions, svr),
 	}
 
 	application.Translators = &GameApplicationTranslators{
@@ -97,5 +99,6 @@ type PlayerDeathCommandHandler decorator.CommandHandler[command.Context, *comman
 type PlayerReviveCommandHandler decorator.CommandHandler[command.Context, *command.PlayerReviveCommand]
 type PlayerReviveClaimCommandHandler decorator.CommandHandler[command.Context, *command.PlayerReviveClaimCommand]
 type GameChatCommandHandler decorator.CommandHandler[command.Context, *command.GameChatCommand]
+type GameStampCommandHandler decorator.CommandHandler[command.Context, *command.GameStampCommand]
 
 type GameSummaryQueryHandler decorator.QueryHandler[query.Context, query.GameSummaryQuery, game.Summary]

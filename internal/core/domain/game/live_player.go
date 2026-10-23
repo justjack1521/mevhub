@@ -37,6 +37,14 @@ type LivePlayer struct {
 	// because rejecting a late revive cannot un-spend anyone's item.
 	ReviveClaimSource uuid.UUID
 	ReviveClaimExpiry time.Time
+	// LastStampTime is when this player's last stamp was relayed; another is
+	// refused until StampCooldown has passed.
+	LastStampTime time.Time
+}
+
+// CanStamp reports whether a stamp sent at time t is clear of the cooldown.
+func (p *LivePlayer) CanStamp(t time.Time) bool {
+	return t.Sub(p.LastStampTime) >= StampCooldown
 }
 
 // HasActiveReviveClaim reports whether an unexpired revive claim stands on this

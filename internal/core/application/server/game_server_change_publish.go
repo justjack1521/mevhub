@@ -29,6 +29,7 @@ type changeMarshaller struct {
 	playerReconnect  translate.GamePlayerReconnectChangeMarshaller
 	playerDeath      translate.GamePlayerDeathChangeMarshaller
 	playerChat       translate.GamePlayerChatChangeMarshaller
+	playerStamp      translate.GamePlayerStampChangeMarshaller
 	playerRevive     translate.GamePlayerReviveChangeMarshaller
 	gameSync         translate.GameStateSyncChangeMarshaller
 
@@ -58,6 +59,7 @@ func NewChangeHandlerPublisher(publisher NotificationPublisher, eventPublisher *
 			playerReconnect:  translate.NewGamePlayerReconnectChangeMarshaller(),
 			playerDeath:      translate.NewGamePlayerDeathChangeMarshaller(),
 			playerChat:       translate.NewGamePlayerChatChangeMarshaller(),
+			playerStamp:      translate.NewGamePlayerStampChangeMarshaller(),
 			playerRevive:     translate.NewGamePlayerReviveChangeMarshaller(),
 			gameSync:         translate.NewGameStateSyncChangeMarshaller(),
 
@@ -110,6 +112,8 @@ func (c *ChangeHandlerPublisher) Handle(svr *GameServer, change game.Change) err
 		return c.HandlePlayerReviveClaimExpireChange(svr, actual)
 	case *action.PlayerChatChange:
 		return c.HandlePlayerChatChange(svr, actual)
+	case *action.PlayerStampChange:
+		return c.HandlePlayerStampChange(svr, actual)
 	default:
 		return ErrUnhandledGameChange(change)
 	}
@@ -283,6 +287,17 @@ func (c *ChangeHandlerPublisher) HandlePlayerChatChange(svr *GameServer, change 
 		return err
 	}
 	return c.publish(svr, protomulti.MultiGameNotificationType_GAME_NOTIFY_CHAT, message)
+}
+
+// HandlePlayerStampChange broadcasts a stamp to everyone in the game, the
+// sender included - their own copy is what shows it over their icon. Like
+// chat it is ephemeral and never restated by the sync frame.
+func (c *ChangeHandlerPublisher) HandlePlayerStampChange(svr *GameServer, change *action.PlayerStampChange) error {
+	message, err := c.marshaller.playerStamp.Marshall(change)
+	if err != nil {
+		return err
+	}
+	return c.publish(svr, protomulti.MultiGameNotificationType_GAME_NOTIFY_STAMP, message)
 }
 
 func (c *ChangeHandlerPublisher) HandlePlayerRemoveChange(svr *GameServer, change *action.PlayerRemoveChange) error {

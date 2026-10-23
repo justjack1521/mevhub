@@ -27,6 +27,10 @@ const (
 	// call back here, but stay short enough that an abandoned claim only
 	// briefly blocks other would-be revivers.
 	ReviveClaimDuration = time.Second * 10
+	// StampCooldown is the minimum gap between one player's stamps. Long enough
+	// that a held tap cannot bury everyone's screen, short enough that a reply
+	// to someone else's stamp never feels blocked.
+	StampCooldown = time.Second * 3
 )
 
 var (
