@@ -57,6 +57,7 @@ type DataRepositories struct {
 	GameParticipants     port.GameParticipantRepository
 	GamePlayers          port.GamePlayerRepository
 	GamePlayerLoadouts   port.GamePlayerLoadoutRepository
+	LobbyStampCooldowns  port.LobbyStampCooldownRepository
 }
 
 type ApplicationServices struct {
@@ -114,6 +115,7 @@ func (a *CoreApplication) BuildDataRepos(db *gorm.DB, client *redis.Client, iden
 		GameParticipants:     memory.NewGameParticipantRepository(client),
 		GamePlayers:          memory.NewGamePlayerRepository(client, serial.NewGamePlayerJSONSerialiser()),
 		GamePlayerLoadouts:   cache.NewGamePlayerLoadoutRepository(external.NewGamePlayerLoadoutRepository(identity), memory.NewGamePlayerLoadoutRepository(client, serial.NewGamePlayerLoadoutJSONSerialiser())),
+		LobbyStampCooldowns:  memory.NewLobbyStampCooldownRedisRepository(client),
 	}
 	return a
 }

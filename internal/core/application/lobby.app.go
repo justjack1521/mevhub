@@ -228,7 +228,7 @@ func (a *LobbyApplication) NewParticipantUnwatchCommandHandler(core *CoreApplica
 }
 
 func (a *LobbyApplication) NewLobbyStampCommandHandler(core *CoreApplication) LobbyStampCommandHandler {
-	var actual = command.NewLobbyStampCommandHandler(core.Services.EventPublisher, core.data.Sessions)
+	var actual = command.NewLobbyStampCommandHandler(core.Services.EventPublisher, core.data.Sessions, core.data.LobbyStampCooldowns)
 	return decorator.NewStandardCommandDecorator[command.Context, *command.LobbyStampCommand](core.Services.EventPublisher, actual)
 }
 
