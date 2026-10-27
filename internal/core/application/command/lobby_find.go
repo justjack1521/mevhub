@@ -45,6 +45,10 @@ func (h *ParticipantFindCommandHandler) Handle(ctx Context, cmd *ParticipantFind
 		return errors.New("cannot find lobbies for this game mode")
 	}
 
+	if err := quest.AvailableAt(time.Now().UTC()); err != nil {
+		return err
+	}
+
 	player, err := h.PlayerSummaryRepository.Query(ctx, ctx.PlayerID())
 	if err != nil {
 		return err

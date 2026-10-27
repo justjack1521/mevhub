@@ -107,6 +107,10 @@ func (h *LobbyCreateCommandHandler) Handle(ctx Context, cmd *LobbyCreateCommand)
 		return err
 	}
 
+	if err := quest.HostableAt(time.Now().UTC(), game.LobbyCreateCutoff); err != nil {
+		return err
+	}
+
 	var factory = lobby.NewInstanceFactory(ctx, ctx.UserID(), ctx.PlayerID())
 
 	var opts = lobby.InstanceFactoryOptions{

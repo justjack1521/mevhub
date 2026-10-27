@@ -19,7 +19,7 @@ func (r *GameQuestDatabaseRepository) QueryByID(id uuid.UUID) (game.Quest, error
 	var cond = &dto.GameQuestGorm{SysID: id}
 	var res = &dto.GameQuestGorm{}
 
-	if err := r.database.Model(cond).Preload("Tier.Mode").Preload("Categories").First(res, cond).Error; err != nil {
+	if err := r.database.Model(cond).Preload("Tier.Mode").Preload("Categories").Preload("Schedules").First(res, cond).Error; err != nil {
 		return game.Quest{}, err
 	}
 	return res.ToEntity(), nil

@@ -20,11 +20,12 @@ func (x *GameCategoryGorm) ToEntity() game.Category {
 }
 
 type GameQuestGorm struct {
-	SysID      uuid.UUID          `gorm:"primaryKey;column:sys_id"`
-	TierID     uuid.UUID          `gorm:"column:tier"`
-	Tier       *GameModeTierGorm  `gorm:"foreignKey:TierID"`
-	Name       string             `gorm:"column:name"`
-	Categories []GameCategoryGorm `gorm:"foreignKey:QuestID"`
+	SysID      uuid.UUID               `gorm:"primaryKey;column:sys_id"`
+	TierID     uuid.UUID               `gorm:"column:tier"`
+	Tier       *GameModeTierGorm       `gorm:"foreignKey:TierID"`
+	Name       string                  `gorm:"column:name"`
+	Categories []GameCategoryGorm      `gorm:"foreignKey:QuestID"`
+	Schedules  []GameQuestScheduleGorm `gorm:"foreignKey:QuestID"`
 }
 
 func (GameQuestGorm) TableName() string {
@@ -36,6 +37,10 @@ func (x *GameQuestGorm) ToEntity() game.Quest {
 		SysID:      x.SysID,
 		Tier:       x.Tier.ToEntity(),
 		Categories: make([]game.Category, len(x.Categories)),
+		Schedules:  make([]game.Schedule, len(x.Schedules)),
+	}
+	for index, value := range x.Schedules {
+		result.Schedules[index] = value.ToEntity()
 	}
 	if x.Categories == nil {
 		return result
@@ -44,6 +49,28 @@ func (x *GameQuestGorm) ToEntity() game.Quest {
 		result.Categories[index] = value.ToEntity()
 	}
 	return result
+}
+
+type GameQuestScheduleGorm struct {
+	SysID     uuid.UUID  `gorm:"primaryKey;column:sys_id"`
+	QuestID   uuid.UUID  `gorm:"column:game_quest"`
+	StartDate *time.Time `gorm:"column:start_date"`
+	EndDate   *time.Time `gorm:"column:end_date"`
+}
+
+func (GameQuestScheduleGorm) TableName() string {
+	return "dict_multi_quest_schedule"
+}
+
+func (x *GameQuestScheduleGorm) ToEntity() game.Schedule {
+	var schedule = game.Schedule{}
+	if x.StartDate != nil {
+		schedule.StartDate = *x.StartDate
+	}
+	if x.EndDate != nil {
+		schedule.EndDate = *x.EndDate
+	}
+	return schedule
 }
 
 type GameModeTierGorm struct {
