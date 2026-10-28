@@ -81,6 +81,8 @@ type GameModeTierGorm struct {
 	StaminaCost    int           `gorm:"column:stamina_cost"`
 	TimeLimit      int           `gorm:"column:time_limit"`
 	SeedMultiplier int           `gorm:"column:seed_multiplier"`
+	// Seconds. 0 means the player turn never expires.
+	PlayerTurnDuration int `gorm:"column:player_turn_duration"`
 }
 
 func (GameModeTierGorm) TableName() string {
@@ -89,12 +91,13 @@ func (GameModeTierGorm) TableName() string {
 
 func (x *GameModeTierGorm) ToEntity() game.Tier {
 	return game.Tier{
-		SysID:          x.SysID,
-		GameMode:       x.Mode.ToEntity(),
-		StarLevel:      x.StarLevel,
-		StaminaCost:    x.StaminaCost,
-		TimeLimit:      time.Duration(x.TimeLimit) * time.Minute,
-		SeedMultiplier: x.SeedMultiplier,
+		SysID:              x.SysID,
+		GameMode:           x.Mode.ToEntity(),
+		StarLevel:          x.StarLevel,
+		StaminaCost:        x.StaminaCost,
+		PlayerTurnDuration: time.Duration(x.PlayerTurnDuration) * time.Second,
+		TimeLimit:          time.Duration(x.TimeLimit) * time.Minute,
+		SeedMultiplier:     x.SeedMultiplier,
 	}
 }
 
