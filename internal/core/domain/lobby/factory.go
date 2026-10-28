@@ -69,20 +69,26 @@ func (f ParticipantFactory) Create(user, player uuid.UUID, instance *Instance, r
 		return nil, err
 	}
 
-	if err := participant.SetRole(player, options.RoleID); err != nil {
-		return nil, err
-	}
+	// Vacant slots are created alongside the host's and have no player to make choices for;
+	// running the player setters on them would validate a Nil role against the slot's role restriction.
+	if participant.HasPlayer() {
 
-	if err := participant.SetDeckIndex(player, options.DeckIndex); err != nil {
-		return nil, err
-	}
+		if err := participant.SetRole(player, options.RoleID); err != nil {
+			return nil, err
+		}
 
-	if err := participant.SetUseStamina(player, options.UseStamina); err != nil {
-		return nil, err
-	}
+		if err := participant.SetDeckIndex(player, options.DeckIndex); err != nil {
+			return nil, err
+		}
 
-	if err := participant.SetReady(player, options.SlotIndex == 0); err != nil {
-		return nil, err
+		if err := participant.SetUseStamina(player, options.UseStamina); err != nil {
+			return nil, err
+		}
+
+		if err := participant.SetReady(player, options.SlotIndex == 0); err != nil {
+			return nil, err
+		}
+
 	}
 
 	if err := instance.CanAddParticipant(participant); err != nil {

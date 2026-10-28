@@ -165,3 +165,25 @@ func TestCanAddParticipant_HostAtSlotNonZero_ReturnsError(t *testing.T) {
 	require.NoError(t, err)
 	assert.Error(t, inst.CanAddParticipant(p))
 }
+
+// --- ParticipantFactory ---
+
+func TestParticipantFactory_VacantRoleRestrictedSlot_Succeeds(t *testing.T) {
+	inst, _ := newInstance(t)
+	role := uuid.NewV4()
+	restriction := lobby.PlayerSlotRestriction{Index: 1, RoleRestriction: role}
+	opts := lobby.ParticipantJoinOptions{SlotIndex: 1}
+	p, err := lobby.ParticipantFactory{}.Create(uuid.Nil, uuid.Nil, inst, restriction, opts)
+	require.NoError(t, err)
+	assert.Equal(t, role, p.RoleRestriction)
+	assert.Equal(t, uuid.Nil, p.Role)
+	assert.False(t, p.HasPlayer())
+}
+
+func TestParticipantFactory_PlayerWithWrongRole_ReturnsError(t *testing.T) {
+	inst, _ := newInstance(t)
+	restriction := lobby.PlayerSlotRestriction{Index: 1, RoleRestriction: uuid.NewV4()}
+	opts := lobby.ParticipantJoinOptions{SlotIndex: 1, RoleID: uuid.NewV4()}
+	_, err := lobby.ParticipantFactory{}.Create(uuid.NewV4(), uuid.NewV4(), inst, restriction, opts)
+	assert.Error(t, err)
+}
