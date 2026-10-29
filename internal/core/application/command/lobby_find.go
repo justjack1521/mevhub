@@ -28,10 +28,11 @@ type ParticipantFindCommandHandler struct {
 	QuestRepository         port.QuestRepository
 	MatchmakingRepository   port.MatchLobbyPlayerQueueWriteRepository
 	PlayerSummaryRepository port.LobbyPlayerSummaryReadRepository
+	SessionRepository       port.SessionInstanceRepository
 }
 
-func NewParticipantFindCommandHandler(quests port.QuestRepository, queue port.MatchLobbyPlayerQueueWriteRepository, players port.LobbyPlayerSummaryReadRepository) *ParticipantFindCommandHandler {
-	return &ParticipantFindCommandHandler{QuestRepository: quests, MatchmakingRepository: queue, PlayerSummaryRepository: players}
+func NewParticipantFindCommandHandler(quests port.QuestRepository, queue port.MatchLobbyPlayerQueueWriteRepository, players port.LobbyPlayerSummaryReadRepository, sessions port.SessionInstanceRepository) *ParticipantFindCommandHandler {
+	return &ParticipantFindCommandHandler{QuestRepository: quests, MatchmakingRepository: queue, PlayerSummaryRepository: players, SessionRepository: sessions}
 }
 
 func (h *ParticipantFindCommandHandler) Handle(ctx Context, cmd *ParticipantFindCommand) error {
@@ -51,6 +52,18 @@ func (h *ParticipantFindCommandHandler) Handle(ctx Context, cmd *ParticipantFind
 
 	player, err := h.PlayerSummaryRepository.Query(ctx, ctx.PlayerID())
 	if err != nil {
+		return err
+	}
+
+	// The matchmaking dispatcher seats the player with the session's deck index, so record the
+	// chosen deck before queueing.
+	current, err := h.SessionRepository.QueryByID(ctx, ctx.UserID())
+	if err != nil {
+		return err
+	}
+
+	current.DeckIndex = cmd.DeckIndex
+	if err := h.SessionRepository.Update(ctx, current); err != nil {
 		return err
 	}
 

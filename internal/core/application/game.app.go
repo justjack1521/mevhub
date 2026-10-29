@@ -82,7 +82,7 @@ func NewGameApplication(core *CoreApplication) *GameApplication {
 	// registration callback populates the live game from those read models.
 	application.subscribers = []ApplicationSubscriber{
 		subscriber.NewGamePartyWriter(core.Services.EventPublisher, core.data.Games, core.data.LobbySummaries, core.data.GameParties, core.Services.Logger),
-		subscriber.NewGameParticipantWriter(core.Services.EventPublisher, core.data.LobbyParticipants, core.data.GameParticipants, core.Services.Logger),
+		subscriber.NewGameParticipantWriter(core.Services.EventPublisher, core.data.LobbyParticipants, core.data.GameParticipants, core.data.GamePlayerLoadouts, core.Services.Logger),
 		subscriber.NewGameChannelServerWriter(svr, core.Services.EventPublisher, core.data.Games, core.data.GameParties, core.data.GameParticipants, core.Services.Logger),
 		subscriber.NewGameLoadoutEvictionSubscriber(core.Services.EventPublisher, core.data.GamePlayerLoadouts),
 	}

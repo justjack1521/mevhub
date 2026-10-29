@@ -218,6 +218,7 @@ func (h *LobbyCreateCommandHandler) Handle(ctx Context, cmd *LobbyCreateCommand)
 		if uuid.Equal(player, uuid.Nil) == false {
 			current.LobbyID = participant.LobbyID
 			current.PartySlot = participant.PlayerSlot
+			current.DeckIndex = participant.DeckIndex
 			if err := h.SessionRepository.Update(ctx, current); err != nil {
 				return err
 			}

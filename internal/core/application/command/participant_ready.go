@@ -23,12 +23,12 @@ func NewParticipantReadyCommand(id uuid.UUID, deck int) *ParticipantReadyCommand
 
 type ParticipantReadyCommandHandler struct {
 	EventPublisher        *mevent.Publisher
-	SessionRepository     port.SessionInstanceReadRepository
+	SessionRepository     port.SessionInstanceRepository
 	InstanceRepository    port.LobbyInstanceRepository
 	ParticipantRepository port.LobbyParticipantRepository
 }
 
-func NewParticipantReadyCommandHandler(publisher *mevent.Publisher, sessions port.SessionInstanceReadRepository, instances port.LobbyInstanceRepository, participants port.LobbyParticipantRepository) *ParticipantReadyCommandHandler {
+func NewParticipantReadyCommandHandler(publisher *mevent.Publisher, sessions port.SessionInstanceRepository, instances port.LobbyInstanceRepository, participants port.LobbyParticipantRepository) *ParticipantReadyCommandHandler {
 	return &ParticipantReadyCommandHandler{EventPublisher: publisher, SessionRepository: sessions, InstanceRepository: instances, ParticipantRepository: participants}
 }
 
@@ -65,6 +65,12 @@ func (h *ParticipantReadyCommandHandler) Handle(ctx Context, cmd *ParticipantRea
 	cmd.QueueEvent(lobby.NewParticipantReadyEvent(ctx, ctx.UserID(), current.LobbyID, participant.DeckIndex, participant.PlayerSlot))
 
 	if previous != cmd.DeckIndex {
+		// The session's deck index keys the loadout eviction on session end. Written only on a
+		// change, since a full session update can clobber a concurrent lobby or game field write.
+		current.DeckIndex = participant.DeckIndex
+		if err := h.SessionRepository.Update(ctx, current); err != nil {
+			return err
+		}
 		cmd.QueueEvent(lobby.NewParticipantDeckChangeEvent(ctx, ctx.UserID(), ctx.PlayerID(), current.LobbyID, cmd.DeckIndex, participant.PlayerSlot))
 	}
 

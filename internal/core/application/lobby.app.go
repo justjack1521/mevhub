@@ -187,7 +187,7 @@ func (a *LobbyApplication) NewLobbyStartCommandHandler(core *CoreApplication) Lo
 }
 
 func (a *LobbyApplication) NewParticipantFindCommandHandler(core *CoreApplication) ParticipantFindCommandHandler {
-	var actual = command.NewParticipantFindCommandHandler(core.repositories.Quests, core.data.MatchPlayerQueue, core.data.LobbyPlayerSummaries)
+	var actual = command.NewParticipantFindCommandHandler(core.repositories.Quests, core.data.MatchPlayerQueue, core.data.LobbyPlayerSummaries, core.data.Sessions)
 	return decorator.NewStandardCommandDecorator[command.Context, *command.ParticipantFindCommand](core.Services.EventPublisher, actual)
 }
 

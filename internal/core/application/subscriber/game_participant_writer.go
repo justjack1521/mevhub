@@ -12,11 +12,12 @@ type GameParticipantWriter struct {
 	EventPublisher             *mevent.Publisher
 	LobbyParticipantRepository port.LobbyParticipantRepository
 	GameParticipantRepository  port.GameParticipantRepository
+	LoadoutRepository          port.GamePlayerLoadoutWriteRepository
 	Logger                     *slog.Logger
 }
 
-func NewGameParticipantWriter(publisher *mevent.Publisher, source port.LobbyParticipantRepository, target port.GameParticipantRepository, logger *slog.Logger) *GameParticipantWriter {
-	var service = &GameParticipantWriter{EventPublisher: publisher, LobbyParticipantRepository: source, GameParticipantRepository: target, Logger: logger}
+func NewGameParticipantWriter(publisher *mevent.Publisher, source port.LobbyParticipantRepository, target port.GameParticipantRepository, loadouts port.GamePlayerLoadoutWriteRepository, logger *slog.Logger) *GameParticipantWriter {
+	var service = &GameParticipantWriter{EventPublisher: publisher, LobbyParticipantRepository: source, GameParticipantRepository: target, LoadoutRepository: loadouts, Logger: logger}
 	publisher.Subscribe(service, game.PartyCreatedEvent{}, game.PartyDeletedEvent{})
 	return service
 }
@@ -67,6 +68,15 @@ func (s *GameParticipantWriter) HandlePartyCreated(evt game.PartyCreatedEvent) e
 			PlayerSlot: participant.PlayerSlot,
 			DeckIndex:  participant.DeckIndex,
 			BotControl: participant.BotControl,
+		}
+
+		// Drop any loadout cached by an earlier game so this one fetches the deck as it is now.
+		// Session-end eviction alone can miss: a lost SessionEnd, or a teammate's GetGame after
+		// the player left, leaves the old deck cached for the full TTL. Evicted before the row is
+		// written: clients are told the lobby started before this runs, and GetGame can only
+		// reach this player's loadout once the row exists.
+		if err := s.LoadoutRepository.Delete(evt.Context(), result.PlayerID, result.DeckIndex); err != nil {
+			s.Logger.With("player.id", result.PlayerID.String(), "deck.index", result.DeckIndex, "error", err.Error()).Error("game participant writer failed to evict cached loadout")
 		}
 
 		if err := s.GameParticipantRepository.Create(evt.Context(), evt.PartyID(), result); err != nil {

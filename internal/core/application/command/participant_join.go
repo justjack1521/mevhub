@@ -92,6 +92,7 @@ func (h *ParticipantJoinCommandHandler) Handle(ctx Context, cmd *ParticipantJoin
 
 	current.LobbyID = participant.LobbyID
 	current.PartySlot = participant.PlayerSlot
+	current.DeckIndex = participant.DeckIndex
 	if err := h.SessionRepository.Update(ctx, current); err != nil {
 		return err
 	}
