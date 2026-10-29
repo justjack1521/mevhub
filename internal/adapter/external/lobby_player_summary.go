@@ -20,8 +20,10 @@ func NewLobbyPlayerSummaryRepository(client services.MeviusIdentityServiceClient
 	return &LobbyPlayerSummaryRepository{client: client, translator: translate.NewLobbyPlayerSummaryTranslator()}
 }
 
-func (r *LobbyPlayerSummaryRepository) Query(ctx context.Context, id uuid.UUID) (lobby.PlayerSummary, error) {
-	identity, err := r.client.GetMultiPlayerLoadoutIdentity(ctx, &protoidentity.GetMultiPlayerLoadoutIdentityRequest{PlayerId: id.String()})
+func (r *LobbyPlayerSummaryRepository) Query(ctx context.Context, id uuid.UUID, deck int) (lobby.PlayerSummary, error) {
+	// The deck index was never sent, so mobius answered for deck 0 whatever the player had joined
+	// with - the lobby showed the wrong deck while the game, which asks with the index, was right.
+	identity, err := r.client.GetMultiPlayerLoadoutIdentity(ctx, &protoidentity.GetMultiPlayerLoadoutIdentityRequest{PlayerId: id.String(), DeckIndex: int32(deck)})
 	if err != nil {
 		return lobby.PlayerSummary{}, err
 	}

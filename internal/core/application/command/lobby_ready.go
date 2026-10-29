@@ -84,7 +84,7 @@ func (h *LobbyReadyCommandHandler) Handle(ctx Context, cmd *LobbyReadyCommand) e
 		if !participant.HasPlayer() {
 			continue
 		}
-		summary, err := h.PlayerSummaryRepository.Query(ctx, participant.PlayerID)
+		summary, err := h.PlayerSummaryRepository.Query(ctx, participant.PlayerID, participant.DeckIndex)
 		if err != nil {
 			return err
 		}

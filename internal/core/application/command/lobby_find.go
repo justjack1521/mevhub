@@ -50,7 +50,7 @@ func (h *ParticipantFindCommandHandler) Handle(ctx Context, cmd *ParticipantFind
 		return err
 	}
 
-	player, err := h.PlayerSummaryRepository.Query(ctx, ctx.PlayerID())
+	player, err := h.PlayerSummaryRepository.Query(ctx, ctx.PlayerID(), cmd.DeckIndex)
 	if err != nil {
 		return err
 	}

@@ -16,24 +16,24 @@ func NewLobbyPlayerSummaryRepository(source port.LobbyPlayerSummaryReadRepositor
 	return &LobbyPlayerSummaryRepository{source: source, cache: cache}
 }
 
-func (r *LobbyPlayerSummaryRepository) Query(ctx context.Context, id uuid.UUID) (lobby.PlayerSummary, error) {
-	hit, err := r.cache.Query(ctx, id)
+func (r *LobbyPlayerSummaryRepository) Query(ctx context.Context, id uuid.UUID, deck int) (lobby.PlayerSummary, error) {
+	hit, err := r.cache.Query(ctx, id, deck)
 	if err == nil {
 		return hit, nil
 	}
 
-	miss, err := r.source.Query(ctx, id)
+	miss, err := r.source.Query(ctx, id, deck)
 	if err != nil {
 		return lobby.PlayerSummary{}, err
 	}
 
-	_ = r.cache.Create(ctx, miss)
+	_ = r.cache.Create(ctx, deck, miss)
 
 	return miss, nil
 }
 
-func (r *LobbyPlayerSummaryRepository) Create(ctx context.Context, player lobby.PlayerSummary) error {
-	return r.cache.Create(ctx, player)
+func (r *LobbyPlayerSummaryRepository) Create(ctx context.Context, deck int, player lobby.PlayerSummary) error {
+	return r.cache.Create(ctx, deck, player)
 }
 
 func (r *LobbyPlayerSummaryRepository) Delete(ctx context.Context, id uuid.UUID) error {

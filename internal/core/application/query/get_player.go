@@ -41,7 +41,7 @@ func (h *SearchPlayerQueryHandler) Handle(ctx Context, qry SearchPlayerQuery) (l
 		return lobby.PlayerSummary{}, err
 	}
 
-	summary, err := h.SummaryRepository.Query(ctx, current.PlayerID)
+	summary, err := h.SummaryRepository.Query(ctx, current.PlayerID, participant.DeckIndex)
 	if err != nil {
 		return lobby.PlayerSummary{}, err
 	}

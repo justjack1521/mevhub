@@ -72,7 +72,7 @@ func (s *SummaryQueryService) Query(ctx context.Context, id uuid.UUID) (lobby.Su
 			}
 			continue
 		}
-		player, err := s.PlayerSummary.Query(ctx, value.PlayerID)
+		player, err := s.PlayerSummary.Query(ctx, value.PlayerID, value.DeckIndex)
 		if err != nil {
 			return lobby.Summary{}, ErrFailedQueryLobbySummary(id, err)
 		}

@@ -170,7 +170,7 @@ func (h *LobbyCreateCommandHandler) Handle(ctx Context, cmd *LobbyCreateCommand)
 	}
 
 	if quest.Tier.GameMode.FulfillMethod == game.FulfillMethodMatch {
-		hostSummary, err := h.PlayerSummaryRepository.Query(ctx, ctx.PlayerID())
+		hostSummary, err := h.PlayerSummaryRepository.Query(ctx, ctx.PlayerID(), cmd.DeckIndex)
 		if err != nil {
 			return err
 		}

@@ -87,7 +87,7 @@ func (s *LobbyChannelEventNotifier) HandleParticipantAdded(event lobby.Participa
 		return nil
 	}
 
-	summary, err := s.PlayerSummaryRepository.Query(event.Context(), event.PlayerID())
+	summary, err := s.PlayerSummaryRepository.Query(event.Context(), event.PlayerID(), event.DeckIndex())
 	if err != nil {
 		return err
 	}
@@ -111,7 +111,7 @@ func (s *LobbyChannelEventNotifier) HandleParticipantAdded(event lobby.Participa
 
 func (s *LobbyChannelEventNotifier) HandleParticipantDeckChange(event lobby.ParticipantDeckChangeEvent) error {
 
-	summary, err := s.PlayerSummaryRepository.Query(event.Context(), event.PlayerID())
+	summary, err := s.PlayerSummaryRepository.Query(event.Context(), event.PlayerID(), event.DeckIndex())
 	if err != nil {
 		return err
 	}

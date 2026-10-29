@@ -41,8 +41,11 @@ var (
 	}
 )
 
+// LobbyPlayerSummaryReadRepository is keyed by deck as well as player: the summary carries the
+// loadout, and a lobby shows the deck each player joined with, not whichever deck the source
+// would pick by default.
 type LobbyPlayerSummaryReadRepository interface {
-	Query(ctx context.Context, id uuid.UUID) (lobby.PlayerSummary, error)
+	Query(ctx context.Context, id uuid.UUID, deck int) (lobby.PlayerSummary, error)
 }
 
 var (
@@ -52,7 +55,8 @@ var (
 )
 
 type LobbyPlayerSummaryWriteRepository interface {
-	Create(ctx context.Context, player lobby.PlayerSummary) error
+	Create(ctx context.Context, deck int, player lobby.PlayerSummary) error
+	// Delete drops the player's summary for every deck.
 	Delete(ctx context.Context, id uuid.UUID) error
 }
 
