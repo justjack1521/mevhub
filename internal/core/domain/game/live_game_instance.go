@@ -55,6 +55,10 @@ type LiveGameInstance struct {
 	Parties       map[uuid.UUID]*LiveParty
 	State         State
 	GameDuration  time.Duration
+	// StartedAt is when the first player turn opened, which is when the
+	// GameDuration clock starts: load-in is not part of the battle. Zero until
+	// then. Read and written only inside the single-writer loop.
+	StartedAt     time.Time
 	EndedAt       time.Time
 	MaxPartyCount int
 	PartyOptions  PartyInstanceOptions
@@ -102,6 +106,15 @@ func (game *LiveGameInstance) End() {
 	if game.ended.CompareAndSwap(false, true) {
 		game.EndedAt = time.Now().UTC()
 	}
+}
+
+// TimeExpired reports whether the battle has run its full GameDuration. A zero
+// duration means no time limit, and a game that has not started has no clock.
+func (game *LiveGameInstance) TimeExpired(t time.Time) bool {
+	if game.GameDuration == 0 || game.StartedAt.IsZero() {
+		return false
+	}
+	return t.Sub(game.StartedAt) >= game.GameDuration
 }
 
 func (game *LiveGameInstance) HasEnded() bool {

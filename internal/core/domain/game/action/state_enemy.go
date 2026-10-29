@@ -207,6 +207,15 @@ func (s *EnemyTurnState) Update(instance *game.LiveGameInstance, t time.Time) {
 		return
 	}
 
+	// Out of time ends the game at the boundary, never mid-turn: every client
+	// has played the dispatched queue and the enemy turn out by now, so all of
+	// them leave from the same point. Not held for a disconnected player, as
+	// there is no next turn for them to rejoin.
+	if instance.TimeExpired(t) {
+		transitionTo(instance, NewEndGameState(instance))
+		return
+	}
+
 	// We are at the enemy -> player boundary. Hold the hand-off to the next
 	// player turn while any player is within their reconnect grace period. The
 	// stall lifts on reconnect or timeout removal.

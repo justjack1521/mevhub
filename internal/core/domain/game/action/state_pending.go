@@ -56,6 +56,7 @@ func (s *PendingState) Update(instance *game.LiveGameInstance, t time.Time) {
 	}
 
 	if instance.AllAlivePlayersReady() {
+		instance.StartedAt = t
 		transitionTo(instance, NewPlayerTurnState(instance))
 	}
 }

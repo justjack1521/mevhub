@@ -57,6 +57,15 @@ func (s *PlayerTurnState) Update(instance *game.LiveGameInstance, t time.Time) {
 		return
 	}
 
+	// Out of time ends the game anywhere in the player turn. The action queue
+	// is only dispatched on the way into the enemy turn, so no client has
+	// played anything out yet and they all leave from the same point. Once it
+	// is dispatched the end waits for the enemy -> player boundary instead.
+	if instance.TimeExpired(t) {
+		transitionTo(instance, NewEndGameState(instance))
+		return
+	}
+
 	var ready = instance.AllAlivePlayersLocked()
 	var expired = s.Expired(t)
 
