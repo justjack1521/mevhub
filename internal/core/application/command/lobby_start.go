@@ -91,8 +91,11 @@ func (h *LobbyStartCommandHandler) Handle(ctx Context, cmd *LobbyStartCommand) e
 		return err
 	}
 
-	cmd.QueueEvent(lobby.NewInstanceStartedEvent(ctx, instance.SysID, result.SysID))
+	// InstanceCreated before InstanceStarted: its subscribers write the game's parties and
+	// participants, and START is what sends clients to GetGame. Told first, a client could read
+	// the game while those rows were still being written and build its battle with an ally missing.
 	cmd.QueueEvent(game.NewInstanceCreatedEvent(ctx, result.SysID))
+	cmd.QueueEvent(lobby.NewInstanceStartedEvent(ctx, instance.SysID, result.SysID))
 	cmd.QueueEvent(lobby.NewInstanceDeletedEvent(ctx, instance.SysID, instance.QuestID).WithStartedGame(result.SysID))
 
 	return nil

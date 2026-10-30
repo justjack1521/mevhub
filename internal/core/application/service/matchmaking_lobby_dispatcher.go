@@ -85,11 +85,13 @@ func (d *LobbyMatchmakingDispatcher) Dispatch(ctx context.Context, mode game.Mod
 		}
 	}
 
+	// Created before started, as in lobby_start: the game's parties and participants must be
+	// written before START sends anyone to GetGame, or they can read it with an ally missing.
+	d.EventPublisher.Notify(game.NewInstanceCreatedEvent(ctx, result.SysID))
+
 	for _, value := range lobbies {
 		d.EventPublisher.Notify(lobby.NewInstanceStartedEvent(ctx, value.LobbyID, result.SysID))
 	}
-
-	d.EventPublisher.Notify(game.NewInstanceCreatedEvent(ctx, result.SysID))
 
 	return nil
 
