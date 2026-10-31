@@ -16,6 +16,10 @@ var (
 // stay open until the window actually closes. The client mirrors this value.
 const LobbyCreateCutoff = 15 * time.Minute
 
+// EnforceQuestSchedule gates the schedule checks on hosting and finding
+// lobbies. Off for now so every quest is playable while schedules are set up.
+const EnforceQuestSchedule = false
+
 type Mode struct {
 	SysID          uuid.UUID
 	ModeIdentifier ModeIdentifier
