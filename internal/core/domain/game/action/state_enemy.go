@@ -14,7 +14,9 @@ const enemyTurnTimeout = time.Second * 15
 type EnemyTurnState struct {
 	QueuedActions map[int][]*game.PlayerActionQueue
 	hpReports     map[uuid.UUID][]game.EnemyHP
-	startTime     time.Time
+	// readyWaitFrom is when the ready wait's timeout started counting: the turn's
+	// start, or the latest reconnect if anyone came back during it.
+	readyWaitFrom time.Time
 	resolved      bool
 	advanced      bool
 }
@@ -23,7 +25,7 @@ func NewEnemyTurnState(instance *game.LiveGameInstance) *EnemyTurnState {
 	var state = &EnemyTurnState{
 		QueuedActions: make(map[int][]*game.PlayerActionQueue),
 		hpReports:     make(map[uuid.UUID][]game.EnemyHP),
-		startTime:     time.Now().UTC(),
+		readyWaitFrom: time.Now().UTC(),
 	}
 	for _, party := range instance.Parties {
 		var players = make([]*game.LivePlayer, 0, len(party.Players))
@@ -172,6 +174,14 @@ func (s *EnemyTurnState) resolve(instance *game.LiveGameInstance) {
 	}
 }
 
+// restartReadyWait gives the ready wait a fresh timeout from t. Never moves it
+// back, so an out of order reconnect cannot shorten a wait already extended.
+func (s *EnemyTurnState) restartReadyWait(t time.Time) {
+	if t.After(s.readyWaitFrom) {
+		s.readyWaitFrom = t
+	}
+}
+
 func (s *EnemyTurnState) Update(instance *game.LiveGameInstance, t time.Time) {
 
 	evictExpiredDisconnectedPlayers(instance, t)
@@ -202,8 +212,11 @@ func (s *EnemyTurnState) Update(instance *game.LiveGameInstance, t time.Time) {
 	// The enemy turn is a client-side interlude: it ends when every living
 	// player reports itself ready again (NewEnemyTurnState cleared the flag on
 	// entry), or when the timeout lifts a turn a silent client would stall.
-	// Dead players are exempt — the turn must not wait on a corpse.
-	if instance.AllAlivePlayersReady() == false && t.Sub(s.startTime) <= enemyTurnTimeout {
+	// Dead players are exempt — the turn must not wait on a corpse. The timeout
+	// counts from the latest reconnect if there was one: a player who was away
+	// past it is back still playing the round out, and would otherwise be handed
+	// a player turn the moment they returned.
+	if instance.AllAlivePlayersReady() == false && t.Sub(s.readyWaitFrom) <= enemyTurnTimeout {
 		return
 	}
 

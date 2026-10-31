@@ -122,6 +122,6 @@ func (w *GameChannelServerWriter) HandlePlayerDisconnected(event game.PlayerDisc
 func (w *GameChannelServerWriter) HandlePlayerReconnected(event game.PlayerReconnectedEvent) {
 	w.Server.ActionChannel <- &server.GameActionRequest{
 		GameID: event.GameID(),
-		Action: action.NewPlayerReconnectAction(event.PlayerID()),
+		Action: action.NewPlayerReconnectAction(event.PlayerID(), time.Now().UTC()),
 	}
 }

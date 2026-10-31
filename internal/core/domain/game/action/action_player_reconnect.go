@@ -14,11 +14,12 @@ var (
 )
 
 type PlayerReconnectAction struct {
-	PlayerID uuid.UUID
+	PlayerID      uuid.UUID
+	ReconnectTime time.Time
 }
 
-func NewPlayerReconnectAction(playerID uuid.UUID) *PlayerReconnectAction {
-	return &PlayerReconnectAction{PlayerID: playerID}
+func NewPlayerReconnectAction(playerID uuid.UUID, reconnectTime time.Time) *PlayerReconnectAction {
+	return &PlayerReconnectAction{PlayerID: playerID, ReconnectTime: reconnectTime}
 }
 
 func (a *PlayerReconnectAction) Perform(instance *game.LiveGameInstance) error {
@@ -42,6 +43,13 @@ func (a *PlayerReconnectAction) Perform(instance *game.LiveGameInstance) error {
 	player.Disconnected = false
 	player.DisconnectTime = time.Time{}
 	instance.SendChange(NewPlayerReconnectChange(instance.InstanceID, a.PlayerID, party.PartyIndex, player.PartySlot))
+
+	// Back mid enemy turn, they may still have the round to play out - and if the
+	// queue confirm went out while they were away, they have not even started it.
+	// The ready wait's timeout ran on while they were gone, so give them a fresh one.
+	if state, ok := instance.State.(*EnemyTurnState); ok {
+		state.restartReadyWait(a.ReconnectTime)
+	}
 
 	// Restate immediately rather than leaving the returning player to wait out
 	// the heartbeat. Nothing changes state on a reconnect, so this is the only
