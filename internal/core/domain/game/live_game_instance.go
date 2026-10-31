@@ -253,6 +253,19 @@ func (game *LiveGameInstance) AllAlivePlayersReady() bool {
 	return true
 }
 
+// AllPlayersReady reports whether every player, dead or alive, has flagged
+// itself ready. The enemy turn waits on this instead when nobody is alive.
+func (game *LiveGameInstance) AllPlayersReady() bool {
+	for _, party := range game.Parties {
+		for _, player := range party.Players {
+			if player.Ready == false {
+				return false
+			}
+		}
+	}
+	return true
+}
+
 func (game *LiveGameInstance) GetActionLockedPlayerCount() int {
 	var total = 0
 	for _, party := range game.Parties {

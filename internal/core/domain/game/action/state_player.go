@@ -50,19 +50,25 @@ func (s *PlayerTurnState) Update(instance *game.LiveGameInstance, t time.Time) {
 		return
 	}
 
-	// Everyone dead is a wipe: the game is over. Revives (a self-revive
-	// included) are only possible while someone is still standing.
-	if instance.GetAlivePlayerCount() == 0 {
-		transitionTo(instance, NewEndGameState(instance))
-		return
-	}
-
 	// Out of time ends the game anywhere in the player turn. The action queue
 	// is only dispatched on the way into the enemy turn, so no client has
 	// played anything out yet and they all leave from the same point. Once it
 	// is dispatched the end waits for the enemy -> player boundary instead.
 	if instance.TimeExpired(t) {
 		transitionTo(instance, NewEndGameState(instance))
+		return
+	}
+
+	// Everyone dead is a wipe, and this turn is the party's chance to get back
+	// up: anyone may revive themselves or another. Nobody alive means nobody to
+	// lock, and the lock check below would pass vacuously and run an enemy turn
+	// over corpses, so hold here. The turn timer running out with the party
+	// still down ends the game; so does the dead-player kick, or everyone
+	// quitting, when the quest has no turn timer.
+	if instance.GetAlivePlayerCount() == 0 {
+		if s.Expired(t) {
+			transitionTo(instance, NewEndGameState(instance))
+		}
 		return
 	}
 

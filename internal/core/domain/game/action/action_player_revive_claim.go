@@ -16,10 +16,9 @@ const (
 	ReviveClaimDenyReasonTargetNotFound
 	ReviveClaimDenyReasonTargetAlive
 	ReviveClaimDenyReasonAlreadyClaimed
-	// ReviveClaimDenyReasonUnavailable is produced here for a wiped party, and
-	// stamped by the application layer when no reply arrives at all (game not
-	// hosted, shut down mid-route, or the loop too far behind), so the claimant
-	// fails closed and spends nothing.
+	// ReviveClaimDenyReasonUnavailable is stamped by the application layer when
+	// no reply arrives at all (game not hosted, shut down mid-route, or the loop
+	// too far behind), so the claimant fails closed and spends nothing.
 	ReviveClaimDenyReasonUnavailable
 )
 
@@ -75,13 +74,6 @@ func (a *PlayerReviveClaimAction) Perform(instance *game.LiveGameInstance) error
 	// Denying here is what saves their item.
 	if player.Dead == false {
 		a.reply(PlayerReviveClaimResult{Reason: ReviveClaimDenyReasonTargetAlive})
-		return nil
-	}
-
-	// A wipe is final: with nobody standing there is no reviving, self-revive
-	// included. Denied before the claim is taken so no item is spent.
-	if instance.GetAlivePlayerCount() == 0 {
-		a.reply(PlayerReviveClaimResult{Reason: ReviveClaimDenyReasonUnavailable})
 		return nil
 	}
 

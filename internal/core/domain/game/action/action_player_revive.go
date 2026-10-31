@@ -46,12 +46,6 @@ func (a *PlayerReviveAction) Perform(instance *game.LiveGameInstance) error {
 		return nil
 	}
 
-	// A wipe is final. The turn states end the game on their next update; a
-	// revive that reaches the loop first must not lift the party back up.
-	if instance.GetAlivePlayerCount() == 0 {
-		return nil
-	}
-
 	player.Dead = false
 	player.DeathTime = time.Time{}
 

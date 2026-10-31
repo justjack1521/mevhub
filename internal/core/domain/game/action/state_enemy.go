@@ -200,15 +200,6 @@ func (s *EnemyTurnState) Update(instance *game.LiveGameInstance, t time.Time) {
 		return
 	}
 
-	// Everyone dead is a wipe: the game is over. A dead player can only be
-	// revived while someone in the party is still standing, so there is nothing
-	// to wait for, and ending here gives every client the same outcome even if
-	// one of their sims has not reached the wipe yet.
-	if instance.GetAlivePlayerCount() == 0 {
-		transitionTo(instance, NewEndGameState(instance))
-		return
-	}
-
 	// The enemy turn is a client-side interlude: it ends when every living
 	// player reports itself ready again (NewEnemyTurnState cleared the flag on
 	// entry), or when the timeout lifts a turn a silent client would stall.
@@ -216,7 +207,16 @@ func (s *EnemyTurnState) Update(instance *game.LiveGameInstance, t time.Time) {
 	// counts from the latest reconnect if there was one: a player who was away
 	// past it is back still playing the round out, and would otherwise be handed
 	// a player turn the moment they returned.
-	if instance.AllAlivePlayersReady() == false && t.Sub(s.readyWaitFrom) <= enemyTurnTimeout {
+	//
+	// A wipe is not the end: the player turn after it is the party's chance to
+	// revive. With nobody alive the living-only check is vacuously true, so wait
+	// on everyone instead — the dead still play the round out, and ready once
+	// they have, and the revive window must not open before they reach it.
+	var ready = instance.AllAlivePlayersReady()
+	if instance.GetAlivePlayerCount() == 0 {
+		ready = instance.AllPlayersReady()
+	}
+	if ready == false && t.Sub(s.readyWaitFrom) <= enemyTurnTimeout {
 		return
 	}
 

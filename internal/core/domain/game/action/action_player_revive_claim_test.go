@@ -34,8 +34,8 @@ func newClaimGame(t *testing.T) (*game.LiveGameInstance, *game.LivePlayer) {
 		Dead:      true,
 		DeathTime: time.Now().UTC(),
 	}
-	// A standing teammate: reviving is only possible while someone is alive.
-	// Without one the party is wiped, which newWipedGame covers.
+	// A standing teammate. Without one the party is wiped, which newWipedGame
+	// covers.
 	ally := &game.LivePlayer{
 		UserID:    uuid.NewV4(),
 		PlayerID:  uuid.NewV4(),
@@ -173,39 +173,77 @@ func TestPlayerRevive_ClearsStandingClaim(t *testing.T) {
 	assert.True(t, player.ReviveClaimExpiry.IsZero())
 }
 
-func TestPlayerReviveClaim_PartyWiped_Denied(t *testing.T) {
+func TestPlayerReviveClaim_PartyWiped_Granted(t *testing.T) {
 	g, player := newWipedGame(t)
 
 	result := performClaim(t, g, player.PlayerID, player.PlayerID, time.Now().UTC())
 
-	assert.False(t, result.Granted)
-	assert.Equal(t, action.ReviveClaimDenyReasonUnavailable, result.Reason)
-	assert.Equal(t, uuid.Nil, player.ReviveClaimSource, "a wiped party must not take a claim")
+	assert.True(t, result.Granted, "a wiped party may still revive itself")
+	assert.Equal(t, player.PlayerID, player.ReviveClaimSource)
 }
 
-func TestPlayerRevive_PartyWiped_NoOp(t *testing.T) {
+func TestPlayerRevive_PartyWiped_Revives(t *testing.T) {
 	g, player := newWipedGame(t)
 
 	revive := action.NewPlayerReviveAction(g.InstanceID, player.PlayerID, player.PlayerID)
 	require.NoError(t, revive.Perform(g))
 
-	assert.True(t, player.Dead, "a wipe is final")
+	assert.False(t, player.Dead)
 }
 
-func TestPlayerTurn_PartyWiped_EndsGame(t *testing.T) {
+func TestPlayerTurn_PartyWiped_HoldsForRevive(t *testing.T) {
 	g, _ := newWipedGame(t)
 	g.State = action.NewPlayerTurnState(g)
 
 	g.State.Update(g, time.Now().UTC())
 
+	assert.IsType(t, &action.PlayerTurnState{}, g.State, "nobody to lock must not run an enemy turn")
+	assert.False(t, g.HasEnded())
+}
+
+func TestPlayerTurn_PartyWiped_TurnExpires_EndsGame(t *testing.T) {
+	g, _ := newWipedGame(t)
+	g.State = action.NewPlayerTurnState(g)
+
+	g.State.Update(g, time.Now().UTC().Add(g.PartyOptions.PlayerTurnDuration))
+
 	assert.IsType(t, &action.EndGameState{}, g.State)
 }
 
-func TestEnemyTurn_PartyWiped_EndsGame(t *testing.T) {
-	g, _ := newWipedGame(t)
+func TestPlayerTurn_PartyWiped_ReviveThenLock_StartsEnemyTurn(t *testing.T) {
+	g, player := newWipedGame(t)
+	g.State = action.NewPlayerTurnState(g)
+	require.NoError(t, action.NewPlayerReviveAction(g.InstanceID, player.PlayerID, player.PlayerID).Perform(g))
+
+	g.State.Update(g, time.Now().UTC())
+	require.IsType(t, &action.PlayerTurnState{}, g.State, "the revived player has not locked yet")
+
+	player.ActionsLocked = true
+	g.State.Update(g, time.Now().UTC())
+
+	assert.IsType(t, &action.EnemyTurnState{}, g.State)
+}
+
+func TestEnemyTurn_PartyWiped_WaitsForEveryReady(t *testing.T) {
+	g, player := newWipedGame(t)
 	g.State = action.NewEnemyTurnState(g)
 
 	g.State.Update(g, time.Now().UTC())
+	require.IsType(t, &action.EnemyTurnState{}, g.State, "the dead are still playing the round out")
 
-	assert.IsType(t, &action.EndGameState{}, g.State)
+	for _, party := range g.Parties {
+		for _, p := range party.Players {
+			if p != player {
+				p.Ready = true
+			}
+		}
+	}
+	g.State.Update(g, time.Now().UTC())
+	require.IsType(t, &action.EnemyTurnState{}, g.State)
+
+	player.Ready = true
+	g.State.Update(g, time.Now().UTC())
+
+	assert.IsType(t, &action.PlayerTurnState{}, g.State, "the revive window opens once everyone is through")
+	assert.False(t, g.HasEnded())
 }
