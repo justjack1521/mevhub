@@ -52,9 +52,11 @@ func (r *LobbySearchRedisRepository) Query(ctx context.Context, qry lobby.Search
 		}
 
 		for _, value := range result {
-			if cache[value] == true {
+			// A lobby with several categories sits in several of the sets read.
+			if cache[value] {
 				continue
 			}
+			cache[value] = true
 			results = append(results, lobby.SearchResult{
 				LobbyID: uuid.FromStringOrNil(value),
 			})
@@ -124,54 +126,83 @@ func (r *LobbySearchRedisRepository) ZAddArgs(instance lobby.SearchEntry) redis.
 	}
 }
 
+// Search keys. Every entry is written to one set per way it can be looked up,
+// so any combination of filters reads only sets that hold all its matches:
+//
+//	<mode>                  every lobby in the mode       (no level, no category)
+//	<mode>:<level>          every lobby in that tier      (level, no category)
+//	<mode>:any:<category>   every lobby with that element (category, no level)
+//	<mode>:<level>:<category>
+//
+// A quest with no categories is written under the "none" category, and a
+// category search also reads "none": an element filter narrows quests that have
+// an element, it does not hide the ones that don't.
+const (
+	LobbyKeyAnyLevel     string = "any"
+	LobbyKeyNoneCategory string = "none"
+)
+
 func (r *LobbySearchRedisRepository) GenerateKeysFromQuery(qry lobby.SearchQuery) []string {
 
 	var identifier = r.GenerateIdentifierKey(game.ModeIdentifier(qry.ModeIdentifier))
 
-	if len(qry.Levels) == 0 {
-		return []string{identifier}
+	var levels = make([]string, 0, len(qry.Levels))
+	for _, level := range qry.Levels {
+		levels = append(levels, strconv.Itoa(level))
 	}
 
-	concatenated := make([]string, 0)
-
-	if len(qry.Levels) == 0 {
-		for _, category := range qry.Categories {
-			concatenated = append(concatenated, category.String())
+	if len(qry.Categories) == 0 {
+		if len(levels) == 0 {
+			return []string{identifier}
 		}
-	} else if len(qry.Categories) == 0 {
-		for _, level := range qry.Levels {
-			concatenated = append(concatenated, strconv.Itoa(level))
-		}
-	} else {
-		for _, level := range qry.Levels {
-			for _, category := range qry.Categories {
-				concatenated = append(concatenated, strconv.Itoa(level)+":"+category.String())
-			}
-		}
+		return r.joinKeys(identifier, levels)
 	}
 
-	var result = make([]string, len(concatenated))
+	var categories = make([]string, 0, len(qry.Categories)+1)
+	for _, category := range qry.Categories {
+		categories = append(categories, category.String())
+	}
+	categories = append(categories, LobbyKeyNoneCategory)
 
-	for index, value := range concatenated {
-		result[index] = strings.Join([]string{identifier, value}, LobbyKeySecondarySeparator)
+	if len(levels) == 0 {
+		levels = []string{LobbyKeyAnyLevel}
 	}
 
-	return result
+	return r.joinKeys(identifier, levels, categories)
+
 }
 
 func (r *LobbySearchRedisRepository) GenerateKeysFromInstance(instance lobby.SearchEntry) []string {
 
 	var identifier = r.GenerateIdentifierKey(game.ModeIdentifier(instance.ModeIdentifier))
-	var tier = strings.Join([]string{identifier, strconv.Itoa(instance.Level)}, LobbyKeySecondarySeparator)
+	var level = strconv.Itoa(instance.Level)
 
-	if len(instance.Categories) == 0 {
-		return []string{tier}
+	var categories = make([]string, 0, len(instance.Categories))
+	for _, category := range instance.Categories {
+		categories = append(categories, category.String())
+	}
+	if len(categories) == 0 {
+		categories = []string{LobbyKeyNoneCategory}
 	}
 
-	var result = make([]string, len(instance.Categories))
+	var result = []string{identifier}
+	result = append(result, r.joinKeys(identifier, []string{level})...)
+	result = append(result, r.joinKeys(identifier, []string{level, LobbyKeyAnyLevel}, categories)...)
+	return result
 
-	for index, category := range instance.Categories {
-		result[index] = strings.Join([]string{tier, category.String()}, LobbyKeySecondarySeparator)
+}
+
+// joinKeys returns prefix:a:b... for every combination of one value per part.
+func (r *LobbySearchRedisRepository) joinKeys(prefix string, parts ...[]string) []string {
+	var result = []string{prefix}
+	for _, part := range parts {
+		var next = make([]string, 0, len(result)*len(part))
+		for _, head := range result {
+			for _, value := range part {
+				next = append(next, strings.Join([]string{head, value}, LobbyKeySecondarySeparator))
+			}
+		}
+		result = next
 	}
 	return result
 }

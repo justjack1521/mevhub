@@ -57,6 +57,19 @@ func (x Quest) Zero() bool {
 	return x.SysID == uuid.Nil
 }
 
+// CategoryIDs is the quest's search categories, without unset rows. Lobby
+// search writes and removes its index entries from this, so both see the same.
+func (x Quest) CategoryIDs() []uuid.UUID {
+	var result = make([]uuid.UUID, 0, len(x.Categories))
+	for _, category := range x.Categories {
+		if category.Zero() {
+			continue
+		}
+		result = append(result, category.SysID)
+	}
+	return result
+}
+
 // AvailableAt fails unless one of the quest's windows is open at now. A quest
 // with no windows is never available.
 func (x Quest) AvailableAt(now time.Time) error {

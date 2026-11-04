@@ -3,7 +3,6 @@ package subscriber
 import (
 	"fmt"
 	"github.com/justjack1521/mevium/pkg/mevent"
-	uuid "github.com/satori/go.uuid"
 	"mevhub/internal/core/domain/game"
 	"mevhub/internal/core/domain/lobby"
 	"mevhub/internal/core/port"
@@ -40,19 +39,11 @@ func (s *LobbySearchWriter) HandleLobbyDelete(evt lobby.InstanceDeletedEvent) er
 		return nil
 	}
 
-	var categories = make([]uuid.UUID, 0, len(quest.Categories))
-	for _, category := range quest.Categories {
-		if category.Zero() {
-			continue
-		}
-		categories = append(categories, category.SysID)
-	}
-
 	var entry = lobby.SearchEntry{
 		InstanceID:     evt.LobbyID(),
 		ModeIdentifier: string(quest.Tier.GameMode.ModeIdentifier),
 		Level:          quest.Tier.StarLevel,
-		Categories:     categories,
+		Categories:     quest.CategoryIDs(),
 	}
 
 	if err := s.SearchRepository.Delete(evt.Context(), entry); err != nil {

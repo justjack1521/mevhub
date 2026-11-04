@@ -152,19 +152,12 @@ func (h *LobbyCreateCommandHandler) Handle(ctx Context, cmd *LobbyCreateCommand)
 	}
 
 	if quest.Tier.GameMode.FulfillMethod == game.FulfillMethodSearch {
-		var categories = make([]uuid.UUID, len(quest.Categories))
-		for i, category := range quest.Categories {
-			if category.Zero() {
-				continue
-			}
-			categories[i] = category.SysID
-		}
 		var search = lobby.SearchEntry{
 			InstanceID:         instance.SysID,
 			ModeIdentifier:     string(quest.Tier.GameMode.ModeIdentifier),
 			Level:              quest.Tier.StarLevel,
 			MinimumPlayerLevel: instance.MinimumPlayerLevel,
-			Categories:         categories,
+			Categories:         quest.CategoryIDs(),
 		}
 		if err := h.SearchRepository.Create(ctx, search); err != nil {
 			return err
