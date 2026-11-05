@@ -60,3 +60,23 @@ func TestEnemyTurnState_Reconnect_ReadyEndsWaitEarly(t *testing.T) {
 
 	assert.IsType(t, &action.PlayerTurnState{}, g.State)
 }
+
+func TestEnemyTurnState_Timeout_ScalesWithQueuedActions(t *testing.T) {
+	g, player := newTurnGateGame(t)
+	drainChanges(g)
+	t.Cleanup(g.Stop)
+	// Five dispatched actions: 15s base + 5 x 4s = 35s for clients to play the round out.
+	player.Actions = make([]*game.PlayerAction, 5)
+	for i := range player.Actions {
+		player.Actions[i] = &game.PlayerAction{ActionType: game.PlayerActionTypeNormalAttack}
+	}
+	var start = time.Now().UTC()
+	g.State = action.NewEnemyTurnState(g)
+
+	// Past the flat 15s the old bound used: clients are still animating.
+	g.State.Update(g, start.Add(time.Second*20))
+	require.IsType(t, &action.EnemyTurnState{}, g.State)
+
+	g.State.Update(g, start.Add(time.Second*36))
+	assert.IsType(t, &action.PlayerTurnState{}, g.State)
+}

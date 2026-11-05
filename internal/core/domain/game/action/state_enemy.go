@@ -7,9 +7,28 @@ import (
 	"time"
 )
 
-// enemyTurnTimeout bounds the enemy turn: a client that never reports itself
-// ready (crashed mid-animation, wedged) must not stall the turn for everyone.
-const enemyTurnTimeout = time.Second * 15
+// The enemy turn's ready wait is bounded so a client that never reports itself
+// ready (crashed mid-animation, wedged) cannot stall the turn for everyone. The
+// bound has to cover the whole client playout, not just the enemy's moves: the
+// party's locked actions are dispatched on entry and every client plays all of
+// them out before the enemy acts. A flat bound fired routinely on long rounds,
+// starting the next player turn - and its server-side clock - while clients were
+// still animating, so they reached the turn with time already gone.
+const (
+	enemyTurnBaseTimeout      = time.Second * 15
+	enemyTurnTimeoutPerAction = time.Second * 4
+)
+
+// enemyTurnTimeout is the ready wait for a round with these dispatched actions.
+func enemyTurnTimeout(queued map[int][]*game.PlayerActionQueue) time.Duration {
+	var count = 0
+	for _, party := range queued {
+		for _, queue := range party {
+			count += len(queue.Actions)
+		}
+	}
+	return enemyTurnBaseTimeout + enemyTurnTimeoutPerAction*time.Duration(count)
+}
 
 type EnemyTurnState struct {
 	QueuedActions map[int][]*game.PlayerActionQueue
@@ -17,8 +36,10 @@ type EnemyTurnState struct {
 	// readyWaitFrom is when the ready wait's timeout started counting: the turn's
 	// start, or the latest reconnect if anyone came back during it.
 	readyWaitFrom time.Time
-	resolved      bool
-	advanced      bool
+	// timeout is how long the ready wait may run, sized to the round's queue.
+	timeout  time.Duration
+	resolved bool
+	advanced bool
 }
 
 func NewEnemyTurnState(instance *game.LiveGameInstance) *EnemyTurnState {
@@ -68,6 +89,7 @@ func NewEnemyTurnState(instance *game.LiveGameInstance) *EnemyTurnState {
 		}
 		state.QueuedActions[party.PartyIndex] = queue
 	}
+	state.timeout = enemyTurnTimeout(state.QueuedActions)
 	return state
 }
 
@@ -216,7 +238,7 @@ func (s *EnemyTurnState) Update(instance *game.LiveGameInstance, t time.Time) {
 	if instance.GetAlivePlayerCount() == 0 {
 		ready = instance.AllPlayersReady()
 	}
-	if ready == false && t.Sub(s.readyWaitFrom) <= enemyTurnTimeout {
+	if ready == false && t.Sub(s.readyWaitFrom) <= s.timeout {
 		return
 	}
 
