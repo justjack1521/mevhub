@@ -40,7 +40,9 @@ func (f *fakeSearchIndex) Prune(ctx context.Context, qry lobby.SearchQuery, id u
 }
 
 type fakeSearchSummaries struct {
-	errs map[uuid.UUID]error
+	errs     map[uuid.UUID]error
+	party    lobby.Summary
+	partyErr error
 }
 
 func (f *fakeSearchSummaries) Query(ctx context.Context, id uuid.UUID) (lobby.Summary, error) {
@@ -52,7 +54,7 @@ func (f *fakeSearchSummaries) Query(ctx context.Context, id uuid.UUID) (lobby.Su
 }
 
 func (f *fakeSearchSummaries) QueryByPartyID(ctx context.Context, party string) (lobby.Summary, error) {
-	return lobby.Summary{}, errors.New("not used")
+	return f.party, f.partyErr
 }
 
 func TestSearchLobby_ExpiredLobby_PrunedAndSkipped(t *testing.T) {
@@ -74,4 +76,37 @@ func TestSearchLobby_ExpiredLobby_PrunedAndSkipped(t *testing.T) {
 	require.Len(t, results, 1)
 	assert.Equal(t, live, results[0].InstanceID)
 	assert.Equal(t, []uuid.UUID{expired}, index.pruned)
+}
+
+func TestSearchLobby_PartyID(t *testing.T) {
+
+	var notFound = fmt.Errorf("failed to query lobby party x summary: %w", lobby.ErrFailedQueryLobbyInstance(fmt.Errorf("%w by key: x", lobby.ErrLobbyInstanceNotFound)))
+	var full = lobby.Summary{InstanceID: uuid.NewV4(), Players: []lobby.PlayerSlotSummary{{PartySlot: 0, PlayerSummary: lobby.PlayerSummary{Identity: lobby.PlayerIdentity{PlayerID: uuid.NewV4()}}}}}
+
+	var cases = []struct {
+		name    string
+		repo    *fakeSearchSummaries
+		want    int
+		wantErr bool
+	}{
+		{"unknown party is empty", &fakeSearchSummaries{partyErr: notFound}, 0, false},
+		{"full lobby still returned", &fakeSearchSummaries{party: full}, 1, false},
+		{"real failure is an error", &fakeSearchSummaries{partyErr: errors.New("redis unavailable")}, 0, true},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			// Filters are set to show they are ignored.
+			var qry = lobby.SearchQuery{ModeIdentifier: "other", Levels: []int{9}, PlayerLevel: 1}
+			handler := query.NewSearchLobbyQueryHandler(&fakeSearchIndex{}, c.repo)
+			results, err := handler.Handle(searchTestContext{context.Background()}, query.NewSearchLobbyQuery(qry, "PARTY"))
+			if c.wantErr {
+				require.Error(t, err)
+				return
+			}
+			require.NoError(t, err)
+			require.NotNil(t, results)
+			assert.Len(t, results, c.want)
+		})
+	}
 }

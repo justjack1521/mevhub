@@ -2,6 +2,7 @@ package memory
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/go-redis/redis/v8"
 	uuid "github.com/satori/go.uuid"
@@ -53,7 +54,11 @@ func (r *LobbyInstanceRedisRepository) QueryByID(ctx context.Context, id uuid.UU
 }
 
 func (r *LobbyInstanceRedisRepository) QueryByPartyID(ctx context.Context, party string) (*lobby.Instance, error) {
-	result, err := r.client.Get(ctx, r.GenerateLobbyPartyKey(party)).Result()
+	var key = r.GenerateLobbyPartyKey(party)
+	result, err := r.client.Get(ctx, key).Result()
+	if errors.Is(err, redis.Nil) {
+		return nil, lobby.ErrFailedQueryLobbyInstance(ErrLobbyInstanceNotFoundByKey(key))
+	}
 	if err != nil {
 		return nil, err
 	}

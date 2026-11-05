@@ -34,7 +34,13 @@ func NewSearchLobbyQueryHandler(lobbies port.LobbySearchIndexRepository, summari
 func (h *SearchLobbyQueryHandler) Handle(ctx Context, qry SearchLobbyQuery) ([]lobby.Summary, error) {
 
 	if qry.party != "" {
+		// Filters and the open slot check do not apply: the searcher named the
+		// party, so a full lobby is still shown. An unknown or expired party is
+		// an empty result, not a failure.
 		summary, err := h.SummaryRepository.QueryByPartyID(ctx, qry.party)
+		if errors.Is(err, lobby.ErrLobbyInstanceNotFound) {
+			return []lobby.Summary{}, nil
+		}
 		if err != nil {
 			return nil, err
 		}
