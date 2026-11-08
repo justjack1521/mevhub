@@ -75,6 +75,15 @@ func NewApplication(ctx context.Context, logger *slog.Logger) *application.CoreA
 		panic(fmt.Errorf("failed to connect to cache: %w", err))
 	}
 
+	// Live games die with the process, so whatever the last one left in Redis is
+	// stale by definition. Cleared before anything is served; a failure is logged
+	// rather than fatal, as the stale state is a hazard but not a broken start.
+	if purged, err := memory.PurgeServiceState(ctx, rds); err != nil {
+		logger.With("purged", purged, "error", err.Error()).Error("failed to purge stale service state from cache")
+	} else {
+		logger.With("purged", purged).Info("purged stale service state from cache")
+	}
+
 	msg, err := rmq.NewRabbitMQConnection()
 	if err != nil {
 		panic(fmt.Errorf("failed to connect to message bus: %w", err))

@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"errors"
 	uuid "github.com/satori/go.uuid"
 	"mevhub/internal/core/domain/game"
 	"sync"
@@ -54,6 +55,25 @@ func (s *GameServer) ClaimExpiredClients(timeout time.Duration) []*PlayerChannel
 		expired = append(expired, ch)
 	}
 	return expired
+}
+
+// ErrGameServerSeedOverflow is a seed that would block: its change could not be
+// queued because the change channel is already full and nothing drains it yet.
+var ErrGameServerSeedOverflow = errors.New("game server seed would overflow the change channel before start")
+
+// Seed performs an action on the game before Start, while nothing else can
+// touch the aggregate. It is how a new game is built populated: its parties and
+// players exist before the loop runs, so no client action can reach the game
+// ahead of the player it is for. The changes it emits wait on the change channel
+// and are handled in order once Start runs - the client registry first.
+//
+// Only for building a new game. Nothing drains the change channel yet, so a seed
+// is refused once the channel is full rather than blocking the caller forever.
+func (s *GameServer) Seed(a game.Action) error {
+	if len(s.game.ChangeChannel) == cap(s.game.ChangeChannel) {
+		return ErrGameServerSeedOverflow
+	}
+	return a.Perform(s.game)
 }
 
 func (s *GameServer) Start() {

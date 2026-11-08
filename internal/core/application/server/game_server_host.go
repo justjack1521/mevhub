@@ -134,14 +134,29 @@ func (h *GameServerHost) action(request *GameActionRequest) {
 			slog.Group("action",
 				slog.String("action.type", reflect.TypeOf(request.Action).String()),
 			),
-		).Info("game server action orphaned")
+		).Warn("game server action orphaned")
 		return
 	}
 
+	// Never wait on one game. This goroutine routes for every game and owns
+	// registration, and the bare sends into ActionChannel from the command
+	// handlers mean a blocked host also hangs their RPCs. A game whose queue is
+	// full has a stalled loop (in practice a publish blocked on the broker), and
+	// waiting for it froze every other game with it. Its own 64 slots are the
+	// slack; past them the action is dropped, and the game's restatement is what
+	// repairs a client that sent it.
 	select {
 	case instance.game.ActionChannel <- request.Action:
 	case <-instance.game.Done():
 		// The game shut down while routing; nothing left to receive it.
+		return
+	default:
+		h.logger.With(
+			slog.String("instance.id", request.GameID.String()),
+			slog.Group("action",
+				slog.String("action.type", reflect.TypeOf(request.Action).String()),
+			),
+		).Warn("game server action dropped: game action queue full")
 		return
 	}
 	h.logger.With(

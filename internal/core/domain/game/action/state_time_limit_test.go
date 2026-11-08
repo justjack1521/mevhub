@@ -71,6 +71,47 @@ func TestPendingState_AllReady_StartsClock(t *testing.T) {
 	assert.Equal(t, now, g.StartedAt)
 }
 
+func TestPendingState_NotReady_WaitsWithinTimeout(t *testing.T) {
+	g := newTimeLimitGame(t)
+	pending := action.NewPendingState(g)
+	g.State = pending
+
+	g.State.Update(g, pending.StartTime.Add(time.Second*59))
+
+	assert.IsType(t, &action.PendingState{}, g.State)
+	assert.True(t, g.StartedAt.IsZero())
+}
+
+func TestPendingState_NotReady_StartsAfterTimeout(t *testing.T) {
+	g := newTimeLimitGame(t)
+	pending := action.NewPendingState(g)
+	g.State = pending
+	now := pending.StartTime.Add(time.Second * 61)
+
+	g.State.Update(g, now)
+
+	require.IsType(t, &action.PlayerTurnState{}, g.State, "a ready that never landed must not hold the party")
+	assert.Equal(t, now, g.StartedAt)
+	assert.Equal(t, 1, g.GetPlayerCount(), "the timeout starts the game; it removes nobody")
+}
+
+func TestPendingState_Timeout_HoldsForDisconnectedPlayer(t *testing.T) {
+	g := newTimeLimitGame(t)
+	pending := action.NewPendingState(g)
+	g.State = pending
+	now := pending.StartTime.Add(time.Second * 61)
+	for _, party := range g.Parties {
+		for _, player := range party.Players {
+			player.Disconnected = true
+			player.DisconnectTime = now.Add(-time.Second * 10)
+		}
+	}
+
+	g.State.Update(g, now)
+
+	assert.IsType(t, &action.PendingState{}, g.State, "a player within their reconnect grace holds the start")
+}
+
 func TestPlayerTurnState_TimeExpired_EndsGame(t *testing.T) {
 	g := newTimeLimitGame(t)
 	g.State = action.NewPlayerTurnState(g)
