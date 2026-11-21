@@ -234,9 +234,11 @@ func (s *EnemyTurnState) Update(instance *game.LiveGameInstance, t time.Time) {
 	// revive. With nobody alive the living-only check is vacuously true, so wait
 	// on everyone instead — the dead still play the round out, and ready once
 	// they have, and the revive window must not open before they reach it.
-	var ready = instance.AllAlivePlayersReady()
+	//
+	// Away players are exempt from both waits, unless everyone is away.
+	var ready = instance.AllPresentAlivePlayersReady()
 	if instance.GetAlivePlayerCount() == 0 {
-		ready = instance.AllPlayersReady()
+		ready = instance.AllPresentPlayersReady()
 	}
 	if ready == false && t.Sub(s.readyWaitFrom) <= s.timeout {
 		return
@@ -258,5 +260,6 @@ func (s *EnemyTurnState) Update(instance *game.LiveGameInstance, t time.Time) {
 		return
 	}
 	s.advanced = true
+	markSilentPlayersAway(instance)
 	transitionTo(instance, NewPlayerTurnState(instance))
 }

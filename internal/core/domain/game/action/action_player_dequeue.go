@@ -23,6 +23,7 @@ func NewPlayerDequeueAction(instanceID uuid.UUID, partyID uuid.UUID, playerID uu
 }
 
 func (a *PlayerDequeueAction) Perform(instance *game.LiveGameInstance) error {
+	noteActivity(instance, a.PlayerID)
 
 	if err := requirePlayerTurn(instance); err != nil {
 		return ErrFailedDequeueAction(a.PlayerID, err)

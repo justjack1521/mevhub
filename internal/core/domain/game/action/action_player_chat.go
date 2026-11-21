@@ -27,6 +27,7 @@ func NewPlayerChatAction(instanceID uuid.UUID, playerID uuid.UUID, message strin
 }
 
 func (a *PlayerChatAction) Perform(instance *game.LiveGameInstance) error {
+	noteActivity(instance, a.PlayerID)
 
 	party, err := instance.GetPartyForPlayer(a.PlayerID)
 	if err != nil {

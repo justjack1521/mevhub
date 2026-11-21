@@ -56,6 +56,7 @@ func NewPlayerReviveClaimAction(instanceID uuid.UUID, playerID uuid.UUID, source
 }
 
 func (a *PlayerReviveClaimAction) Perform(instance *game.LiveGameInstance) error {
+	noteActivity(instance, a.SourceID)
 
 	party, err := instance.GetPartyForPlayer(a.PlayerID)
 	if err != nil {

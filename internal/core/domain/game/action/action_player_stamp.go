@@ -30,6 +30,7 @@ func NewPlayerStampAction(instanceID uuid.UUID, playerID uuid.UUID, stampID uuid
 }
 
 func (a *PlayerStampAction) Perform(instance *game.LiveGameInstance) error {
+	noteActivity(instance, a.PlayerID)
 
 	party, err := instance.GetPartyForPlayer(a.PlayerID)
 	if err != nil {

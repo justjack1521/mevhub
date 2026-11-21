@@ -29,6 +29,7 @@ func NewPlayerDeathAction(instanceID uuid.UUID, playerID uuid.UUID, deathTime ti
 }
 
 func (a *PlayerDeathAction) Perform(instance *game.LiveGameInstance) error {
+	noteActivity(instance, a.PlayerID)
 
 	party, err := instance.GetPartyForPlayer(a.PlayerID)
 	if err != nil {

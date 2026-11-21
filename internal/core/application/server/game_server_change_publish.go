@@ -27,6 +27,8 @@ type changeMarshaller struct {
 	playerDequeue    translate.GamePlayerDequeueActionChangeMarshaller
 	playerDisconnect translate.GamePlayerDisconnectChangeMarshaller
 	playerReconnect  translate.GamePlayerReconnectChangeMarshaller
+	playerAway       translate.GamePlayerAwayChangeMarshaller
+	playerReturn     translate.GamePlayerReturnChangeMarshaller
 	playerDeath      translate.GamePlayerDeathChangeMarshaller
 	playerChat       translate.GamePlayerChatChangeMarshaller
 	playerStamp      translate.GamePlayerStampChangeMarshaller
@@ -57,6 +59,8 @@ func NewChangeHandlerPublisher(publisher NotificationPublisher, eventPublisher *
 			playerDequeue:    translate.NewGamePlayerDequeueActionChangeMarshaller(),
 			playerDisconnect: translate.NewGamePlayerDisconnectChangeMarshaller(),
 			playerReconnect:  translate.NewGamePlayerReconnectChangeMarshaller(),
+			playerAway:       translate.NewGamePlayerAwayChangeMarshaller(),
+			playerReturn:     translate.NewGamePlayerReturnChangeMarshaller(),
 			playerDeath:      translate.NewGamePlayerDeathChangeMarshaller(),
 			playerChat:       translate.NewGamePlayerChatChangeMarshaller(),
 			playerStamp:      translate.NewGamePlayerStampChangeMarshaller(),
@@ -98,6 +102,10 @@ func (c *ChangeHandlerPublisher) Handle(svr *GameServer, change game.Change) err
 		return c.HandlePlayerDisconnectChange(svr, actual)
 	case *action.PlayerReconnectChange:
 		return c.HandlePlayerReconnectChange(svr, actual)
+	case *action.PlayerAwayChange:
+		return c.HandlePlayerAwayChange(svr, actual)
+	case *action.PlayerReturnChange:
+		return c.HandlePlayerReturnChange(svr, actual)
 	case *action.PartyAddChange:
 		// Internal bookkeeping only; clients learn party composition from the
 		// lobby, which is where it has always actually come from.
@@ -228,6 +236,27 @@ func (c *ChangeHandlerPublisher) HandlePlayerDisconnectChange(svr *GameServer, c
 // HandlePlayerReconnectChange broadcasts a reconnect notification.
 func (c *ChangeHandlerPublisher) HandlePlayerReconnectChange(svr *GameServer, change *action.PlayerReconnectChange) error {
 	message, err := c.marshaller.playerReconnect.Marshall(change)
+	if err != nil {
+		return err
+	}
+	return c.publish(svr, protomulti.MultiGameNotificationType_GAME_NOTIFY_PLAYER_RECONNECT, message)
+}
+
+// HandlePlayerAwayChange broadcasts a player going silent as a disconnect, so
+// clients show the badge. Only the notification is shared: the registry (see
+// ChangeHandlerDefault) never sees it, so no disconnect grace starts.
+func (c *ChangeHandlerPublisher) HandlePlayerAwayChange(svr *GameServer, change *action.PlayerAwayChange) error {
+	message, err := c.marshaller.playerAway.Marshall(change)
+	if err != nil {
+		return err
+	}
+	return c.publish(svr, protomulti.MultiGameNotificationType_GAME_NOTIFY_PLAYER_DISCONNECT, message)
+}
+
+// HandlePlayerReturnChange broadcasts an away player's return as a reconnect,
+// clearing the badge.
+func (c *ChangeHandlerPublisher) HandlePlayerReturnChange(svr *GameServer, change *action.PlayerReturnChange) error {
+	message, err := c.marshaller.playerReturn.Marshall(change)
 	if err != nil {
 		return err
 	}

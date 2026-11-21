@@ -27,6 +27,7 @@ func NewPlayerEnqueueAction(instanceID, partyID, playerID uuid.UUID, target int,
 }
 
 func (a *PlayerEnqueueAction) Perform(instance *game.LiveGameInstance) error {
+	noteActivity(instance, a.PlayerID)
 
 	if err := requirePlayerTurn(instance); err != nil {
 		return ErrFailedEnqueueAction(a.PlayerID, err)

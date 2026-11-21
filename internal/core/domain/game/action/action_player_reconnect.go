@@ -42,6 +42,11 @@ func (a *PlayerReconnectAction) Perform(instance *game.LiveGameInstance) error {
 
 	player.Disconnected = false
 	player.DisconnectTime = time.Time{}
+	// A reconnect is a live client, so any silence before it is over. The
+	// reconnect notification already clears the badge, so no return is sent.
+	player.Away = false
+	player.SilentRounds = 0
+	player.HeardThisRound = true
 	instance.SendChange(NewPlayerReconnectChange(instance.InstanceID, a.PlayerID, party.PartyIndex, player.PartySlot))
 
 	// Back mid enemy turn, they may still have the round to play out - and if the

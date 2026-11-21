@@ -40,6 +40,18 @@ type LivePlayer struct {
 	// LastStampTime is when this player's last stamp was relayed; another is
 	// refused until StampCooldown has passed.
 	LastStampTime time.Time
+	// Away marks a connected player whose client has stopped sending: a wedged
+	// send loop, a frozen app, or someone who walked off. Their socket is still
+	// open, so the disconnect grace never catches it, and every round would run
+	// both of its waits to the limit for them. Turn waits skip an away player
+	// instead; anything they send makes them present again at once. Clients are
+	// told through the disconnect badge, which is all a client uses that for.
+	Away bool
+	// SilentRounds counts whole rounds in a row with nothing at all from this
+	// player, and HeardThisRound is whether anything has arrived since the
+	// current round's player turn began. See AwayAfterSilentRounds.
+	SilentRounds   int
+	HeardThisRound bool
 }
 
 // CanStamp reports whether a stamp sent at time t is clear of the cooldown.

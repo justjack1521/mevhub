@@ -31,4 +31,10 @@ const (
 	// that ends in a revive is signalled by the revive itself.
 	ChangeIdentifierPlayerReviveClaim       ChangeIdentifier = "player.revive.claim"
 	ChangeIdentifierPlayerReviveClaimExpire ChangeIdentifier = "player.revive.claim.expire"
+	// Away and return are a connected player going silent and coming back. They
+	// reach clients as the disconnect and reconnect notifications but are not
+	// those changes: the client registry must not start a disconnect grace for a
+	// player whose socket is still open.
+	ChangeIdentifierPlayerAway   ChangeIdentifier = "player.away"
+	ChangeIdentifierPlayerReturn ChangeIdentifier = "player.return"
 )

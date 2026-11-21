@@ -23,6 +23,7 @@ func NewPlayerReadyAction(gameID uuid.UUID, partyID uuid.UUID, playerID uuid.UUI
 }
 
 func (a *PlayerReadyAction) Perform(instance *game.LiveGameInstance) error {
+	noteActivity(instance, a.PlayerID)
 
 	party, err := instance.GetPartyForPlayer(a.PlayerID)
 	if err != nil {

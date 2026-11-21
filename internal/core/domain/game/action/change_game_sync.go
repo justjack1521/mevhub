@@ -103,13 +103,15 @@ func NewGameStateSyncChange(instance *game.LiveGameInstance) *GameStateSyncChang
 			// enqueue/dequeue once it has crossed the change channel.
 			var actions = make([]*game.PlayerAction, len(player.Actions))
 			copy(actions, player.Actions)
+			// Away rides the disconnect flag: a client only uses it for the
+			// party badge, which is what an away player should show.
 			var entry = GameSyncPlayer{
 				PlayerID:     player.PlayerID,
 				PlayerIndex:  player.PartySlot,
 				Ready:        player.Ready,
 				Locked:       player.ActionsLocked,
 				LockIndex:    player.ActionLockIndex,
-				Disconnected: player.Disconnected,
+				Disconnected: player.Disconnected || player.Away,
 				Dead:         player.Dead,
 				Actions:      actions,
 			}

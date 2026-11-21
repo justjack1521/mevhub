@@ -9,6 +9,12 @@ import (
 type GamePlayerRemoveChangeMarshaller Marshaller[*action.PlayerRemoveChange, *protomulti.GamePlayerRemoveNotification]
 type GamePlayerDisconnectChangeMarshaller Marshaller[*action.PlayerDisconnectChange, *protomulti.GamePlayerDisconnectNotification]
 type GamePlayerReconnectChangeMarshaller Marshaller[*action.PlayerReconnectChange, *protomulti.GamePlayerReconnectNotification]
+
+// Away and return go out as the disconnect and reconnect notifications: the
+// client's only use of those is the party badge, which is what an away player
+// should show.
+type GamePlayerAwayChangeMarshaller Marshaller[*action.PlayerAwayChange, *protomulti.GamePlayerDisconnectNotification]
+type GamePlayerReturnChangeMarshaller Marshaller[*action.PlayerReturnChange, *protomulti.GamePlayerReconnectNotification]
 type GamePlayerDeathChangeMarshaller Marshaller[*action.PlayerDeathChange, *protomulti.GamePlayerDeathNotification]
 type GamePlayerReviveChangeMarshaller Marshaller[*action.PlayerReviveChange, *protomulti.GamePlayerReviveNotification]
 type GamePlayerReviveClaimChangeMarshaller Marshaller[*action.PlayerReviveClaimChange, *protomulti.GamePlayerReviveClaimNotification]
@@ -56,6 +62,34 @@ func NewGamePlayerReconnectChangeMarshaller() GamePlayerReconnectChangeMarshalle
 }
 
 func (g gamePlayerReconnectChangeMarshaller) Marshall(data *action.PlayerReconnectChange) (*protomulti.GamePlayerReconnectNotification, error) {
+	return &protomulti.GamePlayerReconnectNotification{
+		GameId:      data.InstanceID.String(),
+		PartyIndex:  int32(data.PartyIndex),
+		PlayerIndex: int32(data.PartySlot),
+	}, nil
+}
+
+type gamePlayerAwayChangeMarshaller struct{}
+
+func NewGamePlayerAwayChangeMarshaller() GamePlayerAwayChangeMarshaller {
+	return gamePlayerAwayChangeMarshaller{}
+}
+
+func (g gamePlayerAwayChangeMarshaller) Marshall(data *action.PlayerAwayChange) (*protomulti.GamePlayerDisconnectNotification, error) {
+	return &protomulti.GamePlayerDisconnectNotification{
+		GameId:      data.InstanceID.String(),
+		PartyIndex:  int32(data.PartyIndex),
+		PlayerIndex: int32(data.PartySlot),
+	}, nil
+}
+
+type gamePlayerReturnChangeMarshaller struct{}
+
+func NewGamePlayerReturnChangeMarshaller() GamePlayerReturnChangeMarshaller {
+	return gamePlayerReturnChangeMarshaller{}
+}
+
+func (g gamePlayerReturnChangeMarshaller) Marshall(data *action.PlayerReturnChange) (*protomulti.GamePlayerReconnectNotification, error) {
 	return &protomulti.GamePlayerReconnectNotification{
 		GameId:      data.InstanceID.String(),
 		PartyIndex:  int32(data.PartyIndex),

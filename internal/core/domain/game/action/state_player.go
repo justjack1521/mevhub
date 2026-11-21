@@ -19,6 +19,9 @@ func NewPlayerTurnState(game *game.LiveGameInstance) *PlayerTurnState {
 			player.ActionsLocked = false
 			player.ActionLockIndex = 0
 			player.Actions = nil
+			// A new round: markSilentPlayersAway judges it on what arrives
+			// from here until the enemy turn after it ends.
+			player.HeardThisRound = false
 		}
 	}
 	return &PlayerTurnState{
@@ -72,7 +75,9 @@ func (s *PlayerTurnState) Update(instance *game.LiveGameInstance, t time.Time) {
 		return
 	}
 
-	var ready = instance.AllAlivePlayersLocked()
+	// Away players are not waited on; they are locked below with whoever else
+	// has not locked when the turn ends.
+	var ready = instance.AllPresentAlivePlayersLocked()
 	var expired = s.Expired(t)
 
 	if ready || expired {
@@ -85,23 +90,21 @@ func (s *PlayerTurnState) Update(instance *game.LiveGameInstance, t time.Time) {
 			return
 		}
 
-		if expired {
-
-			for _, party := range instance.Parties {
-				for _, player := range party.Players {
-					// A dead player is exempt from locking, not force-locked:
-					// they cannot act, and the enemy turn skips them anyway.
-					if player.Dead {
-						continue
-					}
-					if player.ActionsLocked == false {
-						player.ActionLockIndex = party.NextActionLockIndex()
-						player.ActionsLocked = true
-						instance.SendChange(NewPlayerLockActionChange(instance.InstanceID, party.PartyIndex, player.PartySlot, player.ActionLockIndex))
-					}
+		// Lock whoever has not: everyone still unlocked when the timer ran out,
+		// or, when the turn ended early, only the away players it did not wait on.
+		for _, party := range instance.Parties {
+			for _, player := range party.Players {
+				// A dead player is exempt from locking, not force-locked:
+				// they cannot act, and the enemy turn skips them anyway.
+				if player.Dead {
+					continue
+				}
+				if player.ActionsLocked == false {
+					player.ActionLockIndex = party.NextActionLockIndex()
+					player.ActionsLocked = true
+					instance.SendChange(NewPlayerLockActionChange(instance.InstanceID, party.PartyIndex, player.PartySlot, player.ActionLockIndex))
 				}
 			}
-
 		}
 
 		transitionTo(instance, NewEnemyTurnState(instance))

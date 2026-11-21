@@ -25,6 +25,7 @@ func NewPlayerLockAction(instanceID uuid.UUID, partyID uuid.UUID, playerID uuid.
 }
 
 func (a *PlayerLockAction) Perform(instance *game.LiveGameInstance) error {
+	noteActivity(instance, a.PlayerID)
 
 	if err := requirePlayerTurn(instance); err != nil {
 		return ErrFailedLockAction(a.PlayerID, err)

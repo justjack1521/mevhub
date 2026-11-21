@@ -266,6 +266,59 @@ func (game *LiveGameInstance) AllPlayersReady() bool {
 	return true
 }
 
+// AllPresentAlivePlayersLocked is AllAlivePlayersLocked with away players
+// exempt as well: the player turn ends once everyone actually playing has
+// locked, and the away are locked with the stragglers on the way out.
+func (game *LiveGameInstance) AllPresentAlivePlayersLocked() bool {
+	return game.allPresent(isAlive, isLocked)
+}
+
+// AllPresentAlivePlayersReady is AllAlivePlayersReady with away players exempt.
+func (game *LiveGameInstance) AllPresentAlivePlayersReady() bool {
+	return game.allPresent(isAlive, isReady)
+}
+
+// AllPresentPlayersReady is AllPlayersReady with away players exempt.
+func (game *LiveGameInstance) AllPresentPlayersReady() bool {
+	return game.allPresent(isAnyone, isReady)
+}
+
+func isAlive(p *LivePlayer) bool  { return p.Dead == false }
+func isAnyone(*LivePlayer) bool   { return true }
+func isLocked(p *LivePlayer) bool { return p.ActionsLocked }
+func isReady(p *LivePlayer) bool  { return p.Ready }
+
+// allPresent reports whether every player in scope who is not away is done.
+// When everyone in scope is away it waits on all of them instead, so a turn
+// nobody is playing runs to its timer rather than passing at once - left to
+// pass vacuously, a party of away players would race through enemy turns
+// until it was dead.
+func (game *LiveGameInstance) allPresent(inScope, done func(*LivePlayer) bool) bool {
+	var present = false
+	for _, party := range game.Parties {
+		for _, player := range party.Players {
+			if inScope(player) == false || player.Away {
+				continue
+			}
+			present = true
+			if done(player) == false {
+				return false
+			}
+		}
+	}
+	if present {
+		return true
+	}
+	for _, party := range game.Parties {
+		for _, player := range party.Players {
+			if inScope(player) && done(player) == false {
+				return false
+			}
+		}
+	}
+	return true
+}
+
 func (game *LiveGameInstance) GetActionLockedPlayerCount() int {
 	var total = 0
 	for _, party := range game.Parties {
