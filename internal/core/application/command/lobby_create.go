@@ -94,6 +94,10 @@ func (h *LobbyCreateCommandHandler) Handle(ctx Context, cmd *LobbyCreateCommand)
 		return err
 	}
 
+	if err := leaveSeatedGame(ctx, h.EventPublisher, h.SessionRepository, current); err != nil {
+		return err
+	}
+
 	free, err := releaseStaleLobby(ctx, h.SessionRepository, h.InstanceRepository, current)
 	if err != nil {
 		return err

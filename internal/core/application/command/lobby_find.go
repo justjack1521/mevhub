@@ -7,6 +7,8 @@ import (
 	"mevhub/internal/core/domain/match"
 	"mevhub/internal/core/port"
 	"time"
+
+	"github.com/justjack1521/mevium/pkg/mevent"
 )
 
 type ParticipantFindCommand struct {
@@ -25,14 +27,15 @@ func (c ParticipantFindCommand) CommandName() string {
 }
 
 type ParticipantFindCommandHandler struct {
+	EventPublisher          *mevent.Publisher
 	QuestRepository         port.QuestRepository
 	MatchmakingRepository   port.MatchLobbyPlayerQueueWriteRepository
 	PlayerSummaryRepository port.LobbyPlayerSummaryReadRepository
 	SessionRepository       port.SessionInstanceRepository
 }
 
-func NewParticipantFindCommandHandler(quests port.QuestRepository, queue port.MatchLobbyPlayerQueueWriteRepository, players port.LobbyPlayerSummaryReadRepository, sessions port.SessionInstanceRepository) *ParticipantFindCommandHandler {
-	return &ParticipantFindCommandHandler{QuestRepository: quests, MatchmakingRepository: queue, PlayerSummaryRepository: players, SessionRepository: sessions}
+func NewParticipantFindCommandHandler(publisher *mevent.Publisher, quests port.QuestRepository, queue port.MatchLobbyPlayerQueueWriteRepository, players port.LobbyPlayerSummaryReadRepository, sessions port.SessionInstanceRepository) *ParticipantFindCommandHandler {
+	return &ParticipantFindCommandHandler{EventPublisher: publisher, QuestRepository: quests, MatchmakingRepository: queue, PlayerSummaryRepository: players, SessionRepository: sessions}
 }
 
 func (h *ParticipantFindCommandHandler) Handle(ctx Context, cmd *ParticipantFindCommand) error {
@@ -61,6 +64,10 @@ func (h *ParticipantFindCommandHandler) Handle(ctx Context, cmd *ParticipantFind
 	// chosen deck before queueing.
 	current, err := h.SessionRepository.QueryByID(ctx, ctx.UserID())
 	if err != nil {
+		return err
+	}
+
+	if err := leaveSeatedGame(ctx, h.EventPublisher, h.SessionRepository, current); err != nil {
 		return err
 	}
 

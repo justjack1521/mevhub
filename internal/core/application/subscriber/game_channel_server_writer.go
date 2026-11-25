@@ -23,7 +23,7 @@ type GameChannelServerWriter struct {
 
 func NewGameChannelServerWriter(svr *server.GameServerHost, publisher *mevent.Publisher, instances port.GameInstanceRepository, party port.GamePartyReadRepository, participants port.GameParticipantReadRepository, logger *slog.Logger) *GameChannelServerWriter {
 	var writer = &GameChannelServerWriter{Server: svr, InstanceRepository: instances, PartyRepository: party, ParticipantRepository: participants, Logger: logger}
-	publisher.Subscribe(writer, game.InstanceCreatedEvent{}, game.InstanceDeletedEvent{}, session.InstanceDeletedEvent{}, game.PlayerDisconnectedEvent{}, game.PlayerReconnectedEvent{})
+	publisher.Subscribe(writer, game.InstanceCreatedEvent{}, game.InstanceDeletedEvent{}, session.InstanceDeletedEvent{}, session.GameAbandonedEvent{}, game.PlayerDisconnectedEvent{}, game.PlayerReconnectedEvent{})
 	return writer
 }
 
@@ -35,6 +35,8 @@ func (w *GameChannelServerWriter) Notify(event mevent.Event) {
 		w.HandleInstanceDelete(actual)
 	case session.InstanceDeletedEvent:
 		w.HandleSessionDeleted(actual)
+	case session.GameAbandonedEvent:
+		w.HandleGameAbandoned(actual)
 	case game.PlayerDisconnectedEvent:
 		w.HandlePlayerDisconnected(actual)
 	case game.PlayerReconnectedEvent:
@@ -117,6 +119,16 @@ func (w *GameChannelServerWriter) HandleSessionDeleted(event session.InstanceDel
 		GameID:  event.GameID(),
 		PartyID: event.LobbyID(),
 		Action:  action.NewPlayerRemoveAction(event.GameID(), event.LobbyID(), event.UserID(), event.PlayerID()),
+	}
+}
+
+// HandleGameAbandoned removes a player from a game they left for another lobby,
+// the same removal a session end makes: the game stops sending to them and stops
+// waiting on them, and the rest of the party is told they are gone.
+func (w *GameChannelServerWriter) HandleGameAbandoned(event session.GameAbandonedEvent) {
+	w.Server.ActionChannel <- &server.GameActionRequest{
+		GameID: event.GameID(),
+		Action: action.NewPlayerRemoveAction(event.GameID(), uuid.Nil, event.UserID(), event.PlayerID()),
 	}
 }
 
