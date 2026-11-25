@@ -191,6 +191,7 @@ func (c *ChangeHandlerPublisher) HandleEnemyTurnStateChange(svr *GameServer, cha
 	}
 
 	var message = &protomulti.GameActionQueueConfirmNotification{
+		GameId:            svr.InstanceID.String(),
 		PartyActionQueues: queues,
 	}
 	return c.publish(svr, protomulti.MultiGameNotificationType_GAME_NOTIFY_QUEUE_CONFIRM, message)
